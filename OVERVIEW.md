@@ -155,7 +155,7 @@ Aplikace má jen dvě:
 - Neukládá audio na disk (jen RAM, dočasný WAV se maže)
 - Nesleduje uživatele
 - Nevolá žádné API
-- Nemá auto-update (zatím — bude přidán Sparkle framework až budou pravidelné releasy)
+- Auto-update přes Sparkle (kontrola appcastu 1× denně, žádná telemetrie)
 
 ---
 
@@ -166,7 +166,7 @@ Aplikace má jen dvě:
 - [ ] **Smart leading space** při paste doprostřed věty
 - [ ] **Punctuation commands** („tečka", „nový odstavec") — power user feature
 - [ ] **HUD error feedback** při selhání injection
-- [ ] **Sparkle auto-update** framework (po prvních releasech)
+- [x] **Sparkle auto-update** framework
 - [ ] **Apple Developer certifikát + notarizace** pro distribuci bez Gatekeeper warning
 - [ ] Volitelně: English a Slovak jazyková podpora
 
