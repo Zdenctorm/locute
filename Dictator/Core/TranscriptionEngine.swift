@@ -80,12 +80,11 @@ actor TranscriptionEngine {
         }
     }
 
-    func transcribe(audioURL: URL) async throws -> String {
+    func transcribe(audioURL: URL, peakRMS: Float) async throws -> String {
         guard let whisperKit else { throw TranscriptionError.modelNotLoaded }
 
-        let fileRMS = AudioLevelAnalyzer.peakRMS(url: audioURL)
-        DiagnosticsLogger.log("Audio file peakRMS=\(String(format: "%.4f", fileRMS))")
-        guard fileRMS >= 0.002 else {
+        DiagnosticsLogger.log("Audio file peakRMS=\(String(format: "%.4f", peakRMS))")
+        guard peakRMS >= 0.002 else {
             DiagnosticsLogger.log("Transcription skipped: audio file too quiet")
             throw TranscriptionError.audioTooQuiet
         }
@@ -97,10 +96,11 @@ actor TranscriptionEngine {
             language: language,
             temperature: 0.0,
             temperatureIncrementOnFallback: 0.2,
-            temperatureFallbackCount: 3,
+            temperatureFallbackCount: 1,
             usePrefillPrompt: true,
             skipSpecialTokens: true,
             withoutTimestamps: true,
+            wordTimestamps: false,
             promptTokens: promptTokens,
             suppressBlank: true,
             compressionRatioThreshold: 2.4,

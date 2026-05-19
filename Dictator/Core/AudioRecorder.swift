@@ -78,7 +78,7 @@ actor AudioRecorder {
         logger.info("Recording started")
     }
 
-    func stopRecording() async -> URL? {
+    func stopRecording() async -> RecordingCapture? {
         guard let session else { return nil }
 
         captureController.stop()
@@ -102,7 +102,7 @@ actor AudioRecorder {
         )
 
         logger.info("Recording stopped")
-        return session.url
+        return RecordingCapture(url: session.url, peakRMS: filePeakRMS)
     }
 
     func cancelRecording() async {
@@ -415,4 +415,9 @@ private final class RecordingSession: @unchecked Sendable {
         }
         return copy
     }
+}
+
+struct RecordingCapture: Sendable {
+    let url: URL
+    let peakRMS: Float
 }

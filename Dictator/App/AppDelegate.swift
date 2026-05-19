@@ -307,8 +307,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             defer { DiagnosticsLogger.exitDictationSession() }
 
             DiagnosticsLogger.log("Dictation end (\(trigger)): stopping capture")
-            let audioURL = await audioRecorder.stopRecording()
-            guard let audioURL else {
+            let capture = await audioRecorder.stopRecording()
+            guard let capture else {
                 DiagnosticsLogger.log("No audio file (\(trigger)): too short or mic not ready")
                 await MainActor.run { [weak self] in
                     guard let self else { return }
@@ -328,14 +328,17 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 }
                 return
             }
-            defer { try? FileManager.default.removeItem(at: audioURL) }
+            defer { try? FileManager.default.removeItem(at: capture.url) }
 
             await MainActor.run { [weak self] in
                 self?.stateMachine.transition(to: .transcribing)
             }
 
             do {
-                let text = try await transcriptionEngine.transcribe(audioURL: audioURL)
+                let text = try await transcriptionEngine.transcribe(
+                    audioURL: capture.url,
+                    peakRMS: capture.peakRMS
+                )
                 let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
 
                 if trimmed.isEmpty {
