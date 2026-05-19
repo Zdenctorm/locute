@@ -56,6 +56,11 @@
 		01000000000000000000003B /* MicrophonePreference.swift in Sources */ = {isa = PBXBuildFile; fileRef = 020000000000000000000037 /* MicrophonePreference.swift */; };
 		01000000000000000000003C /* SoundFeedbackService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 020000000000000000000038 /* SoundFeedbackService.swift */; };
 		01000000000000000000003D /* StatusBarPopoverController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 020000000000000000000039 /* StatusBarPopoverController.swift */; };
+		010000000000000000000041 /* PasteboardSnapshot.swift in Sources */ = {isa = PBXBuildFile; fileRef = 020000000000000000000041 /* PasteboardSnapshot.swift */; };
+		010000000000000000000042 /* InsertionSpacing.swift in Sources */ = {isa = PBXBuildFile; fileRef = 020000000000000000000042 /* InsertionSpacing.swift */; };
+		010000000000000000000043 /* TranscriptionCaseNormalizer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 020000000000000000000043 /* TranscriptionCaseNormalizer.swift */; };
+		010000000000000000000044 /* InsertionSpacingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 020000000000000000000044 /* InsertionSpacingTests.swift */; };
+		010000000000000000000045 /* TranscriptionCaseNormalizerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 020000000000000000000045 /* TranscriptionCaseNormalizerTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -109,6 +114,11 @@
 		020000000000000000000037 /* MicrophonePreference.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MicrophonePreference.swift; sourceTree = "<group>"; };
 		020000000000000000000038 /* SoundFeedbackService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SoundFeedbackService.swift; sourceTree = "<group>"; };
 		020000000000000000000039 /* StatusBarPopoverController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatusBarPopoverController.swift; sourceTree = "<group>"; };
+		020000000000000000000041 /* PasteboardSnapshot.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PasteboardSnapshot.swift; sourceTree = "<group>"; };
+		020000000000000000000042 /* InsertionSpacing.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InsertionSpacing.swift; sourceTree = "<group>"; };
+		020000000000000000000043 /* TranscriptionCaseNormalizer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TranscriptionCaseNormalizer.swift; sourceTree = "<group>"; };
+		020000000000000000000044 /* InsertionSpacingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InsertionSpacingTests.swift; sourceTree = "<group>"; };
+		020000000000000000000045 /* TranscriptionCaseNormalizerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TranscriptionCaseNormalizerTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -182,6 +192,9 @@
 				020000000000000000000037 /* MicrophonePreference.swift */,
 				020000000000000000000038 /* SoundFeedbackService.swift */,
 				020000000000000000000006 /* TextInjector.swift */,
+				020000000000000000000041 /* PasteboardSnapshot.swift */,
+				020000000000000000000042 /* InsertionSpacing.swift */,
+				020000000000000000000043 /* TranscriptionCaseNormalizer.swift */,
 				020000000000000000000012 /* DiagnosticsLogger.swift */,
 				020000000000000000000015 /* TranscriptionSanitizer.swift */,
 				029000000000000000000001 /* TranscriptionHistoryEntry.swift */,
@@ -241,6 +254,8 @@
 				02000000000000000000001C /* TranscriptionSanitizerTests.swift */,
 				020000000000000000000029 /* TranscriptionModelPreferenceTests.swift */,
 				020000000000000000000032 /* PostProcessingPreferenceTests.swift */,
+				020000000000000000000044 /* InsertionSpacingTests.swift */,
+				020000000000000000000045 /* TranscriptionCaseNormalizerTests.swift */,
 			);
 			path = DictatorTests;
 			sourceTree = "<group>";
@@ -382,6 +397,9 @@
 				01000000000000000000003B /* MicrophonePreference.swift in Sources */,
 				01000000000000000000003C /* SoundFeedbackService.swift in Sources */,
 				010000000000000000000006 /* TextInjector.swift in Sources */,
+				010000000000000000000041 /* PasteboardSnapshot.swift in Sources */,
+				010000000000000000000042 /* InsertionSpacing.swift in Sources */,
+				010000000000000000000043 /* TranscriptionCaseNormalizer.swift in Sources */,
 				01000000000000000000000F /* DiagnosticsLogger.swift in Sources */,
 				010000000000000000000007 /* StatusBarController.swift in Sources */,
 				01000000000000000000003D /* StatusBarPopoverController.swift in Sources */,
@@ -416,6 +434,8 @@
 				010000000000000000000018 /* TranscriptionSanitizerTests.swift in Sources */,
 				010000000000000000000027 /* TranscriptionModelPreferenceTests.swift in Sources */,
 				010000000000000000000032 /* PostProcessingPreferenceTests.swift in Sources */,
+				010000000000000000000044 /* InsertionSpacingTests.swift in Sources */,
+				010000000000000000000045 /* TranscriptionCaseNormalizerTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

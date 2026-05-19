@@ -513,13 +513,18 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 let activeVocab = await MainActor.run { LearningEngine.shared.currentActiveVocabulary() }
                 let replacedWords = activeVocab.applyReplacementsWithTracking(to: raw.words)
                 let joinedText = replacedWords.map(\.text).joined(separator: " ")
+                    .trimmingCharacters(in: .whitespacesAndNewlines)
+                let caseWhitelist = TranscriptionCaseNormalizer.buildWhitelist(
+                    vocabularyCanonicals: activeVocab.entries.map(\.canonical)
+                )
+                let caseNormalized = TranscriptionCaseNormalizer.normalize(joinedText, whitelist: caseWhitelist)
 
                 let finalText: String
                 if PostProcessingPreference.isEnabled, await postProcessingEngine.isLoaded {
                     let processed: String? = await withTaskGroup(of: String?.self) { group in
                         group.addTask { [weak self] in
                             try? await self?.postProcessingEngine.process(
-                                joinedText,
+                                caseNormalized,
                                 targetAppBundleID: targetApp?.bundleIdentifier
                             )
                         }
@@ -535,13 +540,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                     }
                     if let processed {
                         finalText = processed.trimmingCharacters(in: .whitespacesAndNewlines)
-                        DiagnosticsLogger.log("PostProcessing: applied (\(joinedText.count)c → \(finalText.count)c)")
+                        DiagnosticsLogger.log("PostProcessing: applied (\(caseNormalized.count)c → \(finalText.count)c)")
                     } else {
-                        finalText = joinedText.trimmingCharacters(in: .whitespacesAndNewlines)
+                        finalText = caseNormalized
                         DiagnosticsLogger.log("PostProcessing: timeout or error — using original")
                     }
                 } else {
-                    finalText = joinedText.trimmingCharacters(in: .whitespacesAndNewlines)
+                    finalText = caseNormalized
                 }
 
                 if finalText.isEmpty {
@@ -738,6 +743,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             DiagnosticsLogger.log("Paste: background inject succeeded (\(trigger))")
         } else {
             DiagnosticsLogger.log("Paste: background inject failed (\(trigger))")
+            let reason: String
+            if case .failed(let message) = injectResult {
+                reason = message
+            } else {
+                reason = "Text se nevložil"
+            }
+            recordingOverlay.show(.injectionFailed(reason))
+            recordingOverlay.scheduleAutoHide(after: 5)
             showLastTranscription()
             statusBarController.showTransientStatus(
                 "Text je v okně Dictatoru — zkopíruj nebo zkus „Vložit“",
