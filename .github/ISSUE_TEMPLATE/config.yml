@@ -1,0 +1,5 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Roadmap (P0 / P1)
+    url: https://github.com/Zdenctorm/dictator/blob/main/docs/roadmap/README.md
+    about: Specifikace a návod na zakládání úkolů

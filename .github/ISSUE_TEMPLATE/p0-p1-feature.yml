@@ -1,0 +1,42 @@
+name: P0 / P1 feature
+description: Implementace položky z produktové roadmapy
+title: "P0.x / P1.x: "
+labels: ["roadmap"]
+body:
+  - type: dropdown
+    id: priority
+    attributes:
+      label: Priorita
+      options:
+        - P0
+        - P1
+    validations:
+      required: true
+  - type: input
+    id: spec_id
+    attributes:
+      label: ID v roadmapě
+      description: "např. P0.1, P1.4"
+      placeholder: P0.1
+    validations:
+      required: true
+  - type: textarea
+    id: spec_link
+    attributes:
+      label: Odkaz na spec
+      description: Sekce v docs/roadmap/P0-spec.md nebo P1-spec.md
+      placeholder: https://github.com/Zdenctorm/dictator/blob/main/docs/roadmap/P0-spec.md#p01--obnova-schránky-při-cmdv-vkládání
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria
+      description: Zkopírovat ze spec nebo upravit
+    validations:
+      required: true
+  - type: textarea
+    id: notes
+    attributes:
+      label: Poznámky / návrh implementace
+      description: Volitelné technické detaily
