@@ -1,0 +1,24 @@
+# Build artifacts
+build/
+dist/
+
+# Xcode
+*.xcodeproj/project.xcworkspace/
+*.xcodeproj/xcuserdata/
+*.xcworkspace/xcuserdata/
+DerivedData/
+
+# Resolved packages (per-user)
+*.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/
+
+# macOS junk
+.DS_Store
+
+# Editor
+.vscode/
+.idea/
+*.swp
+
+# Local Claude config
+.claude/
+.impeccable/
