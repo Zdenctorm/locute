@@ -2,7 +2,7 @@
 
 ## Co je tento projekt
 
-Nativní macOS appka pro hlasové diktování — funkčně podobná Utteru (uttero.ai).
+Nativní macOS appka pro hlasové diktování.
 
 Uživatel přidrží klávesu, mluví, pustí → text se objeví tam, kde má kurzor.
 
@@ -42,10 +42,6 @@ Jednoduchá, offline, soukromá diktovací appka. Žádná data neopouštějí z
 
 ---
 
-## Inspirace
-
-Uttero (uttero.ai) — česká appka, stejný use case, stejný backend (WhisperKit).
-Nepoužívali jsme jejich kód — stavíme od nuly na open source základech.
 
 ---
 

@@ -5,7 +5,7 @@ enum PasteInsertionStep: String, CaseIterable {
     case commandV
     case accessibility
 
-    /// When `prefersCommandVFirst` is true (Electron browsers, Slack, …): try ⌘V before AX.
+    /// When `prefersCommandVFirst` is true (Electron browsers, web wrappers, …): try ⌘V before AX.
     static func ordered(prefersCommandVFirst: Bool) -> [PasteInsertionStep] {
         prefersCommandVFirst ? [.commandV, .accessibility] : [.accessibility, .commandV]
     }
@@ -14,7 +14,7 @@ enum PasteInsertionStep: String, CaseIterable {
 /// Bundle IDs that reliably paste better via simulated ⌘V than raw AX writes.
 ///
 /// Dva typy "preferuj Cmd+V":
-/// 1. **Electron / web wrappers** (Slack, Discord, VSCode, browsery) — AX zápis tam funguje
+/// 1. **Electron / web wrappers** (Discord, VSCode, browsery, …) — AX zápis tam funguje
 ///    nedeterministicky, Cmd+V je spolehlivější.
 /// 2. **Terminály** — AX `setAttributeValue` na kAXSelectedText vrací success, ale shell text
 ///    input je mimo Cocoa text view, takže text reálně nikdy nedorazí. Cmd+V projde přes

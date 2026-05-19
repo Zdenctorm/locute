@@ -8,7 +8,7 @@ actor TranscriptionEngine {
     private let modelName = "large-v3"
     private let modelRepository = "argmaxinc/whisperkit-coreml"
     private let language = "cs"
-    private let logger = Logger(subsystem: "ai.anycoin.dictator", category: "transcription")
+    private let logger = Logger(subsystem: "com.example.dictator", category: "transcription")
 
     /// Aktuální slovník uživatele — drží se v paměti, aby se nečetl z UserDefaults při každém přepisu.
     /// Reload spouští `dictatorVocabularyChanged` notifikace (viz `AppDelegate`).

@@ -18,7 +18,7 @@ actor AudioRecorder {
     private var session: RecordingSession?
     private var recordingStartedAt: Date?
 
-    private let logger = Logger(subsystem: "ai.anycoin.dictator", category: "audio")
+    private let logger = Logger(subsystem: "com.example.dictator", category: "audio")
 
     func startRecording() throws {
         guard session == nil else { return }
@@ -137,7 +137,7 @@ enum AudioRecorderError: LocalizedError {
 private final class AudioCaptureController: NSObject, AVCaptureAudioDataOutputSampleBufferDelegate, @unchecked Sendable {
     private let captureSession = AVCaptureSession()
     private let audioOutput = AVCaptureAudioDataOutput()
-    private let captureQueue = DispatchQueue(label: "ai.anycoin.dictator.capture", qos: .userInteractive)
+    private let captureQueue = DispatchQueue(label: "com.example.dictator.capture", qos: .userInteractive)
     private var currentInput: AVCaptureDeviceInput?
 
     private let stateLock = NSLock()
@@ -276,7 +276,7 @@ private final class RecordingSession: @unchecked Sendable {
 
     private let file: AVAudioFile
     private let targetFormat: AVAudioFormat
-    private let queue = DispatchQueue(label: "ai.anycoin.dictator.audio-writer")
+    private let queue = DispatchQueue(label: "com.example.dictator.audio-writer")
 
     private let stateLock = NSLock()
     private var converter: AVAudioConverter?

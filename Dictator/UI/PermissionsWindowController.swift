@@ -144,7 +144,7 @@ final class PermissionsWindowController: NSWindowController {
     private func buildVocabularyCard() -> NSView {
         let title = AppTheme.label("Vlastní slovník (volitelné)", font: AppTheme.Font.headline, color: AppTheme.Color.title)
         let detail = AppTheme.label(
-            "Whisper se občas netrefí do produktových termínů. Přidej je sem, jeden na řádek. Pro fonetické varianty: Anycoin: enicoin, any coin",
+            "Whisper se občas netrefí do produktových termínů. Přidej je sem, jeden na řádek. Pro fonetické varianty: MyCompany: my company, maj company",
             font: AppTheme.Font.footnote,
             color: AppTheme.Color.body,
             lines: 0

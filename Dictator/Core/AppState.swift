@@ -57,7 +57,7 @@ enum DictatorState: Equatable {
 final class AppStateMachine: ObservableObject {
     @Published private(set) var state: DictatorState = .launching
 
-    private let logger = Logger(subsystem: "ai.anycoin.dictator", category: "state")
+    private let logger = Logger(subsystem: "com.example.dictator", category: "state")
 
     var isRecording: Bool { state == .recording }
     var isReady: Bool { state == .idle }

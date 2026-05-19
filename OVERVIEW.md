@@ -8,7 +8,7 @@
 
 Nativní macOS aplikace v menu baru, která umožňuje **diktovat text v češtině do libovolné aplikace** push-to-talk gestem.
 
-- Otevřu Slack, Mail, Notion, Linear, Terminál, Notes, …
+- Otevřu libovolnou aplikaci (Mail, Terminál, Notes, webový editor, …)
 - Kliknu do textového pole
 - Podržím **Option (⌥)**, namluvím větu, pustím klávesu
 - Text se objeví na pozici kurzoru
@@ -28,7 +28,7 @@ Nativní macOS aplikace v menu baru, která umožňuje **diktovat text v češti
 1. **Globální klávesová zkratka** (CGEventTap) detekuje stisk Option v jakékoli aplikaci
 2. **AVCaptureSession** zachytí mikrofon (16 kHz mono PCM, WAV)
 3. **WhisperKit large-v3** běží lokálně na Apple Silicon Neural Engine — provede přepis
-4. **Slovník + post-processing** opraví fonetické varianty (např. „enicoin" → „Anycoin")
+4. **Slovník + post-processing** opraví fonetické varianty (např. „měl" → „meEl" atd.)
 5. **TextInjector** vloží text do aplikace, ve které byl kurzor — buď přes Accessibility API, nebo přes simulovaný Cmd+V (podle aplikace)
 
 Celý proces od pauznutí klávesy po zobrazení textu trvá **typicky 1–3 sekundy** v závislosti na délce nahrávky.
@@ -43,7 +43,7 @@ Celý proces od pauznutí klávesy po zobrazení textu trvá **typicky 1–3 sek
 |---|---|
 | Zvuk z mikrofonu | RAM aplikace, nikam jinam |
 | WAV soubor nahrávky | `/tmp/` na lokálním Macu, smaže se po přepisu |
-| Přepsaný text | RAM aplikace + cíl (Slack/Notes/…), historie v okně Dictatoru |
+| Přepsaný text | RAM aplikace + cíl (libovolná aplikace), historie v okně Dictatoru |
 | Telemetrie / analytika | **Žádná** — neexistuje |
 | Síťová aktivita | **Jediná**: jednorázové stažení Whisper modelu (~3 GB) z Apple's HuggingFace mirroru při prvním spuštění. Po stažení je Dictator plně offline. |
 | Cloud / API | Žádné. Dictator nevolá žádný server, OpenAI ani jiný backend. |
@@ -103,7 +103,7 @@ Aplikace má jen dvě:
 
 ### Konfigurace
 - ✅ **Hotkey rebind**: výběr mezi „Levý/pravý Option" / „Pravý Option" / „Levý Option" / „Pravý Command" (řeší kolizi s českou AltGr)
-- ✅ **Vlastní slovník**: textový editor, kde si uživatel přidá produktové termíny (Anycoin, DASE, Bitlifi, …) — Whisper je dostane jako prompt-bias + post-process fonetické varianty se nahradí na kanonický tvar
+- ✅ **Vlastní slovník**: textový editor, kde si uživatel přidá produktové termíny (domény, vlastní jména, zkratky, …) — Whisper je dostane jako prompt-bias + post-process fonetické varianty se nahradí na kanonický tvar
 - ✅ Default seed slovníku obsahuje crypto/finance termíny (KYC, AML, SEPA, EUR, blockchain, …)
 - ✅ Spouštět při přihlášení do macOS (volitelné)
 

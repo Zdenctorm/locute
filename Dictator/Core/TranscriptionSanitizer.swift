@@ -62,7 +62,7 @@ extension Notification.Name {
 }
 
 /// Jeden záznam slovníku: kanonická forma + volitelné fonetické varianty.
-/// `Anycoin: enicoin, any coin` → canonical="Anycoin", variants=["enicoin", "any coin"]
+/// `MyCompany: maj company, my company` → canonical="MyCompany", variants=["maj company", "my company"]
 /// `KYC` (bez dvojtečky) → canonical="KYC", variants=[] (jde jen do promptu).
 struct VocabularyEntry: Equatable, Sendable {
     let canonical: String
@@ -218,35 +218,18 @@ enum VocabularyStore {
     # „Kanonický: varianta1, varianta2" → po přepisu se varianty přepíšou na kanonický tvar.
     # Bez dvojtečky → termín jde jen do promptu Whisperu (biasing dekodéru).
 
-    Anycoin: enicoin, any coin, eny coin, anykoin, anny coin, eny koin
-    DASE: dejs, deyz, dase, dýs, dejz
-    Bitlifi: bit lifi, bitlifi, bitlify, bitliffy
-    Sumsub: sum sub, sumsab, sumsap
-    KYC: kvajsí, kuajsí, kája si
-    AML: ej em el
-    Linear: lineár, linyr
-    Grafana: grafana
-    GTM: dží tý em
-    GA4: dží ej čtyři, gé á čtyři
-    WhisperKit
-    Whisper: whisper, vhisper
-    Anthropic: antropik
-    Claude: klód, kloud
-    Notion: noušn, nošn
-    Slack: slek
-    Figma: figma
-    SEPA: sépa
-    IBAN: íbán
-    on-ramp: on ramp, onramp
-    off-ramp: off ramp, offramp
-    EUR
-    CZK
+    # Přidej svoje produktové termíny (domény, technické zkratky, vlastní jména, …):
+    MyProduct: maj produkt, maj produktu, my product
+    MyAppName: my app name, myappname
+    KYC: kvajsí, kuajsí
+    API: aj pí í
+    PDF: pé dé ef, pe de ef
+    HTML: ajčtímel, ej ti em el
+    JSON: džejson
+    REST: rest, rest api
     bitcoin
-    ethereum: ethereum, etherium, ethérium
+    ethereum: etherium, ethérium
     blockchain: blokčejn, blokčein
-    kryptoměna
-    smart contract: smart kontrakt
-    peněženka
     přepis
     diktování
     board

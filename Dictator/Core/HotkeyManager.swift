@@ -76,7 +76,7 @@ final class HotkeyManager {
     private var lastAccessibilityTrustedSeen: Bool = false
     /// Zabráníme rekurzivní rekonstrukci tapu z více míst najednou.
     private var isRebuildingTap = false
-    private let logger = Logger(subsystem: "ai.anycoin.dictator", category: "hotkey")
+    private let logger = Logger(subsystem: "com.example.dictator", category: "hotkey")
 
     private static let rightCommandKeyCode: CGKeyCode = 54
     private static let leftOptionKeyCode: CGKeyCode = 58

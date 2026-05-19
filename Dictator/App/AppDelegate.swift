@@ -29,7 +29,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     /// menu, or window activation). At keyDown the user is still in their target app.
     private var pendingDictationTarget: NSRunningApplication?
 
-    private let logger = Logger(subsystem: "ai.anycoin.dictator", category: "app")
+    private let logger = Logger(subsystem: "com.example.dictator", category: "app")
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         DiagnosticsLogger.log("App launched. Bundle path: \(Bundle.main.bundleURL.path)")

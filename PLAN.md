@@ -2,14 +2,14 @@
 
 ## Context
 
-Nativní macOS menu bar appka pro push-to-talk hlasové diktování v češtině. Uživatel přidrží Right Option → nahraje se mikrofon → pustí klávesu → WhisperKit přepíše audio → text se vloží do aktivního okna přes clipboard+Cmd+V. Offline, žádná data ven. Funkčně odpovídá Utteru (uttero.ai), postaveno na open source základech.
+Nativní macOS menu bar appka pro push-to-talk hlasové diktování v češtině. Uživatel přidrží Right Option → nahraje se mikrofon → pustí klávesu → WhisperKit přepíše audio → text se vloží do aktivního okna přes clipboard+Cmd+V. Offline, žádná data ven, postaveno na open source základech.
 
 ---
 
 ## Projekt
 
 **Xcode projekt:** `Dictator`
-**Bundle ID:** `ai.anycoin.dictator`
+**Bundle ID:** `com.example.dictator`
 **Jazyk:** Swift
 **Min. macOS:** 14.0 (Sonoma) — požadavek WhisperKit 1.0.0
 **Distribuce:** Mimo App Store (sandbox musí být vypnutý)
