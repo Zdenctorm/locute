@@ -102,7 +102,11 @@ actor AudioRecorder {
         )
 
         logger.info("Recording stopped")
-        return RecordingCapture(url: session.url, peakRMS: filePeakRMS)
+        // tapPeak is measured from converted PCM before write; filePeak is read back from disk.
+        // After AVCaptureSession migration, filePeak is often 0 (WAV read timing/format) while tapPeak
+        // is correct — using only filePeak made TranscriptionEngine reject every recording as "too quiet".
+        let peakRMS = max(tapPeakRMS, filePeakRMS)
+        return RecordingCapture(url: session.url, peakRMS: peakRMS)
     }
 
     func cancelRecording() async {
