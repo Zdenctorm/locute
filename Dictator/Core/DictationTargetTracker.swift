@@ -24,8 +24,10 @@ final class DictationTargetTracker {
 
     /// Volat z `menuWillOpen` — ještě před kliknutím na položku menu.
     func snapshotForMenuAction() {
+        menuSessionExternalTarget = nil
         if let front = NSWorkspace.shared.frontmostApplication, !isOwnApp(front) {
             lastExternalApplication = front
+            menuSessionExternalTarget = front
             DiagnosticsLogger.log(
                 "Dictation target snap (menu): \(front.localizedName ?? "?") (\(front.bundleIdentifier ?? "?"))"
             )
@@ -34,8 +36,8 @@ final class DictationTargetTracker {
 
     func resolveTarget(atHotkeyDown frontmost: NSRunningApplication?, menuTriggered: Bool) -> NSRunningApplication? {
         if menuTriggered {
-            if let last = lastExternalApplication {
-                return last
+            if let menuSessionExternalTarget {
+                return menuSessionExternalTarget
             }
             if let frontmost, !isOwnApp(frontmost) {
                 return frontmost
@@ -46,7 +48,14 @@ final class DictationTargetTracker {
             lastExternalApplication = frontmost
             return frontmost
         }
-        return lastExternalApplication ?? frontmost
+        // Uživatel diktuje z okna Dictatoru — přepis jen do historie, ne do staré externí appky.
+        return nil
+    }
+
+    /// `true` pokud má smysl vkládat text do jiné aplikace (ne jen do panelu přepisů).
+    func shouldInjectExternally(into target: NSRunningApplication?) -> Bool {
+        guard let target else { return false }
+        return !isOwnApp(target)
     }
 
     private func noteActivated(_ app: NSRunningApplication) {

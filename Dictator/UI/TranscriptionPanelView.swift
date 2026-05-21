@@ -12,7 +12,7 @@ final class TranscriptionPanelView: NSView {
     var onInsert: ((String) -> Void)?
 
     private let placeholderLabel = AppTheme.label(
-        "Zatím nic — nadiktuj podržením Option (⌥) v libovolné aplikaci.",
+        "Zatím nic — podrž Option (⌥) a mluv. Přepisy se objeví tady; do jiné aplikace je vložíš tlačítkem „Vložit“.",
         font: AppTheme.Font.body,
         color: AppTheme.Color.body,
         lines: 0

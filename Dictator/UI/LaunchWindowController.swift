@@ -65,7 +65,7 @@ final class LaunchWindowController: NSWindowController {
         let title = AppTheme.label("Dictator běží", font: AppTheme.Font.largeTitle, color: AppTheme.Color.title)
 
         let detail = AppTheme.label(
-            "Soukromé diktování v češtině. Klikněte do libovolného textového pole, podržte Option (⌥), mluvte a klávesu pusťte.",
+            "Soukromé diktování v češtině. Podržte Option (⌥), mluvte a pusťte — přepis se objeví níže. Do jiné aplikace ho vložíte tlačítkem „Vložit“ u řádku v historii.",
             font: AppTheme.Font.body,
             color: AppTheme.Color.body,
             lines: 0

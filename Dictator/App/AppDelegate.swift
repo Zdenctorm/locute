@@ -445,14 +445,25 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                     return
                 }
 
+                let injectExternally = dictationTargetTracker.shouldInjectExternally(into: targetApp)
+
                 await MainActor.run { [weak self] in
                     guard let self else { return }
                     self.publishLastTranscription(entry)
                     LearningEngine.shared.observeTranscriptionDone(entry: entry)
                     self.checkForRetryAndObserve(entry: entry)
-                    self.stateMachine.transition(to: .injecting)
                     self.recordingOverlay.hide()
+                    if injectExternally {
+                        self.stateMachine.transition(to: .injecting)
+                    } else {
+                        DiagnosticsLogger.log("Dictation (\(trigger)): history only — skipping external inject")
+                        self.stateMachine.transition(to: .idle)
+                        self.launchWindowController?.setTranscriptionHistory(self.transcriptionHistory)
+                        self.launchWindowController?.focusTranscriptionPanel()
+                    }
                 }
+
+                guard injectExternally else { return }
 
                 let injectResult = await pasteWithWatchdog(text: finalText, into: targetApp, trigger: trigger)
                 await MainActor.run { [weak self] in
