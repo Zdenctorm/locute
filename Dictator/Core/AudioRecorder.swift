@@ -17,8 +17,18 @@ actor AudioRecorder {
 
     private var session: RecordingSession?
     private var recordingStartedAt: Date?
+    private var samplesUpdateHandler: (@Sendable () -> Void)?
 
     private let logger = Logger(subsystem: "com.example.dictator", category: "audio")
+
+    func setSamplesUpdateHandler(_ handler: (@Sendable () -> Void)?) {
+        samplesUpdateHandler = handler
+    }
+
+    func currentAudioSamples() async -> [Float] {
+        guard let session else { return [] }
+        return await session.audioSamplesSnapshot()
+    }
 
     func startRecording() throws {
         guard session == nil else { return }
@@ -59,10 +69,14 @@ actor AudioRecorder {
             interleaved: false
         )
 
+        let notifySamples = samplesUpdateHandler
         let newSession = RecordingSession(
             url: url,
             file: file,
-            targetFormat: targetFormat
+            targetFormat: targetFormat,
+            onSamplesAppended: {
+                notifySamples?()
+            }
         )
 
         do {
@@ -106,7 +120,8 @@ actor AudioRecorder {
         // After AVCaptureSession migration, filePeak is often 0 (WAV read timing/format) while tapPeak
         // is correct — using only filePeak made TranscriptionEngine reject every recording as "too quiet".
         let peakRMS = max(tapPeakRMS, filePeakRMS)
-        return RecordingCapture(url: session.url, peakRMS: peakRMS)
+        let audioSamples = await session.audioSamplesSnapshot()
+        return RecordingCapture(url: session.url, peakRMS: peakRMS, audioSamples: audioSamples)
     }
 
     func cancelRecording() async {
@@ -281,6 +296,7 @@ private final class RecordingSession: @unchecked Sendable {
     private let file: AVAudioFile
     private let targetFormat: AVAudioFormat
     private let queue = DispatchQueue(label: "com.example.dictator.audio-writer")
+    private let onSamplesAppended: () -> Void
 
     private let stateLock = NSLock()
     private var converter: AVAudioConverter?
@@ -289,11 +305,29 @@ private final class RecordingSession: @unchecked Sendable {
 
     private var framesWritten = 0
     private var peakRMS: Float = 0
+    private var audioSamples: [Float] = []
 
-    init(url: URL, file: AVAudioFile, targetFormat: AVAudioFormat) {
+    init(
+        url: URL,
+        file: AVAudioFile,
+        targetFormat: AVAudioFormat,
+        onSamplesAppended: @escaping () -> Void
+    ) {
         self.url = url
         self.file = file
         self.targetFormat = targetFormat
+        self.onSamplesAppended = onSamplesAppended
+    }
+
+    func audioSamplesSnapshot() async -> [Float] {
+        await withCheckedContinuation { continuation in
+            queue.async {
+                self.stateLock.lock()
+                let copy = self.audioSamples
+                self.stateLock.unlock()
+                continuation.resume(returning: copy)
+            }
+        }
     }
 
     func write(_ buffer: AVAudioPCMBuffer, hardwareSampleRate: Double) {
@@ -302,6 +336,7 @@ private final class RecordingSession: @unchecked Sendable {
 
         guard let converted = convert(buffer, using: activeConverter) else { return }
         updatePeakRMS(converted)
+        appendSamples(from: converted)
         guard let copied = copyBuffer(converted) else { return }
 
         queue.async { [file] in
@@ -375,6 +410,29 @@ private final class RecordingSession: @unchecked Sendable {
         return converted
     }
 
+    private func appendSamples(from buffer: AVAudioPCMBuffer) {
+        guard buffer.frameLength > 0,
+              let channelData = buffer.floatChannelData else {
+            return
+        }
+        let frameLength = Int(buffer.frameLength)
+        let channels = Int(buffer.format.channelCount)
+        stateLock.lock()
+        if channels == 1 {
+            audioSamples.append(contentsOf: UnsafeBufferPointer(start: channelData[0], count: frameLength))
+        } else {
+            for index in 0..<frameLength {
+                var sum: Float = 0
+                for channel in 0..<channels {
+                    sum += channelData[channel][index]
+                }
+                audioSamples.append(sum / Float(channels))
+            }
+        }
+        stateLock.unlock()
+        onSamplesAppended()
+    }
+
     private func updatePeakRMS(_ buffer: AVAudioPCMBuffer) {
         guard buffer.frameLength > 0 else { return }
         let frameLength = Int(buffer.frameLength)
@@ -424,4 +482,5 @@ private final class RecordingSession: @unchecked Sendable {
 struct RecordingCapture: Sendable {
     let url: URL
     let peakRMS: Float
+    let audioSamples: [Float]
 }

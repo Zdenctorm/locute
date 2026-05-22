@@ -33,9 +33,12 @@
 		011000000000000000000001 /* TranscriptionHistoryEntry.swift in Sources */ = {isa = PBXBuildFile; fileRef = 029000000000000000000001 /* TranscriptionHistoryEntry.swift */; };
 		010000000000000000000017 /* PasteInsertionPlanTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 02000000000000000000001B /* PasteInsertionPlanTests.swift */; };
 		010000000000000000000018 /* TranscriptionSanitizerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 02000000000000000000001C /* TranscriptionSanitizerTests.swift */; };
+		010000000000000000000027 /* TranscriptionModelPreferenceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 020000000000000000000029 /* TranscriptionModelPreferenceTests.swift */; };
 		010000000000000000000019 /* LearningEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 02000000000000000000001D /* LearningEngine.swift */; };
 		01000000000000000000001B /* PersistentStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 02000000000000000000001E /* PersistentStorage.swift */; };
 		010000000000000000000024 /* DictationTargetTracker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 020000000000000000000025 /* DictationTargetTracker.swift */; };
+		010000000000000000000025 /* StreamingTranscriptionSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = 020000000000000000000028 /* StreamingTranscriptionSession.swift */; };
+		010000000000000000000026 /* TranscriptionModelPreference.swift in Sources */ = {isa = PBXBuildFile; fileRef = 020000000000000000000027 /* TranscriptionModelPreference.swift */; };
 		01000000000000000000001C /* WordCorrectionPopoverController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 02000000000000000000001F /* WordCorrectionPopoverController.swift */; };
 		010000000000000000000021 /* AccessibilitySettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 020000000000000000000021 /* AccessibilitySettings.swift */; };
 		010000000000000000000022 /* AccessibilitySupport.swift in Sources */ = {isa = PBXBuildFile; fileRef = 020000000000000000000022 /* AccessibilitySupport.swift */; };
@@ -72,9 +75,12 @@
 		02000000000000000000001A /* DictatorTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = DictatorTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		02000000000000000000001B /* PasteInsertionPlanTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PasteInsertionPlanTests.swift; sourceTree = "<group>"; };
 		02000000000000000000001C /* TranscriptionSanitizerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TranscriptionSanitizerTests.swift; sourceTree = "<group>"; };
+		020000000000000000000029 /* TranscriptionModelPreferenceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TranscriptionModelPreferenceTests.swift; sourceTree = "<group>"; };
 		02000000000000000000001D /* LearningEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LearningEngine.swift; sourceTree = "<group>"; };
 		02000000000000000000001E /* PersistentStorage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PersistentStorage.swift; sourceTree = "<group>"; };
 		020000000000000000000025 /* DictationTargetTracker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DictationTargetTracker.swift; sourceTree = "<group>"; };
+		020000000000000000000027 /* TranscriptionModelPreference.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TranscriptionModelPreference.swift; sourceTree = "<group>"; };
+		020000000000000000000028 /* StreamingTranscriptionSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StreamingTranscriptionSession.swift; sourceTree = "<group>"; };
 		02000000000000000000001F /* WordCorrectionPopoverController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WordCorrectionPopoverController.swift; sourceTree = "<group>"; };
 		020000000000000000000021 /* AccessibilitySettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccessibilitySettings.swift; sourceTree = "<group>"; };
 		020000000000000000000022 /* AccessibilitySupport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccessibilitySupport.swift; sourceTree = "<group>"; };
@@ -140,6 +146,8 @@
 				020000000000000000000019 /* PasteInsertionPlan.swift */,
 				020000000000000000000004 /* AudioRecorder.swift */,
 				020000000000000000000005 /* TranscriptionEngine.swift */,
+				020000000000000000000027 /* TranscriptionModelPreference.swift */,
+				020000000000000000000028 /* StreamingTranscriptionSession.swift */,
 				020000000000000000000006 /* TextInjector.swift */,
 				020000000000000000000012 /* DiagnosticsLogger.swift */,
 				020000000000000000000015 /* TranscriptionSanitizer.swift */,
@@ -195,6 +203,7 @@
 			children = (
 				02000000000000000000001B /* PasteInsertionPlanTests.swift */,
 				02000000000000000000001C /* TranscriptionSanitizerTests.swift */,
+				020000000000000000000029 /* TranscriptionModelPreferenceTests.swift */,
 			);
 			path = DictatorTests;
 			sourceTree = "<group>";
@@ -323,6 +332,8 @@
 				010000000000000000000024 /* DictationTargetTracker.swift in Sources */,
 				010000000000000000000004 /* AudioRecorder.swift in Sources */,
 				010000000000000000000005 /* TranscriptionEngine.swift in Sources */,
+				010000000000000000000026 /* TranscriptionModelPreference.swift in Sources */,
+				010000000000000000000025 /* StreamingTranscriptionSession.swift in Sources */,
 				010000000000000000000006 /* TextInjector.swift in Sources */,
 				01000000000000000000000F /* DiagnosticsLogger.swift in Sources */,
 				010000000000000000000007 /* StatusBarController.swift in Sources */,
@@ -353,6 +364,7 @@
 			files = (
 				010000000000000000000017 /* PasteInsertionPlanTests.swift in Sources */,
 				010000000000000000000018 /* TranscriptionSanitizerTests.swift in Sources */,
+				010000000000000000000027 /* TranscriptionModelPreferenceTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

@@ -22,6 +22,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var backgroundInjectTask: Task<Void, Never>?
     private var startupTask: Task<Void, Never>?
     private var microphoneArmTask: Task<Void, Never>?
+    private var streamingTranscriptionTask: Task<Void, Never>?
     private var stateCancellable: AnyCancellable?
     private var optionHeld = false
     private var transcriptionTestMode = false
@@ -54,6 +55,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         ) { [weak self] _ in
             self?.hotkeyManager.preference = HotkeyPreference.current
             DiagnosticsLogger.log("HotkeyManager updated to preference \(HotkeyPreference.current.rawValue)")
+        }
+        NotificationCenter.default.addObserver(
+            forName: .dictatorTranscriptionModelPreferenceChanged,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            self?.handleTranscriptionModelPreferenceChanged()
         }
         updaterController = SPUStandardUpdaterController(
             startingUpdater: true,
@@ -319,10 +327,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         recordingOverlay.show(.recording)
         DiagnosticsLogger.log("Dictation start (\(trigger)): arming microphone")
 
-        microphoneArmTask = Task {
+        streamingTranscriptionTask?.cancel()
+        streamingTranscriptionTask = nil
+
+        microphoneArmTask = Task { @MainActor [weak self] in
+            guard let self else { return }
             do {
                 try await audioRecorder.startRecording()
                 DiagnosticsLogger.log("Microphone pipeline started (\(trigger))")
+                await startStreamingPipelineIfPossible()
             } catch {
                 logger.error("Recording start failed: \(error.localizedDescription, privacy: .public)")
                 DiagnosticsLogger.log("Microphone start failed (\(trigger)): \(error.localizedDescription)")
@@ -353,6 +366,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         let armTask = microphoneArmTask
         microphoneArmTask = nil
+        streamingTranscriptionTask?.cancel()
+        streamingTranscriptionTask = nil
 
         Task { [weak self, targetApp] in
             await armTask?.value
@@ -361,6 +376,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 return
             }
             defer { DiagnosticsLogger.exitDictationSession() }
+
+            await audioRecorder.setSamplesUpdateHandler(nil)
+            await transcriptionEngine.endStreaming()
 
             DiagnosticsLogger.log("Dictation end (\(trigger)): stopping capture")
             let capture = await audioRecorder.stopRecording()
@@ -390,9 +408,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
             do {
                 try await ensureTranscriptionEngineReady()
-                let raw = try await transcriptionEngine.transcribe(
-                    audioURL: capture.url,
-                    peakRMS: capture.peakRMS
+                let keyUpAt = Date()
+                let result = try await transcriptionEngine.transcribe(
+                    audioSamples: capture.audioSamples,
+                    peakRMS: capture.peakRMS,
+                    audioURL: capture.url
+                )
+                let raw = result.raw
+                let keyUpToDecodeMs = Date().timeIntervalSince(keyUpAt) * 1000
+                DiagnosticsLogger.log(
+                    "Dictation timing: keyUpToDecodeMs=\(String(format: "%.0f", keyUpToDecodeMs))"
                 )
 
                 if raw.rawText.isEmpty {
@@ -669,6 +694,57 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
         permissionsWindowController = controller
         AppWindowPresenter.present(controller.window)
+    }
+
+    private func handleTranscriptionModelPreferenceChanged() {
+        guard !stateMachine.isRecording else { return }
+        DiagnosticsLogger.log(
+            "Transcription model preference changed to \(TranscriptionModelPreference.current.rawValue)"
+        )
+        Task {
+            await transcriptionEngine.unload()
+            if PermissionsWindowController.currentSnapshot.allGranted {
+                startStartupTask()
+            }
+        }
+    }
+
+    private func startStreamingPipelineIfPossible() async {
+        do {
+            try await ensureTranscriptionEngineReady()
+            try await transcriptionEngine.beginStreaming()
+        } catch {
+            DiagnosticsLogger.log("Streaming pipeline unavailable: \(error.localizedDescription)")
+            return
+        }
+
+        await audioRecorder.setSamplesUpdateHandler { [weak self] in
+            guard let self else { return }
+            self.scheduleStreamingPartialUpdate()
+        }
+
+        streamingTranscriptionTask = Task { [weak self] in
+            while !Task.isCancelled {
+                try? await Task.sleep(for: .seconds(1.2))
+                guard !Task.isCancelled else { return }
+                await self?.runStreamingPartialUpdate()
+            }
+        }
+    }
+
+    private func scheduleStreamingPartialUpdate() {
+        Task { @MainActor [weak self] in
+            await self?.runStreamingPartialUpdate()
+        }
+    }
+
+    private func runStreamingPartialUpdate() async {
+        guard stateMachine.isRecording else { return }
+        let samples = await audioRecorder.currentAudioSamples()
+        guard !samples.isEmpty else { return }
+        guard let preview = await transcriptionEngine.streamingPreview(for: samples) else { return }
+        guard !preview.displayText.isEmpty else { return }
+        recordingOverlay.updateStreamingPreview(preview)
     }
 
     private func modelLoadErrorMessage(for error: Error) -> String {

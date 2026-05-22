@@ -75,15 +75,17 @@ Aplikace má jen dvě:
 | UI framework | Cocoa / AppKit (nativní) |
 | Audio capture | AVCaptureSession + AVCaptureAudioDataOutput |
 | Klávesnice (globální) | CGEventTap (`flagsChanged` událost) |
-| Transkripce | **WhisperKit large-v3** (Apple Silicon Neural Engine, CoreML) |
+| Transkripce | **WhisperKit** — default `large-v3-v20240930_turbo`, volba přesnosti v nastavení |
 | Jazyk přepisu | Čeština (`cs`), fixně |
 | Min. macOS | 14.0 (Sonoma) |
 | Procesor | Apple Silicon (M1/M2/M3/…) |
 
-### Model: WhisperKit large-v3
+### Model: WhisperKit (turbo / v20240930)
 
 - Open-source ML framework od Argmax Inc. (postaven nad OpenAI Whisper)
-- Verze `large-v3` = největší/nejpřesnější varianta (~3 GB)
+- **Rychlost (výchozí):** `large-v3-v20240930_turbo` (~630 MB) — streamovací partial přepis během držení Option
+- **Přesnost:** `large-v3-v20240930` (~626 MB) — volitelně v Nastavení Dictatoru
+- Metriky latence (`rtf`, `ttft`, `keyUpToDecodeMs`) se zapisují do `~/Library/Logs/Dictator/diagnostics.log`
 - Běží **lokálně** na Apple Neural Engine + GPU
 - Stažený jednou z `argmaxinc/whisperkit-coreml` při prvním spuštění
 - Po stažení žádné API volání — model je v `~/Library/Caches/`

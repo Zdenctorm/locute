@@ -64,6 +64,8 @@ final class PermissionsWindowController: NSWindowController {
     )
     private var keyTestHintTimer: Timer?
     private let hotkeyPicker = NSPopUpButton(frame: .zero, pullsDown: false)
+    private let modelPicker = NSPopUpButton(frame: .zero, pullsDown: false)
+    private let modelDetailLabel = AppTheme.label("", font: AppTheme.Font.body, color: AppTheme.Color.body, lines: 0)
 
     init() {
         let window = NSWindow(
@@ -153,6 +155,28 @@ final class PermissionsWindowController: NSWindowController {
         DiagnosticsLogger.log("Hotkey preference changed to \(HotkeyChoice.allCases[idx].rawValue)")
     }
 
+    private func buildModelCard() -> NSView {
+        modelPicker.removeAllItems()
+        modelPicker.addItems(withTitles: TranscriptionModelPreference.allCases.map(\.label))
+        let currentIndex = TranscriptionModelPreference.allCases.firstIndex(of: TranscriptionModelPreference.current) ?? 0
+        modelPicker.selectItem(at: currentIndex)
+        modelPicker.target = self
+        modelPicker.action = #selector(modelPreferenceChanged(_:))
+
+        let title = AppTheme.label("Model přepisu", font: AppTheme.Font.headline, color: AppTheme.Color.title)
+        modelDetailLabel.stringValue = TranscriptionModelPreference.current.detail
+
+        return AppTheme.card([title, modelDetailLabel, modelPicker])
+    }
+
+    @objc private func modelPreferenceChanged(_ sender: NSPopUpButton) {
+        let idx = sender.indexOfSelectedItem
+        guard idx >= 0, idx < TranscriptionModelPreference.allCases.count else { return }
+        TranscriptionModelPreference.current = TranscriptionModelPreference.allCases[idx]
+        DiagnosticsLogger.log("Model preference changed to \(TranscriptionModelPreference.allCases[idx].rawValue)")
+        modelDetailLabel.stringValue = TranscriptionModelPreference.current.detail
+    }
+
     private func buildUI() {
         let logo = AppLogoView()
         logo.translatesAutoresizingMaskIntoConstraints = false
@@ -209,6 +233,7 @@ final class PermissionsWindowController: NSWindowController {
         )
 
         let hotkeyCard = buildHotkeyCard()
+        let modelCard = buildModelCard()
 
         keyTestStatusLabel.setAccessibilityLabel("Test diktovací klávesy")
         let keyTestCard = AppTheme.card([
@@ -242,6 +267,7 @@ final class PermissionsWindowController: NSWindowController {
                 microphoneRow,
                 accessibilityRow,
                 hotkeyCard,
+                modelCard,
                 keyTestCard,
                 footerButtons,
                 helper

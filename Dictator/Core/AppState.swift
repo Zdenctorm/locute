@@ -3,6 +3,7 @@ import Foundation
 import os
 
 struct ModelDownloadProgress: Equatable, Sendable {
+    /// Legacy estimate (large-v3); nové modely používají `TranscriptionModelPreference.expectedDownloadBytes`.
     static let whisperLargeV3TotalBytes: Int64 = 3_090_319_899
 
     let fraction: Double
@@ -13,7 +14,7 @@ struct ModelDownloadProgress: Equatable, Sendable {
         ModelDownloadProgress(
             fraction: 0,
             downloadedBytes: 0,
-            totalBytes: whisperLargeV3TotalBytes
+            totalBytes: TranscriptionModelPreference.current.expectedDownloadBytes
         )
     }
 }

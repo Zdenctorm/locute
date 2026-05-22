@@ -11,7 +11,7 @@ final class LaunchWindowController: NSWindowController {
     private var modelLoadStartedAt: Date?
     private var modelLoadTimer: Timer?
     private let statusLabel = NSTextField(labelWithString: "Starting")
-    private let downloadTitleLabel = AppTheme.label("Stahuji Whisper large-v3", font: AppTheme.Font.headline, color: AppTheme.Color.title)
+    private let downloadTitleLabel = AppTheme.label("", font: AppTheme.Font.headline, color: AppTheme.Color.title)
     private let downloadProgressIndicator = NSProgressIndicator()
     private let downloadDetailLabel = AppTheme.label("", font: AppTheme.Font.body, color: AppTheme.Color.body, lines: 0)
     private var downloadCard: NSView?
@@ -233,6 +233,8 @@ final class LaunchWindowController: NSWindowController {
     }
 
     private func updateModelLoadMessage() {
+        let preference = TranscriptionModelPreference.current
+        downloadTitleLabel.stringValue = "Stahuji Whisper (\(preference.label))"
         let elapsed = Int(Date().timeIntervalSince(modelLoadStartedAt ?? Date()))
         let minutes = elapsed / 60
         let seconds = elapsed % 60

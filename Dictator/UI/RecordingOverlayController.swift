@@ -4,6 +4,7 @@ enum RecordingOverlayMode: Equatable {
     case hidden
     case keyHeld
     case recording
+    case streamingPreview(confirmed: String, draft: String)
     case transcribing
     case injecting
     case injectionSuccess
@@ -15,6 +16,7 @@ enum RecordingOverlayMode: Equatable {
 final class RecordingOverlayController {
     private var panel: NSPanel?
     private let statusLabel = NSTextField(labelWithString: "")
+    private let previewLabel = NSTextField(labelWithString: "")
     private let dotView = NSView()
     private let statusRow = NSStackView()
     private var pulseTimer: Timer?
@@ -39,7 +41,22 @@ final class RecordingOverlayController {
         currentMode = .hidden
         pulseTimer?.invalidate()
         pulseTimer = nil
+        previewLabel.stringValue = ""
+        previewLabel.isHidden = true
         panel?.orderOut(nil)
+    }
+
+    func updateStreamingPreview(_ preview: StreamingPreview) {
+        guard currentMode == .recording || isStreamingPreviewMode(currentMode) else { return }
+        currentMode = .streamingPreview(confirmed: preview.confirmedText, draft: preview.draftText)
+        ensurePanel()
+        apply(currentMode)
+        panel?.orderFrontRegardless()
+    }
+
+    private func isStreamingPreviewMode(_ mode: RecordingOverlayMode) -> Bool {
+        if case .streamingPreview = mode { return true }
+        return false
     }
 
     func sync(appState: DictatorState, rightOptionHeld: Bool) {
@@ -55,7 +72,11 @@ final class RecordingOverlayController {
         switch appState {
         case .recording:
             cancelHideDelay()
-            show(.recording)
+            if case .streamingPreview = currentMode {
+                break
+            } else {
+                show(.recording)
+            }
         case .transcribing:
             cancelHideDelay()
             show(.transcribing)
@@ -113,7 +134,7 @@ final class RecordingOverlayController {
         guard panel == nil else { return }
 
         let panel = NSPanel(
-            contentRect: NSRect(x: 0, y: 0, width: 340, height: 52),
+            contentRect: NSRect(x: 0, y: 0, width: 420, height: 72),
             styleMask: [.borderless, .nonactivatingPanel],
             backing: .buffered,
             defer: false
@@ -148,15 +169,27 @@ final class RecordingOverlayController {
         statusLabel.font = AppTheme.Font.status
         statusLabel.textColor = AppTheme.Color.title
         statusLabel.lineBreakMode = .byTruncatingTail
-        statusLabel.maximumNumberOfLines = 2
+        statusLabel.maximumNumberOfLines = 1
         statusLabel.setAccessibilityElement(false)
+
+        previewLabel.font = AppTheme.Font.footnote
+        previewLabel.textColor = AppTheme.Color.body
+        previewLabel.lineBreakMode = .byTruncatingTail
+        previewLabel.maximumNumberOfLines = 3
+        previewLabel.isHidden = true
+        previewLabel.setAccessibilityElement(false)
+
+        let textColumn = NSStackView(views: [statusLabel, previewLabel])
+        textColumn.orientation = .vertical
+        textColumn.alignment = .leading
+        textColumn.spacing = 4
 
         statusRow.orientation = .horizontal
         statusRow.alignment = .centerY
         statusRow.spacing = 10
         statusRow.translatesAutoresizingMaskIntoConstraints = false
         statusRow.addArrangedSubview(dotView)
-        statusRow.addArrangedSubview(statusLabel)
+        statusRow.addArrangedSubview(textColumn)
         AccessibilitySupport.configure(
             statusRow,
             label: "Stav diktování",
@@ -208,9 +241,31 @@ final class RecordingOverlayController {
             dotView.layer?.backgroundColor = AppTheme.Color.recording.cgColor
         case .recording:
             statusLabel.stringValue = "Nahrávám — mluv"
+            previewLabel.isHidden = true
             dotView.layer?.backgroundColor = AppTheme.Color.recording.cgColor
+        case .streamingPreview(let confirmed, let draft):
+            statusLabel.stringValue = "Nahrávám — mluv"
+            dotView.layer?.backgroundColor = AppTheme.Color.recording.cgColor
+            let draftTrimmed = draft.trimmingCharacters(in: .whitespaces)
+            let confirmedTrimmed = confirmed.trimmingCharacters(in: .whitespaces)
+            if draftTrimmed.isEmpty && confirmedTrimmed.isEmpty {
+                previewLabel.isHidden = true
+            } else {
+                previewLabel.isHidden = false
+                if draftTrimmed.isEmpty {
+                    previewLabel.stringValue = confirmedTrimmed
+                    previewLabel.textColor = AppTheme.Color.title
+                } else if confirmedTrimmed.isEmpty {
+                    previewLabel.stringValue = draftTrimmed
+                    previewLabel.textColor = AppTheme.Color.body.withAlphaComponent(0.75)
+                } else {
+                    previewLabel.stringValue = "\(confirmedTrimmed) \(draftTrimmed)"
+                    previewLabel.textColor = AppTheme.Color.body
+                }
+            }
         case .transcribing:
             statusLabel.stringValue = "Přepisuji…"
+            previewLabel.isHidden = true
             dotView.layer?.backgroundColor = AppTheme.Color.accent.cgColor
         case .injecting:
             statusLabel.stringValue = "Vkládám text…"
@@ -245,7 +300,7 @@ final class RecordingOverlayController {
     private func startPulseIfNeeded(for mode: RecordingOverlayMode) {
         pulseTimer?.invalidate()
         pulseTimer = nil
-        guard mode == .keyHeld || mode == .recording else { return }
+        guard mode == .keyHeld || mode == .recording || isStreamingPreviewMode(mode) else { return }
 
         let recording = AppTheme.Color.recording
         var bright = true

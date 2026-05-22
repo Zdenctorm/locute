@@ -157,6 +157,15 @@ extension RecordingOverlayMode {
             return "Držíš \(HotkeyPreference.current.hintLabel)"
         case .recording:
             return "Nahrávám, mluv"
+        case .streamingPreview(let confirmed, let draft):
+            let combined = [confirmed, draft]
+                .map { $0.trimmingCharacters(in: .whitespaces) }
+                .filter { !$0.isEmpty }
+                .joined(separator: " ")
+            if combined.isEmpty {
+                return "Nahrávám, mluv"
+            }
+            return "Nahrávám. Dosud: \(combined)"
         case .transcribing:
             return "Přepisuji"
         case .injecting:
@@ -172,7 +181,7 @@ extension RecordingOverlayMode {
 
     var shouldAnnounce: Bool {
         switch self {
-        case .recording, .transcribing, .injecting, .injectionSuccess, .busy, .wrongKey:
+        case .recording, .streamingPreview, .transcribing, .injecting, .injectionSuccess, .busy, .wrongKey:
             return true
         case .hidden, .keyHeld:
             return false
