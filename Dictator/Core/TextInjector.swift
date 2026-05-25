@@ -12,6 +12,45 @@ enum TextInjectResult: Sendable {
     }
 }
 
+// MARK: - ClipboardSnapshot
+
+/// Captures and restores the full NSPasteboard state across all types and items.
+/// Used to preserve the user's clipboard contents around Cmd+V paste injection.
+private struct ClipboardSnapshot {
+    private struct Entry {
+        let type: NSPasteboard.PasteboardType
+        let data: Data
+    }
+
+    private let items: [[Entry]]
+
+    static func capture() -> ClipboardSnapshot {
+        var result: [[Entry]] = []
+        for pbItem in NSPasteboard.general.pasteboardItems ?? [] {
+            let entries = pbItem.types.compactMap { type -> Entry? in
+                guard let data = pbItem.data(forType: type) else { return nil }
+                return Entry(type: type, data: data)
+            }
+            if !entries.isEmpty { result.append(entries) }
+        }
+        return ClipboardSnapshot(items: result)
+    }
+
+    func restore() {
+        let pasteboard = NSPasteboard.general
+        pasteboard.clearContents()
+        guard !items.isEmpty else { return }
+        let pbItems = items.map { entries -> NSPasteboardItem in
+            let item = NSPasteboardItem()
+            for entry in entries { item.setData(entry.data, forType: entry.type) }
+            return item
+        }
+        pasteboard.writeObjects(pbItems)
+    }
+}
+
+// MARK: - TextInjector
+
 enum TextInjector {
     /// Injects text into `targetApp` (the app that was frontmost when the user released Option).
     /// Native apps → Accessibility API. Electron/browser apps → clipboard + simulated Cmd+V.
@@ -40,13 +79,14 @@ enum TextInjector {
             try? await Task.sleep(for: .milliseconds(150))
         }
 
-        return await MainActor.run { injectViaClipboard(text: text) }
+        return await injectViaClipboard(text: text)
     }
 
     // MARK: - Clipboard + Cmd+V
 
     @MainActor
-    private static func injectViaClipboard(text: String) -> TextInjectResult {
+    private static func injectViaClipboard(text: String) async -> TextInjectResult {
+        let snapshot = ClipboardSnapshot.capture()
         let pasteboard = NSPasteboard.general
         pasteboard.clearContents()
         guard pasteboard.setString(text, forType: .string) else {
@@ -55,11 +95,18 @@ enum TextInjector {
         }
 
         guard simulateCmdV() else {
+            snapshot.restore()
             DiagnosticsLogger.log("Paste: Cmd+V event creation failed")
             return .failed(reason: "Nepodařilo se simulovat Cmd+V")
         }
 
         DiagnosticsLogger.log("Paste: done via Cmd+V")
+        // Give the target app time to read the clipboard before we restore it.
+        // Cmd+V events are already in the system event queue at this point, so 400 ms
+        // is enough for even the slowest Electron apps to process the paste.
+        try? await Task.sleep(for: .milliseconds(400))
+        snapshot.restore()
+        DiagnosticsLogger.log("Paste: clipboard restored")
         return .success(method: "Cmd+V")
     }
 
