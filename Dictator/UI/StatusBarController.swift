@@ -29,6 +29,7 @@ final class StatusBarController: NSObject, NSMenuDelegate {
     private let testTranscriptionMenuItem = NSMenuItem(title: "Ověřit přepis (ukáže text)", action: #selector(runTranscriptionTest), keyEquivalent: "")
     private let lastTranscriptionMenuItem = NSMenuItem(title: "Poslední přepis…", action: #selector(showLastTranscription), keyEquivalent: "")
     private let launchAtLoginItem = NSMenuItem(title: "Spouštět po přihlášení", action: #selector(toggleLaunchAtLogin), keyEquivalent: "")
+    private let postProcessingItem = NSMenuItem(title: "Oprava přepisu pomocí AI (lokální LLM)", action: #selector(togglePostProcessing), keyEquivalent: "")
 
     init(stateMachine: AppStateMachine, updaterController: SPUStandardUpdaterController) {
         self.stateMachine = stateMachine
@@ -74,6 +75,9 @@ final class StatusBarController: NSObject, NSMenuDelegate {
         launchAtLoginItem.target = self
         menu.addItem(launchAtLoginItem)
 
+        postProcessingItem.target = self
+        menu.addItem(postProcessingItem)
+
         let learnedItem = NSMenuItem(title: "Co se Dictator naučil…", action: #selector(openLearnedTerms), keyEquivalent: "")
         learnedItem.target = self
         menu.addItem(learnedItem)
@@ -115,6 +119,7 @@ final class StatusBarController: NSObject, NSMenuDelegate {
     func menuWillOpen(_ menu: NSMenu) {
         onMenuWillOpen?()
         launchAtLoginItem.state = isLaunchAtLoginEnabled ? .on : .off
+        postProcessingItem.state = PostProcessingPreference.isEnabled ? .on : .off
         hintMenuItem.title = "Podrž \(HotkeyPreference.current.hintLabel) a mluv"
         refreshDictationMenuItems()
     }
@@ -284,6 +289,11 @@ final class StatusBarController: NSObject, NSMenuDelegate {
 
     private var isLaunchAtLoginEnabled: Bool {
         SMAppService.mainApp.status == .enabled
+    }
+
+    @objc private func togglePostProcessing() {
+        PostProcessingPreference.isEnabled.toggle()
+        postProcessingItem.state = PostProcessingPreference.isEnabled ? .on : .off
     }
 
     @objc private func toggleLaunchAtLogin() {

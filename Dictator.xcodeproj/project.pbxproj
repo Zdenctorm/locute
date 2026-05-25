@@ -29,6 +29,11 @@
 		010000000000000000000015 /* ScrollContentLayout.swift in Sources */ = {isa = PBXBuildFile; fileRef = 020000000000000000000018 /* ScrollContentLayout.swift */; };
 		010000000000000000000009 /* WhisperKit in Frameworks */ = {isa = PBXBuildFile; productRef = 0A0000000000000000000001 /* WhisperKit */; };
 		01000000000000000000001A /* Sparkle in Frameworks */ = {isa = PBXBuildFile; productRef = 0A0000000000000000000002 /* Sparkle */; };
+		010000000000000000000035 /* MLXLMCommon in Frameworks */ = {isa = PBXBuildFile; productRef = 0A0000000000000000000003 /* MLXLMCommon */; };
+		010000000000000000000036 /* MLXLLM in Frameworks */ = {isa = PBXBuildFile; productRef = 0A0000000000000000000004 /* MLXLLM */; };
+		010000000000000000000030 /* PostProcessingPreference.swift in Sources */ = {isa = PBXBuildFile; fileRef = 020000000000000000000030 /* PostProcessingPreference.swift */; };
+		010000000000000000000031 /* PostProcessingEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 020000000000000000000031 /* PostProcessingEngine.swift */; };
+		010000000000000000000032 /* PostProcessingPreferenceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 020000000000000000000032 /* PostProcessingPreferenceTests.swift */; };
 		010000000000000000000016 /* PasteInsertionPlan.swift in Sources */ = {isa = PBXBuildFile; fileRef = 020000000000000000000019 /* PasteInsertionPlan.swift */; };
 		011000000000000000000001 /* TranscriptionHistoryEntry.swift in Sources */ = {isa = PBXBuildFile; fileRef = 029000000000000000000001 /* TranscriptionHistoryEntry.swift */; };
 		010000000000000000000017 /* PasteInsertionPlanTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 02000000000000000000001B /* PasteInsertionPlanTests.swift */; };
@@ -85,6 +90,9 @@
 		020000000000000000000021 /* AccessibilitySettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccessibilitySettings.swift; sourceTree = "<group>"; };
 		020000000000000000000022 /* AccessibilitySupport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccessibilitySupport.swift; sourceTree = "<group>"; };
 		020000000000000000000020 /* LearnedTermsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LearnedTermsView.swift; sourceTree = "<group>"; };
+		020000000000000000000030 /* PostProcessingPreference.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PostProcessingPreference.swift; sourceTree = "<group>"; };
+		020000000000000000000031 /* PostProcessingEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PostProcessingEngine.swift; sourceTree = "<group>"; };
+		020000000000000000000032 /* PostProcessingPreferenceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PostProcessingPreferenceTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -94,6 +102,8 @@
 			files = (
 				010000000000000000000009 /* WhisperKit in Frameworks */,
 				01000000000000000000001A /* Sparkle in Frameworks */,
+				010000000000000000000035 /* MLXLMCommon in Frameworks */,
+				010000000000000000000036 /* MLXLLM in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -156,6 +166,8 @@
 				02000000000000000000001E /* PersistentStorage.swift */,
 		020000000000000000000021 /* AccessibilitySettings.swift */,
 		020000000000000000000016 /* AudioLevelAnalyzer.swift */,
+				020000000000000000000030 /* PostProcessingPreference.swift */,
+				020000000000000000000031 /* PostProcessingEngine.swift */,
 			);
 			path = Core;
 			sourceTree = "<group>";
@@ -204,6 +216,7 @@
 				02000000000000000000001B /* PasteInsertionPlanTests.swift */,
 				02000000000000000000001C /* TranscriptionSanitizerTests.swift */,
 				020000000000000000000029 /* TranscriptionModelPreferenceTests.swift */,
+				020000000000000000000032 /* PostProcessingPreferenceTests.swift */,
 			);
 			path = DictatorTests;
 			sourceTree = "<group>";
@@ -245,6 +258,8 @@
 			packageProductDependencies = (
 				0A0000000000000000000001 /* WhisperKit */,
 				0A0000000000000000000002 /* Sparkle */,
+				0A0000000000000000000003 /* MLXLMCommon */,
+				0A0000000000000000000004 /* MLXLLM */,
 			);
 			productName = Dictator;
 			productReference = 02000000000000000000000B /* Dictator.app */;
@@ -298,6 +313,7 @@
 			packageReferences = (
 				0B0000000000000000000001 /* XCRemoteSwiftPackageReference "WhisperKit" */,
 				0B0000000000000000000002 /* XCRemoteSwiftPackageReference "Sparkle" */,
+				0B0000000000000000000003 /* XCRemoteSwiftPackageReference "mlx-swift-lm" */,
 			);
 			productRefGroup = 040000000000000000000007 /* Products */;
 			projectDirPath = "";
@@ -355,6 +371,8 @@
 				010000000000000000000021 /* AccessibilitySettings.swift in Sources */,
 				01000000000000000000001C /* WordCorrectionPopoverController.swift in Sources */,
 				01000000000000000000001D /* LearnedTermsView.swift in Sources */,
+				010000000000000000000030 /* PostProcessingPreference.swift in Sources */,
+				010000000000000000000031 /* PostProcessingEngine.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -365,6 +383,7 @@
 				010000000000000000000017 /* PasteInsertionPlanTests.swift in Sources */,
 				010000000000000000000018 /* TranscriptionSanitizerTests.swift in Sources */,
 				010000000000000000000027 /* TranscriptionModelPreferenceTests.swift in Sources */,
+				010000000000000000000032 /* PostProcessingPreferenceTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -614,6 +633,14 @@
 /* End XCConfigurationList section */
 
 /* Begin XCRemoteSwiftPackageReference section */
+		0B0000000000000000000003 /* XCRemoteSwiftPackageReference "mlx-swift-lm" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/ml-explore/mlx-swift-lm";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 3.31.3;
+			};
+		};
 		0B0000000000000000000001 /* XCRemoteSwiftPackageReference "WhisperKit" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/argmaxinc/WhisperKit.git";
@@ -642,6 +669,16 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 0B0000000000000000000002 /* XCRemoteSwiftPackageReference "Sparkle" */;
 			productName = Sparkle;
+		};
+		0A0000000000000000000003 /* MLXLMCommon */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 0B0000000000000000000003 /* XCRemoteSwiftPackageReference "mlx-swift-lm" */;
+			productName = MLXLMCommon;
+		};
+		0A0000000000000000000004 /* MLXLLM */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 0B0000000000000000000003 /* XCRemoteSwiftPackageReference "mlx-swift-lm" */;
+			productName = MLXLLM;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

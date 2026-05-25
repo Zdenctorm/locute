@@ -11,6 +11,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var hotkeyManager: HotkeyManager!
     private var audioRecorder: AudioRecorder!
     private var transcriptionEngine: TranscriptionEngine!
+    private var postProcessingEngine: PostProcessingEngine!
     private var recordingOverlay: RecordingOverlayController!
     private var permissionsWindowController: PermissionsWindowController?
     private var launchWindowController: LaunchWindowController?
@@ -46,6 +47,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         stateMachine = AppStateMachine()
         audioRecorder = AudioRecorder()
         transcriptionEngine = TranscriptionEngine()
+        postProcessingEngine = PostProcessingEngine()
         hotkeyManager = HotkeyManager()
         hotkeyManager.preference = HotkeyPreference.current
         NotificationCenter.default.addObserver(
@@ -62,6 +64,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             queue: .main
         ) { [weak self] _ in
             self?.handleTranscriptionModelPreferenceChanged()
+        }
+        NotificationCenter.default.addObserver(
+            forName: .dictatorPostProcessingPreferenceChanged,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            self?.handlePostProcessingPreferenceChanged()
         }
         updaterController = SPUStandardUpdaterController(
             startingUpdater: true,
@@ -279,6 +288,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         stateMachine.transition(to: .idle)
         hotkeyManager.prepareForCrossAppUse()
         DiagnosticsLogger.log("Startup completed. App is idle.")
+
+        if PostProcessingPreference.isEnabled {
+            Task { [weak self] in await self?.startPostProcessingLoad() }
+        }
     }
 
     @discardableResult
@@ -432,8 +445,34 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 // Aplikuj per-token replacement s tracking → finální slova (s originalText kde proběhla náhrada).
                 let activeVocab = await MainActor.run { LearningEngine.shared.currentActiveVocabulary() }
                 let replacedWords = activeVocab.applyReplacementsWithTracking(to: raw.words)
-                let finalText = replacedWords.map(\.text).joined(separator: " ")
-                    .trimmingCharacters(in: .whitespacesAndNewlines)
+                let joinedText = replacedWords.map(\.text).joined(separator: " ")
+
+                let finalText: String
+                if PostProcessingPreference.isEnabled, await postProcessingEngine.isLoaded {
+                    let processed: String? = await withTaskGroup(of: String?.self) { group in
+                        group.addTask { [weak self] in
+                            try? await self?.postProcessingEngine.process(joinedText)
+                        }
+                        group.addTask {
+                            try? await Task.sleep(for: .milliseconds(2_500))
+                            return nil
+                        }
+                        for await result in group {
+                            group.cancelAll()
+                            return result
+                        }
+                        return nil
+                    }
+                    if let processed {
+                        finalText = processed.trimmingCharacters(in: .whitespacesAndNewlines)
+                        DiagnosticsLogger.log("PostProcessing: applied (\(joinedText.count)c → \(finalText.count)c)")
+                    } else {
+                        finalText = joinedText.trimmingCharacters(in: .whitespacesAndNewlines)
+                        DiagnosticsLogger.log("PostProcessing: timeout or error — using original")
+                    }
+                } else {
+                    finalText = joinedText.trimmingCharacters(in: .whitespacesAndNewlines)
+                }
 
                 if finalText.isEmpty {
                     try? FileManager.default.removeItem(at: capture.url)
@@ -694,6 +733,33 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
         permissionsWindowController = controller
         AppWindowPresenter.present(controller.window)
+    }
+
+    private func startPostProcessingLoad() async {
+        guard PostProcessingPreference.isEnabled else { return }
+        guard await !postProcessingEngine.isLoaded else { return }
+        DiagnosticsLogger.log("PostProcessing: background load starting")
+        do {
+            try await postProcessingEngine.load { [weak self] progress in
+                Task { @MainActor in
+                    let pct = Int(progress * 100)
+                    self?.statusBarController.showTransientStatus("AI: načítám (\(pct) %)", duration: 3)
+                }
+            }
+            await MainActor.run { [weak self] in
+                self?.statusBarController.showTransientStatus("AI: připraveno", duration: 4)
+            }
+        } catch {
+            DiagnosticsLogger.log("PostProcessing: background load failed — \(error.localizedDescription)")
+        }
+    }
+
+    private func handlePostProcessingPreferenceChanged() {
+        if PostProcessingPreference.isEnabled {
+            Task { [weak self] in await self?.startPostProcessingLoad() }
+        } else {
+            Task { [weak self] in await self?.postProcessingEngine.unload() }
+        }
     }
 
     private func handleTranscriptionModelPreferenceChanged() {
