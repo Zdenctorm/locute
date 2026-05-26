@@ -11,6 +11,14 @@ APP_DIST="${DIST_DIR}/Dictator.app"
 mkdir -p "${DIST_DIR}" "${SOURCE_PACKAGES_PATH}"
 rm -rf "${APP_DIST}"
 
+if ! xcrun --find metal >/dev/null 2>&1; then
+  echo "Chybí Metal Toolchain (potřebný pro MLX / lokální post-processing)." >&2
+  echo "Stáhni ho v Xcode nebo spusť:" >&2
+  echo "  xcodebuild -downloadComponent MetalToolchain" >&2
+  echo "Pak znovu: ./scripts/build_release.sh" >&2
+  exit 1
+fi
+
 xcodebuild \
   -project "${ROOT_DIR}/Dictator.xcodeproj" \
   -scheme "Dictator" \

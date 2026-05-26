@@ -85,6 +85,38 @@ Až vydáš release skriptem `./scripts/release.sh`, kolegové dostanou DMG a Sp
 
 Viz [RELEASING.md](RELEASING.md).
 
+## První build (co uvidíš v terminálu)
+
+1. **Stahování SPM balíčků** — WhisperKit, Sparkle, **mlx-swift** (lokální LLM post-processing). Na první build počítej **desítky minut** podle připojení.
+2. **Kompilace** — dlouhý výpis `CompileMetalFile` u `mlx-swift` je normální.
+3. **BUILD SUCCEEDED** — pak `install_latest.sh` dokončí instalaci do `/Applications`.
+
+## Build selže: `missing Metal Toolchain`
+
+Typická chyba na novějším Xcode (např. s macOS 26 SDK):
+
+```text
+error: cannot execute tool 'metal' due to missing Metal Toolchain
+use: xcodebuild -downloadComponent MetalToolchain
+```
+
+**Oprava (jednou na Macu):**
+
+```bash
+xcodebuild -downloadComponent MetalToolchain
+```
+
+Nebo v **Xcode → Settings → Platforms / Components** doinstaluj **Metal Toolchain**.
+
+Pak znovu:
+
+```bash
+cd ~/anycoin/dictator
+./scripts/install_latest.sh
+```
+
+Bez Metal Toolchainu nejde zkompilovat MLX; Dictator na `main` ho pro volitelný post-processing potřebuje v buildu vždy.
+
 ## Diagnostika
 
 - Log: `~/Library/Logs/Dictator/diagnostics.log`
