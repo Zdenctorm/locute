@@ -196,6 +196,7 @@ private final class HistoryRowView: NSView, NSTextViewDelegate {
     private let copyButton: NSButton
     private let insertButton: NSButton
     private var copyRevertTimer: Timer?
+    private var lastMeasuredTextWidth: CGFloat = 0
 
     private static let copyDefaultTitle = "Zkopírovat"
     private static let copyDoneTitle = "Zkopírováno"
@@ -305,12 +306,28 @@ private final class HistoryRowView: NSView, NSTextViewDelegate {
     }
 
     private func updateBodyHeight() {
+        guard bounds.width > 0 else { return }
+        bodyTextView.layoutSubtreeIfNeeded()
         guard let layoutManager = bodyTextView.layoutManager,
               let textContainer = bodyTextView.textContainer else { return }
+        let targetWidth = max(bodyTextView.bounds.width, 1)
+        if abs(textContainer.containerSize.width - targetWidth) > 0.5 {
+            textContainer.containerSize = NSSize(width: targetWidth, height: .greatestFiniteMagnitude)
+        }
         layoutManager.ensureLayout(for: textContainer)
         let used = layoutManager.usedRect(for: textContainer)
         let inset = bodyTextView.textContainerInset.height * 2
         bodyHeightConstraint?.constant = max(used.height + inset, 20)
+    }
+
+    override func layout() {
+        super.layout()
+        let currentWidth = bodyTextView.bounds.width
+        guard currentWidth > 0 else { return }
+        if abs(currentWidth - lastMeasuredTextWidth) > 0.5 {
+            lastMeasuredTextWidth = currentWidth
+            updateBodyHeight()
+        }
     }
 
     func textView(_ textView: NSTextView, clickedOnLink link: Any, at charIndex: Int) -> Bool {
