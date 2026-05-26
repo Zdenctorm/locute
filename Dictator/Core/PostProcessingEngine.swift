@@ -61,7 +61,18 @@ actor PostProcessingEngine {
             state = .loading
             progressHandler(0.5)
 
-            let loaded = try await loadModel(configuration: config)
+            let loaded = try await loadModelContainer(
+                from: HuggingFaceHubDownloader(),
+                using: HuggingFaceTokenizerLoader(),
+                configuration: config
+            ) { progress in
+                let fraction = progress.fractionCompleted
+                if fraction < 0.5 {
+                    progressHandler(0.05 + fraction * 0.9)
+                } else {
+                    progressHandler(0.5 + (fraction - 0.5))
+                }
+            }
             container = loaded
             state = .ready
             progressHandler(1.0)
@@ -93,7 +104,7 @@ actor PostProcessingEngine {
             prompt += "\nKontext aktivní aplikace: \(context)"
         }
 
-        let session = ChatSession(container, systemPrompt: prompt)
+        let session = ChatSession(container, instructions: prompt)
         let raw = try await session.respond(to: text)
 
         guard let validated = validateOutput(raw, input: text) else {

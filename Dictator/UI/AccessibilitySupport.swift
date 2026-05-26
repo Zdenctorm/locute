@@ -172,6 +172,8 @@ extension RecordingOverlayMode {
             return "Vkládám text"
         case .injectionSuccess:
             return "Vloženo"
+        case .injectionFailed(let reason):
+            return "Text se nevložil. \(reason). Otevři okno Dictatoru."
         case .busy(let message):
             return message
         case .wrongKey:
@@ -181,7 +183,7 @@ extension RecordingOverlayMode {
 
     var shouldAnnounce: Bool {
         switch self {
-        case .recording, .streamingPreview, .transcribing, .injecting, .injectionSuccess, .busy, .wrongKey:
+        case .recording, .streamingPreview, .transcribing, .injecting, .injectionSuccess, .injectionFailed, .busy, .wrongKey:
             return true
         case .hidden, .keyHeld:
             return false

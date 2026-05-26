@@ -513,13 +513,18 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 let activeVocab = await MainActor.run { LearningEngine.shared.currentActiveVocabulary() }
                 let replacedWords = activeVocab.applyReplacementsWithTracking(to: raw.words)
                 let joinedText = replacedWords.map(\.text).joined(separator: " ")
+                    .trimmingCharacters(in: .whitespacesAndNewlines)
+                let caseWhitelist = TranscriptionCaseNormalizer.buildWhitelist(
+                    vocabularyCanonicals: activeVocab.entries.map(\.canonical)
+                )
+                let caseNormalized = TranscriptionCaseNormalizer.normalize(joinedText, whitelist: caseWhitelist)
 
                 let finalText: String
                 if PostProcessingPreference.isEnabled, await postProcessingEngine.isLoaded {
                     let processed: String? = await withTaskGroup(of: String?.self) { group in
                         group.addTask { [weak self] in
                             try? await self?.postProcessingEngine.process(
-                                joinedText,
+                                caseNormalized,
                                 targetAppBundleID: targetApp?.bundleIdentifier
                             )
                         }
@@ -535,13 +540,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                     }
                     if let processed {
                         finalText = processed.trimmingCharacters(in: .whitespacesAndNewlines)
-                        DiagnosticsLogger.log("PostProcessing: applied (\(joinedText.count)c → \(finalText.count)c)")
+                        DiagnosticsLogger.log("PostProcessing: applied (\(caseNormalized.count)c → \(finalText.count)c)")
                     } else {
-                        finalText = joinedText.trimmingCharacters(in: .whitespacesAndNewlines)
+                        finalText = caseNormalized
                         DiagnosticsLogger.log("PostProcessing: timeout or error — using original")
                     }
                 } else {
-                    finalText = joinedText.trimmingCharacters(in: .whitespacesAndNewlines)
+                    finalText = caseNormalized
                 }
 
                 if finalText.isEmpty {
@@ -611,8 +616,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
                 let injectResult = await pasteWithWatchdog(text: finalText, into: targetApp, trigger: trigger)
                 await MainActor.run { [weak self] in
-                    self?.stateMachine.transition(to: .idle)
                     self?.finalizeInjectUI(injectResult, trigger: trigger)
+                    self?.stateMachine.transition(to: .idle)
                 }
             } catch let error as TranscriptionError {
                 try? FileManager.default.removeItem(at: capture.url)
@@ -708,6 +713,24 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         launchWindowController?.focusTranscriptionPanel()
     }
 
+    private func showTranscriptionPopover(from statusButton: NSStatusBarButton) {
+        let entry = transcriptionHistory.first
+        statusBarPopover.show(
+            relativeTo: statusButton,
+            entry: entry,
+            onCopy: { [weak self] in
+                guard let text = entry?.text else { return }
+                NSPasteboard.general.clearContents()
+                NSPasteboard.general.setString(text, forType: .string)
+                self?.statusBarController.showTransientStatus("Zkopírováno", duration: 2)
+            },
+            onInsert: { [weak self] in
+                guard let text = entry?.text else { return }
+                self?.startBackgroundInject(text: text, trigger: "menu-popover")
+            }
+        )
+    }
+
     /// Runs paste pipeline with a watchdog; safe from any executor.
     private func pasteWithWatchdog(text: String, into targetApp: NSRunningApplication?, trigger: String) async -> TextInjectResult {
         let watchdog = DispatchWorkItem { [weak self] in
@@ -736,8 +759,19 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private func finalizeInjectUI(_ injectResult: TextInjectResult, trigger: String) {
         if injectResult.succeeded {
             DiagnosticsLogger.log("Paste: background inject succeeded (\(trigger))")
+            recordingOverlay.show(.injectionSuccess)
+            recordingOverlay.scheduleAutoHide(after: 0.7)
         } else {
             DiagnosticsLogger.log("Paste: background inject failed (\(trigger))")
+            SoundFeedbackService.playError()
+            let reason: String
+            if case .failed(let message) = injectResult {
+                reason = message
+            } else {
+                reason = "Text se nevložil"
+            }
+            recordingOverlay.show(.injectionFailed(reason))
+            recordingOverlay.scheduleAutoHide(after: 5)
             showLastTranscription()
             statusBarController.showTransientStatus(
                 "Text je v okně Dictatoru — zkopíruj nebo zkus „Vložit“",
@@ -871,8 +905,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
 
         await audioRecorder.setSamplesUpdateHandler { [weak self] in
-            guard let self else { return }
-            self.scheduleStreamingPartialUpdate()
+            Task { @MainActor in
+                self?.scheduleStreamingPartialUpdate()
+            }
         }
 
         streamingTranscriptionTask = Task { [weak self] in

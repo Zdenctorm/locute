@@ -8,6 +8,7 @@ enum RecordingOverlayMode: Equatable {
     case transcribing
     case injecting
     case injectionSuccess
+    case injectionFailed(String)
     case busy(String)
     case wrongKey
 }
@@ -92,8 +93,14 @@ final class RecordingOverlayController {
             show(.injecting)
         case .idle:
             if previous == .injecting, !rightOptionHeld {
-                show(.injectionSuccess)
-                scheduleHide(after: 0.7)
+                switch currentMode {
+                case .injectionSuccess:
+                    scheduleAutoHide(after: 0.7)
+                case .injectionFailed:
+                    break
+                default:
+                    hide()
+                }
             } else if rightOptionHeld {
                 cancelHideDelay()
                 show(.keyHeld)
@@ -123,6 +130,10 @@ final class RecordingOverlayController {
                 hide()
             }
         }
+    }
+
+    func scheduleAutoHide(after delay: TimeInterval) {
+        scheduleHide(after: delay)
     }
 
     private func scheduleHide(after delay: TimeInterval) {
@@ -280,6 +291,9 @@ final class RecordingOverlayController {
         case .injectionSuccess:
             statusLabel.stringValue = "Vloženo"
             dotView.layer?.backgroundColor = AppTheme.Color.success.cgColor
+        case .injectionFailed:
+            statusLabel.stringValue = "Text se nevložil — otevři Dictator"
+            dotView.layer?.backgroundColor = NSColor.systemRed.cgColor
         case .busy(let message):
             statusLabel.stringValue = message
             dotView.layer?.backgroundColor = AppTheme.Color.warning.cgColor

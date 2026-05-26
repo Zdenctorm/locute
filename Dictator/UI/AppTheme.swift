@@ -157,29 +157,55 @@ enum AppTheme {
         return field
     }
 
-    static func card(_ views: [NSView]) -> NSView {
-        let container = NSView()
-        container.translatesAutoresizingMaskIntoConstraints = false
-        container.wantsLayer = true
-        container.layer?.cornerRadius = 16
-        container.layer?.backgroundColor = Color.panel.cgColor
-        container.layer?.borderColor = Color.separator.cgColor
-        container.layer?.borderWidth = 1
-        container.setContentHuggingPriority(.defaultLow, for: .horizontal)
-        container.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+    /// Resolves dynamic theme colors for the view's current appearance.
+    /// Use instead of bare `color.cgColor` on layers — assignment can freeze the wrong variant.
+    static func resolved(_ color: NSColor, for view: NSView) -> NSColor {
+        var result = color
+        view.effectiveAppearance.performAsCurrentDrawingAppearance {
+            result = NSColor(cgColor: color.cgColor) ?? color
+        }
+        return result
+    }
 
-        let stack = NSStackView(views: views)
+    /// Applies panel fill + border; call from `viewDidChangeEffectiveAppearance` when using custom containers.
+    static func applyPanelChrome(to view: NSView, cornerRadius: CGFloat = 16) {
+        view.wantsLayer = true
+        view.layer?.cornerRadius = cornerRadius
+        view.layer?.borderWidth = 1
+        view.effectiveAppearance.performAsCurrentDrawingAppearance {
+            view.layer?.backgroundColor = Color.panel.cgColor
+            view.layer?.borderColor = Color.separator.cgColor
+        }
+    }
+
+    static func card(_ views: [NSView]) -> NSView {
+        PanelCardView(views: views)
+    }
+}
+
+// MARK: - Layer-backed card that tracks light/dark appearance
+
+private final class PanelCardView: NSView {
+    private let stack: NSStackView
+
+    init(views: [NSView]) {
+        stack = NSStackView(views: views)
+        super.init(frame: .zero)
+        translatesAutoresizingMaskIntoConstraints = false
+        setContentHuggingPriority(.defaultLow, for: .horizontal)
+        setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+
         stack.orientation = .vertical
         stack.alignment = .leading
-        stack.spacing = Spacing.row
+        stack.spacing = AppTheme.Spacing.row
         stack.translatesAutoresizingMaskIntoConstraints = false
 
-        container.addSubview(stack)
+        addSubview(stack)
         NSLayoutConstraint.activate([
-            stack.leadingAnchor.constraint(equalTo: container.leadingAnchor, constant: Spacing.cardPadding),
-            stack.trailingAnchor.constraint(equalTo: container.trailingAnchor, constant: -Spacing.cardPadding),
-            stack.topAnchor.constraint(equalTo: container.topAnchor, constant: Spacing.cardPadding),
-            stack.bottomAnchor.constraint(equalTo: container.bottomAnchor, constant: -Spacing.cardPadding)
+            stack.leadingAnchor.constraint(equalTo: leadingAnchor, constant: AppTheme.Spacing.cardPadding),
+            stack.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -AppTheme.Spacing.cardPadding),
+            stack.topAnchor.constraint(equalTo: topAnchor, constant: AppTheme.Spacing.cardPadding),
+            stack.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -AppTheme.Spacing.cardPadding)
         ])
 
         for view in views {
@@ -187,6 +213,19 @@ enum AppTheme {
             view.widthAnchor.constraint(equalTo: stack.widthAnchor).isActive = true
         }
 
-        return container
+        refreshChrome()
+    }
+
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+
+    override func viewDidChangeEffectiveAppearance() {
+        super.viewDidChangeEffectiveAppearance()
+        refreshChrome()
+    }
+
+    private func refreshChrome() {
+        AppTheme.applyPanelChrome(to: self)
     }
 }

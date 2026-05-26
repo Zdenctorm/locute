@@ -79,6 +79,11 @@ final class LearnedTermsView: NSView {
         fatalError("init(coder:) has not been implemented")
     }
 
+    override func viewDidChangeEffectiveAppearance() {
+        super.viewDidChangeEffectiveAppearance()
+        AppTheme.applyPanelChrome(to: advancedPanel, cornerRadius: 12)
+    }
+
     func setEntries(_ entries: [LearnedEntry]) {
         for view in listStack.arrangedSubviews {
             listStack.removeArrangedSubview(view)
@@ -169,10 +174,7 @@ final class LearnedTermsView: NSView {
     private func buildAdvancedPanel() {
         advancedPanel.translatesAutoresizingMaskIntoConstraints = false
         advancedPanel.wantsLayer = true
-        advancedPanel.layer?.cornerRadius = 12
-        advancedPanel.layer?.backgroundColor = AppTheme.Color.panel.cgColor
-        advancedPanel.layer?.borderColor = AppTheme.Color.separator.cgColor
-        advancedPanel.layer?.borderWidth = 1
+        AppTheme.applyPanelChrome(to: advancedPanel, cornerRadius: 12)
 
         let canonicalLabel = AppTheme.label("Kanonický tvar", font: AppTheme.Font.footnote, color: AppTheme.Color.body)
         canonicalField.placeholderString = "např. Anycoin"

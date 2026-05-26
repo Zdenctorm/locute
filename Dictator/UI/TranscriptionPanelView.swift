@@ -21,6 +21,7 @@ final class TranscriptionPanelView: NSView {
     private let scrollView = NSScrollView()
     private let entriesStack = NSStackView()
     private var rowViews: [HistoryRowView] = []
+    private var cachedEntries: [TranscriptionHistoryEntry] = []
 
     private static let historyDateFormatter: DateFormatter = {
         let f = DateFormatter()
@@ -41,6 +42,7 @@ final class TranscriptionPanelView: NSView {
     // MARK: - Public API
 
     func setHistory(_ entries: [TranscriptionHistoryEntry]) {
+        cachedEntries = entries
         for row in rowViews { row.removeFromSuperview() }
         rowViews.removeAll()
         for view in entriesStack.arrangedSubviews {
@@ -67,7 +69,7 @@ final class TranscriptionPanelView: NSView {
             row.widthAnchor.constraint(equalTo: entriesStack.widthAnchor).isActive = true
 
             if idx < entries.count - 1 {
-                let sep = Self.makeSeparator()
+                let sep = Self.makeSeparator(in: self)
                 entriesStack.addArrangedSubview(sep)
                 sep.widthAnchor.constraint(equalTo: entriesStack.widthAnchor).isActive = true
             }
@@ -76,13 +78,17 @@ final class TranscriptionPanelView: NSView {
 
     // MARK: - Layout
 
+    override func viewDidChangeEffectiveAppearance() {
+        super.viewDidChangeEffectiveAppearance()
+        AppTheme.applyPanelChrome(to: self)
+        if !cachedEntries.isEmpty {
+            setHistory(cachedEntries)
+        }
+    }
+
     private func buildLayout() {
         translatesAutoresizingMaskIntoConstraints = false
-        wantsLayer = true
-        layer?.cornerRadius = 16
-        layer?.backgroundColor = AppTheme.Color.panel.cgColor
-        layer?.borderColor = AppTheme.Color.separator.cgColor
-        layer?.borderWidth = 1
+        AppTheme.applyPanelChrome(to: self)
         AccessibilitySupport.configure(
             self,
             label: "Historie přepisů",
@@ -155,11 +161,11 @@ final class TranscriptionPanelView: NSView {
         NSPasteboard.general.setString(trimmed, forType: .string)
     }
 
-    private static func makeSeparator() -> NSView {
+    private static func makeSeparator(in host: NSView) -> NSView {
         let line = NSView()
         line.translatesAutoresizingMaskIntoConstraints = false
         line.wantsLayer = true
-        line.layer?.backgroundColor = AppTheme.Color.separator.cgColor
+        line.layer?.backgroundColor = AppTheme.resolved(AppTheme.Color.separator, for: host).cgColor
         line.heightAnchor.constraint(equalToConstant: 1).isActive = true
         return line
     }
@@ -230,7 +236,7 @@ private final class HistoryRowView: NSView, NSTextViewDelegate {
         timestampLabel.translatesAutoresizingMaskIntoConstraints = false
 
         configureBodyTextView()
-        bodyTextView.textStorage?.setAttributedString(Self.buildAttributedBody(entry: entry, words: words))
+        refreshBodyAppearance()
         let spokenText = text.isEmpty ? "Prázdný přepis" : text
         bodyTextView.setAccessibilityLabel(spokenText)
         bodyTextView.setAccessibilityHelp(TranscriptionPanelView.wordMarkupLegend)
@@ -297,12 +303,26 @@ private final class HistoryRowView: NSView, NSTextViewDelegate {
         bodyTextView.textContainer?.widthTracksTextView = true
         bodyTextView.textContainer?.lineFragmentPadding = 0
         bodyTextView.delegate = self
-        bodyTextView.linkTextAttributes = [
-            .foregroundColor: AppTheme.Color.title
-        ]
         bodyTextView.translatesAutoresizingMaskIntoConstraints = false
         bodyHeightConstraint = bodyTextView.heightAnchor.constraint(equalToConstant: 24)
         bodyHeightConstraint?.isActive = true
+    }
+
+    override func viewDidChangeEffectiveAppearance() {
+        super.viewDidChangeEffectiveAppearance()
+        refreshBodyAppearance()
+        copyButton.contentTintColor = AppTheme.resolved(AppTheme.Color.body, for: self)
+        insertButton.contentTintColor = AppTheme.resolved(AppTheme.Color.accent, for: self)
+    }
+
+    private func refreshBodyAppearance() {
+        bodyTextView.linkTextAttributes = [
+            .foregroundColor: AppTheme.resolved(AppTheme.Color.title, for: self)
+        ]
+        bodyTextView.textStorage?.setAttributedString(
+            Self.buildAttributedBody(entry: entry, words: words, appearanceHost: self)
+        )
+        updateBodyHeight()
     }
 
     private func updateBodyHeight() {
@@ -383,13 +403,17 @@ private final class HistoryRowView: NSView, NSTextViewDelegate {
             .filter { !$0.text.isEmpty }
     }
 
-    private static func buildAttributedBody(entry: TranscriptionHistoryEntry, words: [WordToken]) -> NSAttributedString {
+    private static func buildAttributedBody(
+        entry: TranscriptionHistoryEntry,
+        words: [WordToken],
+        appearanceHost: NSView
+    ) -> NSAttributedString {
         let result = NSMutableAttributedString()
         for (index, word) in words.enumerated() {
             if index > 0 {
-                result.append(NSAttributedString(string: " ", attributes: baseAttributes()))
+                result.append(NSAttributedString(string: " ", attributes: baseAttributes(for: appearanceHost)))
             }
-            var attrs = baseAttributes()
+            var attrs = baseAttributes(for: appearanceHost)
 
             let markupHelp = AccessibilitySupport.wordMarkupHelp(
                 confidence: Double(word.confidence),
@@ -398,13 +422,13 @@ private final class HistoryRowView: NSView, NSTextViewDelegate {
 
             if let original = word.originalText {
                 attrs[.underlineStyle] = NSUnderlineStyle.single.rawValue
-                attrs[.underlineColor] = AppTheme.Color.success
+                attrs[.underlineColor] = AppTheme.resolved(AppTheme.Color.success, for: appearanceHost)
                 attrs[.toolTip] = markupHelp.isEmpty
                     ? "Z „\(original)“ → „\(word.text)“"
                     : "\(markupHelp) Z „\(original)“ → „\(word.text)“"
             } else if word.confidence < 0.65 {
                 attrs[.underlineStyle] = NSUnderlineStyle.patternDot.rawValue | NSUnderlineStyle.single.rawValue
-                attrs[.underlineColor] = AppTheme.Color.warning
+                attrs[.underlineColor] = AppTheme.resolved(AppTheme.Color.warning, for: appearanceHost)
                 if let url = DictatorWordLink.url(entryID: entry.id, wordIndex: index) {
                     attrs[.link] = url
                 }
@@ -413,7 +437,7 @@ private final class HistoryRowView: NSView, NSTextViewDelegate {
                 }
             } else if word.confidence < 0.85 {
                 attrs[.underlineStyle] = NSUnderlineStyle.single.rawValue
-                attrs[.underlineColor] = NSColor.secondaryLabelColor
+                attrs[.underlineColor] = AppTheme.resolved(NSColor.secondaryLabelColor, for: appearanceHost)
                 if let url = DictatorWordLink.url(entryID: entry.id, wordIndex: index) {
                     attrs[.link] = url
                 }
@@ -427,10 +451,10 @@ private final class HistoryRowView: NSView, NSTextViewDelegate {
         return result
     }
 
-    private static func baseAttributes() -> [NSAttributedString.Key: Any] {
+    private static func baseAttributes(for appearanceHost: NSView) -> [NSAttributedString.Key: Any] {
         [
             .font: AppTheme.Font.body,
-            .foregroundColor: AppTheme.Color.title
+            .foregroundColor: AppTheme.resolved(AppTheme.Color.title, for: appearanceHost)
         ]
     }
 

@@ -163,11 +163,11 @@ Aplikace má jen dvě:
 
 ## Roadmap (návrhy do diskuse)
 
-- [ ] **Post-process velikost písmen**: normalizovat ALL-CAPS slova mimo whitelist (KYC, AML, …) na lowercase
-- [ ] **Backup + restore schránky** kolem Cmd+V — neztratit uživatelův obsah
-- [ ] **Smart leading space** při paste doprostřed věty
+- [x] **Post-process velikost písmen**: pravidlová normalizace ALL-CAPS (+ volitelný LLM post-processing)
+- [x] **Backup + restore schránky** kolem Cmd+V — neztratit uživatelův obsah
+- [x] **Smart leading space** při paste doprostřed věty
 - [ ] **Punctuation commands** („tečka", „nový odstavec") — power user feature
-- [ ] **HUD error feedback** při selhání injection
+- [x] **HUD error feedback** při selhání injection
 - [x] **Sparkle auto-update** framework
 - [ ] **Apple Developer certifikát + notarizace** pro distribuci bez Gatekeeper warning
 - [ ] Volitelně: English a Slovak jazyková podpora
