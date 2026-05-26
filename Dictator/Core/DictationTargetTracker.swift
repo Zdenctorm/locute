@@ -4,9 +4,13 @@ import AppKit
 @MainActor
 final class DictationTargetTracker {
     private(set) var lastExternalApplication: NSRunningApplication?
+    private var lastExternalActivationAt: Date?
     /// Cíl zachycený při otevření menu — platí jen pro aktuální menu session.
     private var menuSessionExternalTarget: NSRunningApplication?
     private let ownBundleID = Bundle.main.bundleIdentifier
+    /// Když `frontmostApplication` při hotkey down dočasně vrátí `nil` nebo vlastní appku,
+    /// dovolíme krátký fallback na poslední externí appku.
+    private let recentExternalFallbackWindow: TimeInterval = 8
 
     func startObserving() {
         NotificationCenter.default.addObserver(
@@ -28,7 +32,7 @@ final class DictationTargetTracker {
     func snapshotForMenuAction() {
         menuSessionExternalTarget = nil
         if let front = NSWorkspace.shared.frontmostApplication, !isOwnApp(front) {
-            lastExternalApplication = front
+            updateLastExternal(front)
             menuSessionExternalTarget = front
             DiagnosticsLogger.log(
                 "Dictation target snap (menu): \(front.localizedName ?? "?") (\(front.bundleIdentifier ?? "?"))"
@@ -47,10 +51,19 @@ final class DictationTargetTracker {
             return nil
         }
         if let frontmost, !isOwnApp(frontmost) {
-            lastExternalApplication = frontmost
+            updateLastExternal(frontmost)
             return frontmost
         }
-        // Uživatel diktuje z okna Dictatoru — přepis jen do historie, ne do staré externí appky.
+        // Když API vrátí nil, může jít o krátký focus race. V tom případě je bezpečné
+        // použít čerstvě viděnou externí appku. Pokud je frontmost Dictator, fallback
+        // neděláme, aby diktování zůstalo "history only".
+        if frontmost == nil, let fallback = recentExternalTarget() {
+            DiagnosticsLogger.log(
+                "Dictation target fallback to recent external app: \(fallback.localizedName ?? "?") (\(fallback.bundleIdentifier ?? "?"))"
+            )
+            return fallback
+        }
+        // Uživatel diktuje z okna Dictatoru nebo neznáme bezpečný externí cíl.
         return nil
     }
 
@@ -62,10 +75,26 @@ final class DictationTargetTracker {
 
     private func noteActivated(_ app: NSRunningApplication) {
         guard !isOwnApp(app) else { return }
-        lastExternalApplication = app
+        updateLastExternal(app)
     }
 
     private func isOwnApp(_ app: NSRunningApplication) -> Bool {
         app.bundleIdentifier == ownBundleID
+    }
+
+    private func updateLastExternal(_ app: NSRunningApplication) {
+        lastExternalApplication = app
+        lastExternalActivationAt = Date()
+    }
+
+    private func recentExternalTarget() -> NSRunningApplication? {
+        guard let app = lastExternalApplication,
+              !isOwnApp(app),
+              !app.isTerminated,
+              let seenAt = lastExternalActivationAt,
+              Date().timeIntervalSince(seenAt) <= recentExternalFallbackWindow else {
+            return nil
+        }
+        return app
     }
 }
