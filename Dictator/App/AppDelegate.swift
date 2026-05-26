@@ -14,6 +14,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var postProcessingEngine: PostProcessingEngine!
     private var recordingOverlay: RecordingOverlayController!
     private var permissionsWindowController: PermissionsWindowController?
+    private var onboardingWindowController: OnboardingWindowController?
     private var launchWindowController: LaunchWindowController?
     private var learnedTermsWindowController: LearnedTermsWindowController?
     private var updaterController: SPUStandardUpdaterController!
@@ -30,7 +31,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var transcriptionTestMode = false
     private var escapeMonitor: Any?
     private let statusBarPopover = StatusBarPopoverController()
+    private let statusBarQuickPanel = StatusBarQuickPanelController()
+    private let transcriptionTestSheet = TranscriptionTestSheet()
     private var historySaveTimer: Timer?
+    private var audioLevelTimer: Timer?
+    private var onboardingModelLoadTask: Task<Void, Never>?
     private var audioCachePurgeTimer: Timer?
     /// Poslední úspěšný přepis pro retry-detektor.
     private var lastDictation: (entry: TranscriptionHistoryEntry, recordedAt: Date)?
@@ -133,6 +138,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             self?.showTranscriptionPopover(from: button)
         }
         statusBarController.onOpenLearnedTerms = { [weak self] in self?.showLearnedTermsWindow() }
+        statusBarController.onStatusItemClick = { [weak self] button in
+            self?.showStatusBarQuickPanel(from: button)
+        }
         launchWindowController?.onRetry = { [weak self] in self?.startStartupTask() }
         launchWindowController?.onRetryInsert = { [weak self] text in
             self?.retryInsert(text: text)
@@ -169,6 +177,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     private func cancelActiveDictation() {
         guard stateMachine.isRecording else { return }
+        stopAudioLevelMeterUpdates()
         hotkeyManager.cancelToggleSessionIfNeeded()
         microphoneArmTask?.cancel()
         microphoneArmTask = nil
@@ -197,7 +206,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
-        if stateMachine.state == .permissionsNeeded {
+        if !OnboardingPreference.hasCompletedOnboarding {
+            showOnboardingWindow()
+        } else if stateMachine.state == .permissionsNeeded {
             showCurrentSetupWindow()
         } else {
             showLaunchWindow()
@@ -240,6 +251,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     private func handleModifierEvent(key: HotkeyKey, down: Bool) {
         permissionsWindowController?.reportKeyEvent(key: key, isDown: down)
+        onboardingWindowController?.reportKeyEvent(key: key, isDown: down)
 
         switch key {
         case .option, .leftOption:
@@ -320,13 +332,30 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             stateMachine.transition(to: .permissionsNeeded)
             DiagnosticsLogger.log("Startup paused: permissions needed")
             installHotkeyIfPossible()
-            showPermissionsWindow()
+            if !OnboardingPreference.hasCompletedOnboarding {
+                showOnboardingWindow()
+            } else {
+                showPermissionsWindow()
+            }
             return
         }
 
         permissionsWindowController?.close()
         permissionsWindowController = nil
-        showLaunchWindow()
+
+        guard !OnboardingPreference.hasCompletedOnboarding else {
+            await continueStartupAfterPermissions()
+            return
+        }
+
+        installHotkeyIfPossible()
+        await MainActor.run { showOnboardingWindow() }
+    }
+
+    private func continueStartupAfterPermissions() async {
+        if !OnboardingPreference.suppressAutoLaunchWindow {
+            showLaunchWindow()
+        }
 
         guard installHotkeyIfPossible() else {
             stateMachine.transition(to: .permissionsNeeded)
@@ -334,30 +363,61 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             return
         }
 
+        await loadTranscriptionModel(trigger: "startup")
+    }
+
+    private func loadTranscriptionModel(trigger: String) async {
+        if await transcriptionEngine.isLoaded {
+            stateMachine.transition(to: .idle)
+            hotkeyManager.prepareForCrossAppUse()
+            if PostProcessingPreference.isEnabled {
+                Task { [weak self] in await self?.startPostProcessingLoad() }
+            }
+            return
+        }
+
         stateMachine.transition(to: .modelDownloading(.empty))
-        DiagnosticsLogger.log("Model load started")
+        DiagnosticsLogger.log("Model load started (\(trigger))")
         do {
             try await transcriptionEngine.load { [weak self] progress in
                 Task { @MainActor in
                     self?.stateMachine.transition(to: .modelDownloading(progress))
+                    let pct = Int((progress.fraction * 100).rounded())
+                    self?.statusBarController.updateModelDownloadProgress(percent: pct)
+                    self?.onboardingWindowController?.updateDownloadProgress(
+                        fraction: progress.fraction,
+                        detail: self?.modelDownloadDetailText(for: progress) ?? ""
+                    )
                 }
             }
         } catch {
             logger.error("Model load failed: \(error.localizedDescription, privacy: .public)")
             DiagnosticsLogger.log("Model load failed: \(error.localizedDescription)")
             stateMachine.transition(to: .error(modelLoadErrorMessage(for: error)))
+            statusBarController.updateModelDownloadProgress(percent: nil)
             return
         }
-        DiagnosticsLogger.log("Model load completed")
+        DiagnosticsLogger.log("Model load completed (\(trigger))")
 
         stateMachine.transition(to: .modelLoading)
         stateMachine.transition(to: .idle)
+        statusBarController.updateModelDownloadProgress(percent: nil)
+        onboardingWindowController?.updateDownloadProgress(fraction: 1, detail: "Model je připravený.")
         hotkeyManager.prepareForCrossAppUse()
         DiagnosticsLogger.log("Startup completed. App is idle.")
 
         if PostProcessingPreference.isEnabled {
             Task { [weak self] in await self?.startPostProcessingLoad() }
         }
+    }
+
+    private func modelDownloadDetailText(for progress: ModelDownloadProgress) -> String {
+        let formatter = ByteCountFormatter()
+        formatter.countStyle = .file
+        let downloaded = formatter.string(fromByteCount: progress.downloadedBytes)
+        let total = formatter.string(fromByteCount: progress.totalBytes)
+        let percent = Int((progress.fraction * 100).rounded())
+        return "Staženo \(downloaded) z \(total) (\(percent) %)."
     }
 
     @discardableResult
@@ -381,6 +441,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         try await transcriptionEngine.load { [weak self] progress in
             Task { @MainActor in
                 self?.stateMachine.transition(to: .modelDownloading(progress))
+                let pct = Int((progress.fraction * 100).rounded())
+                self?.statusBarController.updateModelDownloadProgress(percent: pct)
             }
         }
     }
@@ -415,6 +477,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             do {
                 try await audioRecorder.startRecording()
                 DiagnosticsLogger.log("Microphone pipeline started (\(trigger))")
+                startAudioLevelMeterUpdates()
                 await startStreamingPipelineIfPossible()
             } catch {
                 logger.error("Recording start failed: \(error.localizedDescription, privacy: .public)")
@@ -443,6 +506,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let targetApp = pendingDictationTarget ?? NSWorkspace.shared.frontmostApplication
         pendingDictationTarget = nil
         DiagnosticsLogger.log("Dictation end (\(trigger)): using target \(targetApp?.localizedName ?? "?") (\(targetApp?.bundleIdentifier ?? "?"))")
+
+        stopAudioLevelMeterUpdates()
 
         let armTask = microphoneArmTask
         microphoneArmTask = nil
@@ -680,6 +745,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     private func pushTranscriptionHistoryToPanels() {
         launchWindowController?.setTranscriptionHistory(transcriptionHistory)
+        statusBarController.updateRecentTranscriptions(transcriptionHistory) { [weak self] text in
+            self?.startBackgroundInject(text: text, trigger: "menu-recent")
+        }
     }
 
     private func scheduleHistoryPersist() {
@@ -714,6 +782,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
         launchWindowController?.setTranscriptionHistory(transcriptionHistory)
         launchWindowController?.focusTranscriptionPanel()
+        showLaunchWindow()
     }
 
     private func showTranscriptionPopover(from statusButton: NSStatusBarButton) {
@@ -801,24 +870,82 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     private func showTranscriptionTestAlert(text: String?, errorMessage: String?) {
-        let alert = NSAlert()
-        alert.alertStyle = text == nil ? .warning : .informational
-        if let text {
-            alert.messageText = "Přepis funguje"
-            alert.informativeText = text
-            alert.addButton(withTitle: "Zkopírovat")
-            alert.addButton(withTitle: "Zavřít")
-            let response = alert.runModal()
-            if response == .alertFirstButtonReturn {
-                NSPasteboard.general.clearContents()
-                NSPasteboard.general.setString(text, forType: .string)
+        transcriptionTestSheet.present(text: text, errorMessage: errorMessage, onDismiss: {})
+    }
+
+    private func showStatusBarQuickPanel(from button: NSStatusBarButton) {
+        statusBarQuickPanel.show(
+            relativeTo: button,
+            state: stateMachine.state,
+            recentEntries: Array(transcriptionHistory.prefix(3)),
+            onInsert: { [weak self] text in
+                self?.startBackgroundInject(text: text, trigger: "quick-panel")
+            },
+            onOpenHistory: { [weak self] in
+                guard let self else { return }
+                self.launchWindowController?.setTranscriptionHistory(self.transcriptionHistory)
+                self.launchWindowController?.focusTranscriptionPanel()
+                self.showLaunchWindow()
+            },
+            onOpenSettings: { [weak self] in
+                self?.showCurrentSetupWindow()
             }
-        } else {
-            alert.messageText = "Přepis se nepodařil"
-            alert.informativeText = errorMessage ?? "Neznámá chyba"
-            alert.addButton(withTitle: "OK")
-            alert.runModal()
+        )
+    }
+
+    private func showOnboardingWindow() {
+        if let onboardingWindowController {
+            AppWindowPresenter.present(onboardingWindowController.window)
+            return
         }
+
+        let controller = OnboardingWindowController()
+        controller.onPermissionsChanged = { [weak self] in
+            _ = self?.hotkeyManager.install()
+            self?.hotkeyManager.prepareForCrossAppUse()
+        }
+        controller.onRequestContinueStartup = { [weak self] in
+            self?.startOnboardingModelLoad()
+        }
+        controller.onFinished = { [weak self] in
+            self?.onboardingWindowController = nil
+            self?.hotkeyManager.prepareForCrossAppUse()
+            if PostProcessingPreference.isEnabled {
+                Task { [weak self] in await self?.startPostProcessingLoad() }
+            }
+        }
+        onboardingWindowController = controller
+        controller.showWindow(nil)
+    }
+
+    private func startOnboardingModelLoad() {
+        guard onboardingModelLoadTask == nil else { return }
+        onboardingModelLoadTask = Task { [weak self] in
+            guard let self else { return }
+            _ = self.installHotkeyIfPossible()
+            await self.loadTranscriptionModel(trigger: "onboarding")
+            await MainActor.run { self.onboardingModelLoadTask = nil }
+        }
+    }
+
+    private func startAudioLevelMeterUpdates() {
+        audioLevelTimer?.invalidate()
+        audioLevelTimer = Timer.scheduledTimer(withTimeInterval: 0.05, repeats: true) { [weak self] _ in
+            Task { [weak self] in
+                guard let self, self.stateMachine.isRecording else { return }
+                let level = await self.audioRecorder.recentLiveLevel()
+                let normalized = min(1, level / 0.02)
+                await MainActor.run {
+                    self.recordingOverlay.updateAudioLevel(normalized)
+                }
+            }
+        }
+    }
+
+    private func stopAudioLevelMeterUpdates() {
+        audioLevelTimer?.invalidate()
+        audioLevelTimer = nil
+        recordingOverlay.updateAudioLevel(0)
     }
 
     private func busyStatusMessage() -> String {
@@ -852,7 +979,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             self?.permissionsWindowController = nil
             _ = self?.hotkeyManager.install()
             self?.hotkeyManager.prepareForCrossAppUse()
-            self?.startStartupTask()
+            if OnboardingPreference.hasCompletedOnboarding {
+                self?.startStartupTask()
+            } else {
+                self?.showOnboardingWindow()
+            }
         }
         permissionsWindowController = controller
         AppWindowPresenter.present(controller.window)

@@ -64,6 +64,13 @@
 		010000000000000000000043 /* TranscriptionCaseNormalizer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 020000000000000000000043 /* TranscriptionCaseNormalizer.swift */; };
 		010000000000000000000044 /* InsertionSpacingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 020000000000000000000044 /* InsertionSpacingTests.swift */; };
 		010000000000000000000045 /* TranscriptionCaseNormalizerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 020000000000000000000045 /* TranscriptionCaseNormalizerTests.swift */; };
+		010000000000000000000049 /* OnboardingPreference.swift in Sources */ = {isa = PBXBuildFile; fileRef = 020000000000000000000049 /* OnboardingPreference.swift */; };
+		01000000000000000000004A /* PunctuationCommandProcessor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 02000000000000000000004A /* PunctuationCommandProcessor.swift */; };
+		01000000000000000000004B /* OnboardingWindowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 02000000000000000000004B /* OnboardingWindowController.swift */; };
+		01000000000000000000004C /* AudioLevelMeterView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 02000000000000000000004C /* AudioLevelMeterView.swift */; };
+		01000000000000000000004D /* StatusBarQuickPanelController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 02000000000000000000004D /* StatusBarQuickPanelController.swift */; };
+		01000000000000000000004E /* TranscriptionTestSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 02000000000000000000004E /* TranscriptionTestSheet.swift */; };
+		01000000000000000000004F /* PunctuationCommandProcessorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 02000000000000000000004F /* PunctuationCommandProcessorTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -123,6 +130,13 @@
 		020000000000000000000044 /* InsertionSpacingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InsertionSpacingTests.swift; sourceTree = "<group>"; };
 		020000000000000000000045 /* TranscriptionCaseNormalizerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TranscriptionCaseNormalizerTests.swift; sourceTree = "<group>"; };
 		020000000000000000000046 /* HuggingFaceModelLoading.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HuggingFaceModelLoading.swift; sourceTree = "<group>"; };
+		020000000000000000000049 /* OnboardingPreference.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingPreference.swift; sourceTree = "<group>"; };
+		02000000000000000000004A /* PunctuationCommandProcessor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PunctuationCommandProcessor.swift; sourceTree = "<group>"; };
+		02000000000000000000004B /* OnboardingWindowController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingWindowController.swift; sourceTree = "<group>"; };
+		02000000000000000000004C /* AudioLevelMeterView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioLevelMeterView.swift; sourceTree = "<group>"; };
+		02000000000000000000004D /* StatusBarQuickPanelController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatusBarQuickPanelController.swift; sourceTree = "<group>"; };
+		02000000000000000000004E /* TranscriptionTestSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TranscriptionTestSheet.swift; sourceTree = "<group>"; };
+		02000000000000000000004F /* PunctuationCommandProcessorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PunctuationCommandProcessorTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -209,6 +223,8 @@
 				02000000000000000000001E /* PersistentStorage.swift */,
 		020000000000000000000021 /* AccessibilitySettings.swift */,
 		020000000000000000000016 /* AudioLevelAnalyzer.swift */,
+				020000000000000000000049 /* OnboardingPreference.swift */,
+				02000000000000000000004A /* PunctuationCommandProcessor.swift */,
 				020000000000000000000030 /* PostProcessingPreference.swift */,
 				020000000000000000000031 /* PostProcessingEngine.swift */,
 			);
@@ -231,6 +247,10 @@
 				020000000000000000000018 /* ScrollContentLayout.swift */,
 				02000000000000000000001F /* WordCorrectionPopoverController.swift */,
 				020000000000000000000020 /* LearnedTermsView.swift */,
+				02000000000000000000004B /* OnboardingWindowController.swift */,
+				02000000000000000000004C /* AudioLevelMeterView.swift */,
+				02000000000000000000004D /* StatusBarQuickPanelController.swift */,
+				02000000000000000000004E /* TranscriptionTestSheet.swift */,
 			);
 			path = UI;
 			sourceTree = "<group>";
@@ -263,6 +283,7 @@
 				020000000000000000000032 /* PostProcessingPreferenceTests.swift */,
 				020000000000000000000044 /* InsertionSpacingTests.swift */,
 				020000000000000000000045 /* TranscriptionCaseNormalizerTests.swift */,
+				02000000000000000000004F /* PunctuationCommandProcessorTests.swift */,
 			);
 			path = DictatorTests;
 			sourceTree = "<group>";
@@ -435,6 +456,12 @@
 				01000000000000000000001D /* LearnedTermsView.swift in Sources */,
 				010000000000000000000030 /* PostProcessingPreference.swift in Sources */,
 				010000000000000000000031 /* PostProcessingEngine.swift in Sources */,
+				010000000000000000000049 /* OnboardingPreference.swift in Sources */,
+				01000000000000000000004A /* PunctuationCommandProcessor.swift in Sources */,
+				01000000000000000000004B /* OnboardingWindowController.swift in Sources */,
+				01000000000000000000004C /* AudioLevelMeterView.swift in Sources */,
+				01000000000000000000004D /* StatusBarQuickPanelController.swift in Sources */,
+				01000000000000000000004E /* TranscriptionTestSheet.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -448,6 +475,7 @@
 				010000000000000000000032 /* PostProcessingPreferenceTests.swift in Sources */,
 				010000000000000000000044 /* InsertionSpacingTests.swift in Sources */,
 				010000000000000000000045 /* TranscriptionCaseNormalizerTests.swift in Sources */,
+				01000000000000000000004F /* PunctuationCommandProcessorTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

@@ -3,7 +3,7 @@ import Foundation
 import os
 
 struct ModelDownloadProgress: Equatable, Sendable {
-    /// Legacy estimate (large-v3); nové modely používají `TranscriptionModelPreference.expectedDownloadBytes`.
+    /// Historický odhad; aktuální velikosti viz `TranscriptionModelPreference.expectedDownloadBytes` (~630 MB turbo).
     static let whisperLargeV3TotalBytes: Int64 = 3_090_319_899
 
     let fraction: Double

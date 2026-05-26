@@ -110,6 +110,14 @@ final class StatusBarController: NSObject, NSMenuDelegate {
         setupItem.target = self
         menu.addItem(setupItem)
 
+        let punctuationHelp = NSMenuItem(title: "Hlasové příkazy (tečka, čárka…)", action: nil, keyEquivalent: "")
+        punctuationHelp.isEnabled = false
+        AccessibilitySupport.configure(
+            punctuationHelp,
+            help: "Řekni „tečka“, „čárka“, „nový řádek“ nebo „nový odstavec“ — Dictator je převede na znaky."
+        )
+        menu.addItem(punctuationHelp)
+
         let diagnosticsItem = NSMenuItem(title: "Otevřít diagnostické logy", action: #selector(openDiagnostics), keyEquivalent: "")
         diagnosticsItem.target = self
         menu.addItem(diagnosticsItem)
