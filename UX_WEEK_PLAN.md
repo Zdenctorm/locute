@@ -21,6 +21,10 @@ Výchozí model je **`large-v3-v20240930_turbo` (~630 MB)**, ne ~3 GB. Varianta 
 | Test přepisu (themed) | `TranscriptionTestSheet` |
 | Bez auto launch okna po onboardingu | `OnboardingPreference.suppressAutoLaunchWindow` |
 
+## Koordinace subagentů a GitHub
+
+Viz [`SUBAGENT_COORDINATION.md`](SUBAGENT_COORDINATION.md) — mapa commitů, pravidla paralelní práce, checklist před merge. Větev `cursor/ux-week-67b0` je pushnutá a s `main` bez konfliktů.
+
 ## Volitelně další sprint
 
 - Figma design systém (tokeny z `AppTheme`) — koordinace s designérem
