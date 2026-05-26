@@ -593,7 +593,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                         self.showLaunchWindow()
                         self.launchWindowController?.focusTranscriptionPanel()
                         self.recordingOverlay.showTransientFeedback(
-                            "Přepis je v historii — zkontroluj a klepni „Vložit"",
+                            "Přepis je v historii — zkontroluj a klepni „Vložit“",
                             duration: 5
                         )
                     } else if injectExternally {
