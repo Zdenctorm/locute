@@ -5,6 +5,7 @@ final class StatusBarPopoverController: NSObject, NSPopoverDelegate {
     private let popover = NSPopover()
     private let previewLabel = NSTextField(wrappingLabelWithString: "")
     private let timestampLabel = NSTextField(labelWithString: "")
+    private let copyButton = AppTheme.primaryButton("Zkopírovat", target: nil, action: nil)
     private var onCopy: (() -> Void)?
 
     override init() {
@@ -12,6 +13,8 @@ final class StatusBarPopoverController: NSObject, NSPopoverDelegate {
         popover.behavior = .transient
         popover.delegate = self
         popover.contentSize = NSSize(width: 360, height: 200)
+        copyButton.target = self
+        copyButton.action = #selector(copyTapped)
         let controller = NSViewController()
         controller.view = buildContent()
         popover.contentViewController = controller
@@ -24,7 +27,7 @@ final class StatusBarPopoverController: NSObject, NSPopoverDelegate {
     ) {
         self.onCopy = onCopy
 
-        if let entry {
+        if let entry, !entry.text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
             previewLabel.stringValue = entry.text
             let formatter = DateFormatter()
             formatter.locale = Locale(identifier: "cs_CZ")
@@ -32,9 +35,11 @@ final class StatusBarPopoverController: NSObject, NSPopoverDelegate {
             formatter.timeStyle = .short
             timestampLabel.stringValue = formatter.string(from: entry.recordedAt)
             timestampLabel.isHidden = false
+            copyButton.isEnabled = true
         } else {
-            previewLabel.stringValue = "Zatím žádný přepis. Podržte diktovací klávesu a mluvte."
+            previewLabel.stringValue = "Zatím žádný přepis. Podrž diktovací klávesu a mluv."
             timestampLabel.isHidden = true
+            copyButton.isEnabled = false
         }
 
         if popover.isShown {
@@ -57,7 +62,6 @@ final class StatusBarPopoverController: NSObject, NSPopoverDelegate {
         timestampLabel.font = AppTheme.Font.footnote
         timestampLabel.textColor = AppTheme.Color.body
 
-        let copyButton = AppTheme.primaryButton("Zkopírovat", target: self, action: #selector(copyTapped))
         let buttons = NSStackView(views: [copyButton])
         buttons.orientation = .horizontal
         buttons.spacing = AppTheme.Spacing.row
@@ -75,7 +79,9 @@ final class StatusBarPopoverController: NSObject, NSPopoverDelegate {
             stack.leadingAnchor.constraint(equalTo: root.leadingAnchor),
             stack.trailingAnchor.constraint(equalTo: root.trailingAnchor),
             stack.topAnchor.constraint(equalTo: root.topAnchor),
-            stack.bottomAnchor.constraint(lessThanOrEqualTo: root.bottomAnchor)
+            stack.bottomAnchor.constraint(lessThanOrEqualTo: root.bottomAnchor),
+            timestampLabel.widthAnchor.constraint(equalTo: stack.widthAnchor),
+            previewLabel.widthAnchor.constraint(equalTo: stack.widthAnchor)
         ])
         return root
     }

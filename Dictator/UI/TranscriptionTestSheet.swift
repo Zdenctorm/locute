@@ -55,7 +55,9 @@ final class TranscriptionTestSheet {
             stack.leadingAnchor.constraint(equalTo: root.leadingAnchor),
             stack.trailingAnchor.constraint(equalTo: root.trailingAnchor),
             stack.topAnchor.constraint(equalTo: root.topAnchor),
-            stack.bottomAnchor.constraint(lessThanOrEqualTo: root.bottomAnchor)
+            stack.bottomAnchor.constraint(lessThanOrEqualTo: root.bottomAnchor),
+            title.widthAnchor.constraint(equalTo: stack.widthAnchor),
+            body.widthAnchor.constraint(equalTo: stack.widthAnchor)
         ])
 
         panel.contentView = root

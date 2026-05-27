@@ -167,6 +167,8 @@ final class OnboardingWindowController: NSWindowController {
             root.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -pad),
             root.topAnchor.constraint(equalTo: contentView.topAnchor, constant: pad),
             root.bottomAnchor.constraint(lessThanOrEqualTo: contentView.bottomAnchor, constant: -pad),
+            stepTitleLabel.widthAnchor.constraint(equalTo: root.widthAnchor),
+            stepBodyLabel.widthAnchor.constraint(equalTo: root.widthAnchor),
             stepCardContainer.widthAnchor.constraint(equalTo: root.widthAnchor)
         ])
     }

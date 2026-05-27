@@ -5,7 +5,8 @@ final class TranscriptionPanelView: NSView {
     static let wordMarkupLegend = """
     Nejnovější nahoře. Klikni na podtržené slovo pro opravu. \
     Plné zelené podtržení: už opravené slovo. Tečkované oranžové: nízká jistota přepisu. \
-    Šedé plné: střední jistota.     U každého přepisu můžeš text zkopírovat. Do jiné aplikace ho vložíš při diktování (podrž Option).
+    Šedé plné: střední jistota. U každého přepisu můžeš text zkopírovat. \
+    Do jiné aplikace se vkládá při diktování (podrž Option).
     """
 
     private let placeholderLabel = AppTheme.label(
