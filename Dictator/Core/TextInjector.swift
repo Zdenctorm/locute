@@ -54,7 +54,7 @@ enum TextInjector {
                 DiagnosticsLogger.log("Paste: AX path did not apply; trying next step")
             case .commandV:
                 await activateTargetAppIfNeeded(targetApp)
-                let result = await MainActor.run { await injectViaClipboard(text: payload) }
+                let result = await injectViaClipboard(text: payload)
                 if result.succeeded {
                     return result
                 }
