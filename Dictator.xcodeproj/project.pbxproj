@@ -69,6 +69,7 @@
 		01000000000000000000004B /* CzechDictationFormatter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 02000000000000000000004B /* CzechDictationFormatter.swift */; };
 		01000000000000000000004C /* HotkeyTriggerLogicTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 02000000000000000000004C /* HotkeyTriggerLogicTests.swift */; };
 		01000000000000000000004D /* CzechDictationFormatterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 02000000000000000000004D /* CzechDictationFormatterTests.swift */; };
+		01000000000000000000004E /* InputMonitoringSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 02000000000000000000004E /* InputMonitoringSettings.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -133,6 +134,7 @@
 		02000000000000000000004B /* CzechDictationFormatter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CzechDictationFormatter.swift; sourceTree = "<group>"; };
 		02000000000000000000004C /* HotkeyTriggerLogicTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HotkeyTriggerLogicTests.swift; sourceTree = "<group>"; };
 		02000000000000000000004D /* CzechDictationFormatterTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CzechDictationFormatterTests.swift; sourceTree = "<group>"; };
+		02000000000000000000004E /* InputMonitoringSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InputMonitoringSettings.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -220,7 +222,8 @@
 				029000000000000000000001 /* TranscriptionHistoryEntry.swift */,
 				02000000000000000000001D /* LearningEngine.swift */,
 				02000000000000000000001E /* PersistentStorage.swift */,
-		020000000000000000000021 /* AccessibilitySettings.swift */,
+				020000000000000000000021 /* AccessibilitySettings.swift */,
+				02000000000000000000004E /* InputMonitoringSettings.swift */,
 		020000000000000000000016 /* AudioLevelAnalyzer.swift */,
 				020000000000000000000030 /* PostProcessingPreference.swift */,
 				020000000000000000000031 /* PostProcessingEngine.swift */,
@@ -453,6 +456,7 @@
 				010000000000000000000049 /* HotkeyTriggerLogic.swift in Sources */,
 				01000000000000000000004A /* DictationPreviewPreference.swift in Sources */,
 				01000000000000000000004B /* CzechDictationFormatter.swift in Sources */,
+				01000000000000000000004E /* InputMonitoringSettings.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

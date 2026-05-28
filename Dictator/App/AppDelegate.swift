@@ -29,6 +29,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var wrongModifierHeld = false
     private var transcriptionTestMode = false
     private var escapeMonitor: Any?
+    private var keepAliveActivity: NSObjectProtocol?
     private let statusBarPopover = StatusBarPopoverController()
     private var historySaveTimer: Timer?
     private var audioCachePurgeTimer: Timer?
@@ -44,6 +45,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private let logger = Logger(subsystem: "com.example.dictator", category: "app")
 
     func applicationDidFinishLaunching(_ notification: Notification) {
+        keepAliveActivity = ProcessInfo.processInfo.performActivity(
+            options: [.userInitiated, .idleSystemSleepDisabled],
+            reason: "Dictator global hotkey monitoring"
+        )
         DiagnosticsLogger.log("App launched. Bundle path: \(Bundle.main.bundleURL.path)")
         DiagnosticsLogger.logStartupContext()
 
@@ -121,10 +126,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         if PermissionsWindowController.currentSnapshot.allGranted {
             if !installHotkeyIfPossible() {
-                statusBarController.showTransientStatus(
-                    "Chybí Zpřístupnění — diktovací klávesa nebude fungovat v jiných aplikacích.",
-                    duration: 8
-                )
+                let message = if !InputMonitoringSettings.isGranted() {
+                    "Chybí Monitorování vstupu — klávesa funguje jen s oknem Dictatoru. Otevři Nastavení."
+                } else {
+                    "Chybí Zpřístupnění — diktovací klávesa nebude fungovat v jiných aplikacích."
+                }
+                statusBarController.showTransientStatus(message, duration: 10)
+                showPermissionsWindow()
             } else {
                 maybeShowCzechHotkeyTip()
             }
@@ -325,7 +333,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         DiagnosticsLogger.log("Startup started")
 
         let permissions = PermissionsWindowController.currentSnapshot
-        DiagnosticsLogger.log("Permissions snapshot. microphone=\(permissions.microphone.label), accessibility=\(permissions.accessibility.label)")
+        DiagnosticsLogger.log(
+            "Permissions snapshot. microphone=\(permissions.microphone.label), accessibility=\(permissions.accessibility.label), inputMonitoring=\(permissions.inputMonitoring.label)"
+        )
         guard permissions.allGranted else {
             stateMachine.transition(to: .permissionsNeeded)
             DiagnosticsLogger.log("Startup paused: permissions needed")
@@ -364,10 +374,23 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         stateMachine.transition(to: .idle)
         hotkeyManager.prepareForCrossAppUse()
         DiagnosticsLogger.log("Startup completed. App is idle.")
+        maybeShowCzechHotkeyTip()
 
         if PostProcessingPreference.isEnabled {
             Task { [weak self] in await self?.startPostProcessingLoad() }
         }
+    }
+
+    private func maybeShowCzechHotkeyTip() {
+        let tipKey = "didShowCzechHotkeyTip"
+        guard !UserDefaults.standard.bool(forKey: tipKey) else { return }
+        guard HotkeyPreference.recommendedDefault == .rightCommand else { return }
+        guard HotkeyPreference.current == .rightOption || HotkeyPreference.current == .eitherOption else { return }
+        UserDefaults.standard.set(true, forKey: tipKey)
+        statusBarController.showTransientStatus(
+            "Na české klávesnici zvol v Nastavení „pravý Command (⌘)“ — pravý Option často nefunguje v jiných appkách.",
+            duration: 12
+        )
     }
 
     @discardableResult

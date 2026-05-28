@@ -173,6 +173,11 @@ final class HotkeyManager {
             return false
         }
 
+        guard InputMonitoringSettings.isGranted() else {
+            DiagnosticsLogger.log("Hotkey install blocked: Input Monitoring not granted")
+            return false
+        }
+
         if eventTap == nil {
             guard createTap() else { return false }
         }
@@ -255,6 +260,7 @@ final class HotkeyManager {
 
     func currentHealth() -> HotkeyHealth {
         guard AccessibilitySettings.isTrusted() else { return .notTrusted }
+        guard InputMonitoringSettings.isGranted() else { return .notTrusted }
         guard eventTap != nil, keyStatePoller != nil else { return .tapMissing }
         if lastPolledTriggerDown || Date().timeIntervalSince(lastEventReceivedAt) <= 8 {
             return .receivingEvents
@@ -285,16 +291,27 @@ final class HotkeyManager {
         tearDownTap()
 
         let mask: CGEventMask = 1 << CGEventType.flagsChanged.rawValue
-        guard let tap = CGEvent.tapCreate(
-            tap: .cgSessionEventTap,
-            place: .headInsertEventTap,
-            options: .listenOnly,
-            eventsOfInterest: mask,
-            callback: eventTapCallback,
-            userInfo: Unmanaged.passUnretained(self).toOpaque()
-        ) else {
+        let locations: [CGEventTapLocation] = [.cgHIDEventTap, .cgSessionEventTap]
+        var tap: CFMachPort?
+        for location in locations {
+            tap = CGEvent.tapCreate(
+                tap: location,
+                place: .headInsertEventTap,
+                options: .listenOnly,
+                eventsOfInterest: mask,
+                callback: eventTapCallback,
+                userInfo: Unmanaged.passUnretained(self).toOpaque()
+            )
+            if tap != nil {
+                DiagnosticsLogger.log("Hotkey event tap created at \(location == .cgHIDEventTap ? "HID" : "session")")
+                break
+            }
+        }
+        guard let tap else {
             logger.error("Unable to install event tap")
-            DiagnosticsLogger.log("Hotkey event tap install failed (AXTrusted=\(AXIsProcessTrusted()))")
+            DiagnosticsLogger.log(
+                "Hotkey event tap install failed (AX=\(AXIsProcessTrusted()), ListenEvent=\(InputMonitoringSettings.isGranted()))"
+            )
             return false
         }
 
@@ -503,7 +520,7 @@ final class HotkeyManager {
     }
 
     private func pollHIDKeyState() {
-        guard AccessibilitySettings.isTrusted() else { return }
+        guard AccessibilitySettings.isTrusted(), InputMonitoringSettings.isGranted() else { return }
         let snap = snapshotFromHIDKeyState()
         let logicSnap = HotkeyTriggerLogic.Snapshot(
             keyCode: snap.keyCode,

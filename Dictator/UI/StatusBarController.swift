@@ -289,7 +289,7 @@ final class StatusBarController: NSObject, NSMenuDelegate {
         case .injecting:
             return "Vkládám text — pokud to trvá dlouho, zkontroluj Zpřístupnění a log."
         case .permissionsNeeded:
-            return "Doplň oprávnění mikrofon a Zpřístupnění v Nastavení."
+            return "Doplň mikrofon, Zpřístupnění a Monitorování vstupu (jinak klávesa jen s oknem Dictatoru)."
         case .error:
             return "Je potřeba zásah — nápověda výše v menu."
         }
@@ -300,6 +300,9 @@ final class StatusBarController: NSObject, NSMenuDelegate {
         guard let health = hotkeyHealthProvider?() else { return nil }
         switch health {
         case .notTrusted:
+            if !InputMonitoringSettings.isGranted() {
+                return "Zapni Monitorování vstupu pro Dictator.app — bez toho klávesa nefunguje v jiných appkách."
+            }
             return "Zapni Zpřístupnění pro tuto kopii Dictator.app (Nastavení → Soukromí)."
         case .tapMissing:
             return "Diktovací klávesa není aktivní — otevři Nastavení Dictatoru."
