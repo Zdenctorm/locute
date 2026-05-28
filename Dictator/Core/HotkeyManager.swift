@@ -48,11 +48,18 @@ extension Notification.Name {
 enum HotkeyPreference {
     private static let storageKey = "hotkeyChoice"
 
+    /// Česká klávesnice: pravý Option je často AltGr — pro globální diktování je spolehlivější pravý Command.
+    static var recommendedDefault: HotkeyChoice {
+        let czech = Locale.preferredLanguages.contains { $0.hasPrefix("cs") }
+            || Locale.current.identifier.hasPrefix("cs")
+        return czech ? .rightCommand : .eitherOption
+    }
+
     static var current: HotkeyChoice {
         get {
             guard let raw = UserDefaults.standard.string(forKey: storageKey),
                   let choice = HotkeyChoice(rawValue: raw) else {
-                return .eitherOption
+                return recommendedDefault
             }
             return choice
         }
@@ -82,6 +89,9 @@ final class HotkeyManager {
 
     private var runLoopSource: CFRunLoopSource?
     private var healthTimer: Timer?
+    /// Čte fyzický stav kláves z HID — funguje i když `flagsChanged` z event tapu v cizí appce nepřijde.
+    private var keyStatePoller: Timer?
+    private var lastPolledTriggerDown = false
     /// Poslední čas, kdy přišel jakýkoli event z tapu. Slouží k detekci tichého úmrtí tapu
     /// (kdy tap je formálně „enabled", ale macOS mu zastavila doručování crossapp eventů).
     fileprivate var lastEventReceivedAt: Date = .init()
@@ -134,6 +144,7 @@ final class HotkeyManager {
     deinit {
         NotificationCenter.default.removeObserver(self)
         healthTimer?.invalidate()
+        keyStatePoller?.invalidate()
         if let runLoopSource {
             CFRunLoopRemoveSource(CFRunLoopGetMain(), runLoopSource, .commonModes)
         }
@@ -171,6 +182,7 @@ final class HotkeyManager {
         DiagnosticsLogger.log("Hotkey event tap enabled (AXTrusted=\(trusted))")
 
         startHealthCheck()
+        startKeyStatePoller()
         return true
     }
 
@@ -243,12 +255,12 @@ final class HotkeyManager {
 
     func currentHealth() -> HotkeyHealth {
         guard AccessibilitySettings.isTrusted() else { return .notTrusted }
-        guard eventTap != nil else { return .tapMissing }
-        let idle = Date().timeIntervalSince(lastEventReceivedAt)
-        if idle > 8 {
-            return .stale(seconds: idle)
+        guard eventTap != nil, keyStatePoller != nil else { return .tapMissing }
+        if lastPolledTriggerDown || Date().timeIntervalSince(lastEventReceivedAt) <= 8 {
+            return .receivingEvents
         }
-        return .receivingEvents
+        let idle = Date().timeIntervalSince(lastEventReceivedAt)
+        return .stale(seconds: idle)
     }
 
     /// AppDelegate volá po úspěšném `transition(.recording)` v toggle režimu.
@@ -296,6 +308,8 @@ final class HotkeyManager {
     }
 
     private func tearDownTap() {
+        keyStatePoller?.invalidate()
+        keyStatePoller = nil
         if let runLoopSource {
             CFRunLoopRemoveSource(CFRunLoopGetMain(), runLoopSource, .commonModes)
         }
@@ -438,18 +452,72 @@ final class HotkeyManager {
     }
 
     fileprivate func scheduleFlagsHandling(event: CGEvent) {
-        let snap = ModifierSnapshot(
-            keyCode: Int(event.getIntegerValueField(.keyboardEventKeycode)),
-            alternateDown: event.flags.contains(.maskAlternate),
-            commandDown: event.flags.contains(.maskCommand),
-            numericPad: event.flags.contains(.maskNumericPad),
-            key54Down: CGEventSource.keyState(.hidSystemState, key: Self.rightCommandKeyCode),
-            key58Down: CGEventSource.keyState(.hidSystemState, key: Self.leftOptionKeyCode),
-            key61Down: CGEventSource.keyState(.hidSystemState, key: Self.rightOptionKeyCode)
-        )
-
+        let snap = snapshotFromEvent(event)
         DispatchQueue.main.async { [weak self] in
             self?.applyModifierSnapshotOnMainQueue(snap)
+        }
+    }
+
+    private func snapshotFromEvent(_ event: CGEvent) -> ModifierSnapshot {
+        let key58 = CGEventSource.keyState(.hidSystemState, key: Self.leftOptionKeyCode)
+        let key61 = CGEventSource.keyState(.hidSystemState, key: Self.rightOptionKeyCode)
+        let key54 = CGEventSource.keyState(.hidSystemState, key: Self.rightCommandKeyCode)
+        return ModifierSnapshot(
+            keyCode: Int(event.getIntegerValueField(.keyboardEventKeycode)),
+            alternateDown: event.flags.contains(.maskAlternate) || key58 || key61,
+            commandDown: event.flags.contains(.maskCommand) || key54,
+            numericPad: event.flags.contains(.maskNumericPad),
+            key54Down: key54,
+            key58Down: key58,
+            key61Down: key61
+        )
+    }
+
+    private func snapshotFromHIDKeyState() -> ModifierSnapshot {
+        let key58 = CGEventSource.keyState(.hidSystemState, key: Self.leftOptionKeyCode)
+        let key61 = CGEventSource.keyState(.hidSystemState, key: Self.rightOptionKeyCode)
+        let key54 = CGEventSource.keyState(.hidSystemState, key: Self.rightCommandKeyCode)
+        let keyCode: Int = {
+            if key61 { return Int(Self.rightOptionKeyCode) }
+            if key58 { return Int(Self.leftOptionKeyCode) }
+            if key54 { return Int(Self.rightCommandKeyCode) }
+            return -1
+        }()
+        return ModifierSnapshot(
+            keyCode: keyCode,
+            alternateDown: key58 || key61,
+            commandDown: key54,
+            numericPad: false,
+            key54Down: key54,
+            key58Down: key58,
+            key61Down: key61
+        )
+    }
+
+    private func startKeyStatePoller() {
+        keyStatePoller?.invalidate()
+        keyStatePoller = Timer.scheduledTimer(withTimeInterval: 0.03, repeats: true) { [weak self] _ in
+            self?.pollHIDKeyState()
+        }
+        DiagnosticsLogger.log("Hotkey HID key-state poller started (30ms)")
+    }
+
+    private func pollHIDKeyState() {
+        guard AccessibilitySettings.isTrusted() else { return }
+        let snap = snapshotFromHIDKeyState()
+        let logicSnap = HotkeyTriggerLogic.Snapshot(
+            keyCode: snap.keyCode,
+            alternateDown: snap.alternateDown,
+            commandDown: snap.commandDown,
+            key54Down: snap.key54Down,
+            key58Down: snap.key58Down,
+            key61Down: snap.key61Down
+        )
+        let triggerDown = HotkeyTriggerLogic.isTriggerDown(preference: preference, snap: logicSnap)
+        if triggerDown != lastPolledTriggerDown {
+            lastPolledTriggerDown = triggerDown
+            noteEventReceived()
+            applyModifierSnapshotOnMainQueue(snap)
         }
     }
 

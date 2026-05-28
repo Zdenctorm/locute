@@ -24,8 +24,6 @@ enum CzechDictationFormatter {
 
     private static func applySpokenCommands(_ text: String) -> String {
         var s = " \(text) "
-        let lower = text.lowercased()
-        _ = lower
         let replacements: [(String, String)] = [
             (" nový odstavec ", "\n\n"),
             (" novy odstavec ", "\n\n"),
@@ -43,7 +41,9 @@ enum CzechDictationFormatter {
             (" strednik ", "; "),
         ]
         for (spoken, symbol) in replacements {
-            s = s.replacingOccurrences(of: spoken, with: symbol)
+            while let range = s.range(of: spoken, options: .caseInsensitive) {
+                s.replaceSubrange(range, with: symbol)
+            }
         }
         return s.trimmingCharacters(in: .whitespacesAndNewlines)
     }

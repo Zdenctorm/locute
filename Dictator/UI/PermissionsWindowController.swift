@@ -159,20 +159,27 @@ final class PermissionsWindowController: NSWindowController {
     private func buildHotkeyCard() -> NSView {
         hotkeyPicker.removeAllItems()
         hotkeyPicker.addItems(withTitles: HotkeyChoice.allCases.map(\.label))
-        let currentIndex = HotkeyChoice.allCases.firstIndex(of: HotkeyPreference.current) ?? 0
+        let currentIndex = HotkeyChoice.allCases.firstIndex(of: HotkeyPreference.current)
+            ?? HotkeyChoice.allCases.firstIndex(of: HotkeyPreference.recommendedDefault)
+            ?? 0
         hotkeyPicker.selectItem(at: currentIndex)
         hotkeyPicker.target = self
         hotkeyPicker.action = #selector(hotkeyChoiceChanged(_:))
 
         let title = AppTheme.label("Klávesa pro diktování", font: AppTheme.Font.headline, color: AppTheme.Color.title)
         let detail = AppTheme.label(
-            "Defaultně levý nebo pravý Option (⌥). Na české klávesnici je pravý Option často AltGr (@, #, &) — pak zvol levý Option nebo pravý Command (⌘).",
+            "Doporučeno na českém Macu: pravý Command (⌘). Pravý Option (⌥) je často AltGr (@, #, &) a v jiných aplikacích (Linear, Cursor) nemusí spustit diktování.",
             font: AppTheme.Font.body,
             color: AppTheme.Color.body,
             lines: 0
         )
 
-        return AppTheme.card([title, detail, hotkeyPicker, hotkeyTapHealthLabel])
+        let recommendButton = AppTheme.secondaryButton(
+            "Použít doporučenou klávesu (\(HotkeyPreference.recommendedDefault.label))",
+            target: self,
+            action: #selector(useRecommendedHotkey(_:))
+        )
+        return AppTheme.card([title, detail, hotkeyPicker, recommendButton, hotkeyTapHealthLabel])
     }
 
     @objc private func hotkeyChoiceChanged(_ sender: NSPopUpButton) {
@@ -180,6 +187,14 @@ final class PermissionsWindowController: NSWindowController {
         guard idx >= 0, idx < HotkeyChoice.allCases.count else { return }
         HotkeyPreference.current = HotkeyChoice.allCases[idx]
         DiagnosticsLogger.log("Hotkey preference changed to \(HotkeyChoice.allCases[idx].rawValue)")
+    }
+
+    @objc private func useRecommendedHotkey(_ sender: NSButton) {
+        HotkeyPreference.current = HotkeyPreference.recommendedDefault
+        let idx = HotkeyChoice.allCases.firstIndex(of: HotkeyPreference.current) ?? 0
+        hotkeyPicker.selectItem(at: idx)
+        keyTestStatusLabel.stringValue = "Nastaveno: \(HotkeyPreference.current.label). Vyzkoušej ve Linearu nebo Cursoru."
+        keyTestStatusLabel.textColor = AppTheme.Color.success
     }
 
     private func buildModelCard() -> NSView {

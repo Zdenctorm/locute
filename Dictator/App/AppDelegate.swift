@@ -125,6 +125,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                     "Chybí Zpřístupnění — diktovací klávesa nebude fungovat v jiných aplikacích.",
                     duration: 8
                 )
+            } else {
+                maybeShowCzechHotkeyTip()
             }
         }
 
