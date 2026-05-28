@@ -35,27 +35,42 @@ enum TextInjector {
         )
         let payload = prefix + text
 
+        let steps = PasteInsertionStep.ordered(prefersCommandVFirst: prefersCommandV)
         DiagnosticsLogger.log(
-            "Paste: target app=\(appName) bundle=\(bundleID ?? "?") prefersCommandV=\(prefersCommandV) leadingPrefixLen=\(prefix.count)"
+            "Paste: target app=\(appName) bundle=\(bundleID ?? "?") prefersCommandV=\(prefersCommandV) steps=\(steps.map(\.rawValue).joined(separator: "→")) leadingPrefixLen=\(prefix.count)"
         )
 
-        if !prefersCommandV {
-            let ok = await MainActor.run {
-                injectViaAccessibility(text: payload, spacingContext: spacingContext)
+        for step in steps {
+            switch step {
+            case .accessibility:
+                await activateTargetAppIfNeeded(targetApp)
+                let ok = await MainActor.run {
+                    injectViaAccessibility(text: payload, spacingContext: spacingContext)
+                }
+                if ok {
+                    DiagnosticsLogger.log("Paste: done via AX")
+                    return .success(method: "AX")
+                }
+                DiagnosticsLogger.log("Paste: AX path did not apply; trying next step")
+            case .commandV:
+                await activateTargetAppIfNeeded(targetApp)
+                let result = await MainActor.run { await injectViaClipboard(text: payload) }
+                if result.succeeded {
+                    return result
+                }
+                if case .failed(let reason) = result {
+                    DiagnosticsLogger.log("Paste: Cmd+V path failed (\(reason)); trying next step")
+                }
             }
-            if ok {
-                DiagnosticsLogger.log("Paste: done via AX")
-                return .success(method: "AX")
-            }
-            DiagnosticsLogger.log("Paste: AX failed, trying clipboard")
         }
 
-        if let targetApp {
-            await MainActor.run { _ = targetApp.activate(options: .activateIgnoringOtherApps) }
-            try? await Task.sleep(for: .milliseconds(150))
-        }
+        return .failed(reason: "Nepodařilo se vložit text do aktivní aplikace")
+    }
 
-        return await injectViaClipboard(text: payload)
+    private static func activateTargetAppIfNeeded(_ targetApp: NSRunningApplication?) async {
+        guard let targetApp else { return }
+        await MainActor.run { _ = targetApp.activate(options: .activateIgnoringOtherApps) }
+        try? await Task.sleep(for: .milliseconds(150))
     }
 
     // MARK: - Clipboard + Cmd+V

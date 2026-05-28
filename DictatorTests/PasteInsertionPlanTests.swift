@@ -26,4 +26,14 @@ final class PasteInsertionPlanTests: XCTestCase {
     func testNilBundleNotCommandVPreferring() {
         XCTAssertFalse(CommandVPastePreferringBundles.prefersCommandV(bundleID: nil))
     }
+
+    func testCursorBundlePrefersCommandV() {
+        XCTAssertTrue(
+            CommandVPastePreferringBundles.prefersCommandV(bundleID: "com.todesktop.230313mzl4w4u92")
+        )
+    }
+
+    func testToDesktopPrefixPrefersCommandV() {
+        XCTAssertTrue(CommandVPastePreferringBundles.prefersCommandV(bundleID: "com.todesktop.other-app-id"))
+    }
 }

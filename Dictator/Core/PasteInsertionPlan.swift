@@ -25,6 +25,8 @@ enum CommandVPastePreferringBundles {
         "com.tinyspeck.slackmacgap",
         "com.hnc.Discord",
         "com.microsoft.VSCode",
+        // Cursor (ToDesktop / Electron) — AX reports success but Monaco never shows the text.
+        "com.todesktop.230313mzl4w4u92",
         "com.microsoft.teams2",
         "com.tdesktop.Telegram",
         "com.spotify.client",
@@ -57,6 +59,9 @@ enum CommandVPastePreferringBundles {
     static func prefersCommandV(bundleID: String?) -> Bool {
         guard let bundleID else { return false }
         if commandVPreferredBundleIDs.contains(bundleID) { return true }
+        // ToDesktop-wrapped Electron apps (Cursor and similar) do not use "electron" in the bundle ID.
+        if bundleID.hasPrefix("com.todesktop.") { return true }
+        if bundleID.hasPrefix("com.anysphere.") { return true }
         if bundleID.contains("electron") { return true }
         if bundleID.hasPrefix("com.google.Chrome") { return true }
         // Heuristika: nezachycené terminálové appky často obsahují "term" v bundle ID.
