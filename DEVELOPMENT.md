@@ -54,11 +54,15 @@ git reset --hard origin/main
 
 `reset --hard` zahodí lokální necommitnuté změny. Pokud je nechceš ztratit, místo toho použij `git pull --ff-only origin main`.
 
-Jedním příkazem (jen fast-forward pull, bez resetu):
+Jedním příkazem (jen fast-forward pull aktuální větve, bez resetu):
 
 ```bash
 ./scripts/install_latest.sh --pull
 ```
+
+Na feature větvi (např. `cursor/hotkey-ux-formatting-7dec`) stáhne tu větev, ne `main`.
+Bez `--pull` skript skončí chybou, pokud jsi za `origin/<aktuální-větev>`.
+Pro plný překlad po změně Swiftu: `./scripts/install_latest.sh --pull --clean`.
 
 ### Co skript dělá
 
