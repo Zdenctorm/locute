@@ -17,7 +17,7 @@ final class StatusBarController: NSObject, NSMenuDelegate {
 
     var statusButton: NSStatusBarButton? { statusItem.button }
 
-    private let statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
+    private let statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
     private let stateMachine: AppStateMachine
     private let updaterController: SPUStandardUpdaterController
     private let sparkleUpdatesAvailable: Bool
@@ -142,6 +142,7 @@ final class StatusBarController: NSObject, NSMenuDelegate {
         statusItem.menu = menu
 
         if let button = statusItem.button {
+            applyIconOnlyPresentation(to: button)
             button.setAccessibilityRole(.button)
             button.setAccessibilityTitle("Dictator")
         }
@@ -300,11 +301,16 @@ final class StatusBarController: NSObject, NSMenuDelegate {
         }
     }
 
+    private func applyIconOnlyPresentation(to button: NSStatusBarButton) {
+        button.title = ""
+        button.imagePosition = .imageOnly
+    }
+
     private func setImage(_ symbolName: String, template: Bool, decorativeDescription: String) {
         guard let button = statusItem.button else { return }
         button.image = NSImage(systemSymbolName: symbolName, accessibilityDescription: decorativeDescription)
         button.image?.isTemplate = template
-        button.title = " Dictator"
+        applyIconOnlyPresentation(to: button)
     }
 
     private func startRecordingPulse() {
@@ -321,6 +327,7 @@ final class StatusBarController: NSObject, NSMenuDelegate {
                     .withSymbolConfiguration(NSImage.SymbolConfiguration(paletteColors: [recording]))
                 button.image = image
                 button.image?.isTemplate = false
+                self.applyIconOnlyPresentation(to: button)
                 self.applyStatusBarAccessibility(for: self.stateMachine.state, button: button)
             }
         }
