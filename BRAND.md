@@ -1,5 +1,7 @@
 # Locute — BRAND.md
 
+> **Viz [BRAND_MANUAL.md](./BRAND_MANUAL.md)** — autoritativní brand manuál (brand identity, hlas a tón, vizuální systém, copy vzory). Tento soubor zachován pro zpětnou kompatibilitu s Impeccable toolingem.
+
 > Rozhodnutí: **2026-05-30** · veřejný název **Locute**
 
 ---
