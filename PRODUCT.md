@@ -6,7 +6,11 @@
 
 ## Register
 
-**product** — nativní macOS utilita (menu bar + pomocná okna). Design **slouží produktu**: rychlé diktování, důvěra, minimum rušení. Ne marketingový web; žádný „AI SaaS landing“ vzhled.
+product
+
+Nativní macOS utilita (menu bar + pomocná okna). Design **slouží produktu**: rychlé diktování, důvěra, minimum rušení. Ne marketingový web; žádný „AI SaaS landing“ vzhled.
+
+Impeccable: viz [IMPECCABLE.md](./IMPECCABLE.md).
 
 ---
 
@@ -89,6 +93,15 @@ Hlavní loop: **klávesa → mikrofon → přepis → vložení**. Vedlejší: h
 - Čas od key-up do viditelného textu v cílové appce (subjektivně „rychlé“).
 - Počet kroků do prvního úspěšného diktátu po instalaci (cíl: ≤ 3 viditelné kroky po grant permissions).
 - Uživatel nikdy nehledá „kam šel můj přepis“ — historie / poslední přepis na jedno kliknutí.
+
+---
+
+## Accessibility & inclusion
+
+- Cíl: **WCAG 2.1 AA** tam, kde AppKit a VoiceOver umožňují měřitelné chování (labely, oznámení stavů, kontrast textu na `AppTheme` površích).
+- **VoiceOver:** dynamické labely menu baru a HUD (`AccessibilitySupport`); audit z menu „Analýza zpřístupnění“.
+- **Reduced motion:** respektovat systémové nastavení macOS u pulzujícího HUD (roadmap).
+- **Barvoslepost:** stavy nesmí spoléhat jen na červenou/zelenou — ikona + text stavu.
 
 ---
 

@@ -1,6 +1,6 @@
 # Locute — DESIGN.md
 
-> Google Stitch format (Impeccable). Generováno ze `Dictator/UI/AppTheme.swift` a implementovaných komponent. Aktualizujte po změně vizuálního systému; příkazy `/impeccable *` čtou tento soubor.
+> Google Stitch format (Impeccable). Generováno ze `Dictator/UI/AppTheme.swift` a implementovaných komponent. Aktualizujte po změně vizuálního systému; příkazy `/impeccable *` čtou tento soubor. Hub: [IMPECCABLE.md](./IMPECCABLE.md).
 
 ---
 
