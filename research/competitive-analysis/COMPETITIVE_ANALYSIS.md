@@ -2,7 +2,8 @@
 
 > Datum: 2026-05-30  
 > Cíl: Porovnat Dictator s hlavními nástroji pro push-to-talk / system-wide diktování na Macu a vyvodit UX vzory, které stojí za převzetí.  
-> Screenshoty: `./screenshots/` (stažené z veřejných webů, GitHub README a marketingových materiálů).
+> Screenshoty: `./screenshots/` (**96 souborů**, ~16 MB, po složkách podle konkurenta).  
+> Index zdrojů: [`SOURCES.md`](./SOURCES.md) · manifest: [`sources/MANIFEST.txt`](./sources/MANIFEST.txt)
 
 ---
 
@@ -17,32 +18,44 @@
 | **MacWhisper** | App + dictation režim | Lokálně | ~80 USD lifetime | Přepisy souborů + občasné diktování |
 | **Whispur** | Menu bar (open source) | BYOK (Groq, OpenAI, Apple…) | Zdarma + API | Technicky zdatní |
 | **WhisperClip / Open-Wispr / Pindrop** | Menu bar, lokální | Lokálně | Zdarma / jednorázově | DIY, privacy puristé |
+| **Glimpse** | Tauri app, local-first | Lokálně | Zdarma (beta) | Privacy, Wispr/Superwhisper alternative |
+| **VoiceInk** | Menu bar (OSS) | Lokálně + API | Zdarma | Komunita, podobná kategorie |
+| **Superduper-whisper** | OSS overlay | Cloud Whisper API | Zdarma + API | Referenční UI (waveform, themes) |
 | **Apple Dictation** | Systém | On-device (omezeně) | Zdarma | Krátké vstupy, žádná instalace |
 
 **Závěr trhu (2026):** Přepis už není diferenciace — všichni stojí na Whisper nebo vlastním modelu. Produkt je **workflow**: hotkey, overlay, latence key-up → paste, post-processing, onboarding oprávnění, důvěra (privacy copy).
 
 ---
 
-## 2. Stažené screenshoty (inventář)
+## 2. Stažené materiály (inventář)
 
-| Soubor | Zdroj | Co ukazuje |
-|--------|-------|------------|
-| `wispr-flow-og.jpg` | wisprflow.ai | Marketing: „Don't type, just speak“ |
-| `wispr-flow-product.png` | wisprflow.ai | Logo / ikona produktu |
-| `wispr-flow-apps-*.webp` | wisprflow.ai | Integrace do Slack, VS Code (ikony aplikací) |
-| `wispr-flow-youtube-thumb.jpg` | YouTube promo | Brand „Flow“, ne in-app UI |
-| `superwhisper-og.png` | superwhisper.com | Brand: tmavý, prémiový, „Transform your voice“ |
-| `aqua-voice-ui.png` | aquavoice.com | Produkt na mockupu iMac (spíš brand než UI) |
-| `aqua-voice-logo.png` | app.aquavoice.com | Logo |
-| `whispur-hero-menubar.png` | GitHub whispur | **Menu bar dropdown** — Ready, Start Dictation, providers |
-| `whispur-recording-overlay.png` | GitHub whispur | **HUD pill**: Listening + waveform + Esc cancel |
-| `whispur-settings-setup.png` | GitHub whispur | **Onboarding checklist** 5/5, sidebar nastavení |
-| `whispur-settings-providers.png` | GitHub whispur | BYOK providers, Keychain |
-| `open-wispr-permissions.png` | GitHub open-wispr | Systémový dialog Accessibility |
-| `open-wispr-menu.png` | GitHub open-wispr | System Settings → seznam app v Accessibility |
-| `whisperclip-icon.png` | GitHub whisperclip | Ikona (sidebar app — viz jejich repo) |
+### Přehled po složkách
 
-**Poznámka:** Wispr Flow a Superwhisper chrání in-app UI za paywallem / v binárce — veřejné UI screenshoty jsou řídké. Nejbližší srovnatelné reference pro Dictator jsou **Whispur** (open source, stejná kategorie) a popisy z recenzí (Cult of Mac u Wispr).
+| Složka | Soubory | Hlavní hodnota pro Dictator |
+|--------|---------|------------------------------|
+| **`whispur/`** | 9 | ⭐ Menu bar, HUD + waveform, setup checklist, demo.gif |
+| **`wispr-flow/`** | 44 | Marketing CDN, integrace app, YouTube recenze |
+| **`aqua-voice/`** | 25 | Landing Framer, produktové mockupy, logo |
+| **`glimpse/`** | 5 | Local-first app: home, dictionary, personalization, library |
+| **`superduper-whisper/`** | 5 | Recording bar, settings (12 themes), mini HUD |
+| **`open-wispr/`** | 2 | Accessibility onboarding |
+| **`whisperclip/`** | 3 | Ikony, dark-app positioning |
+| **`superwhisper/`** | 1+URL | OG + docs obrázky (mintcdn — viz `sources/superwhisper-mintcdn-urls.txt`) |
+| **`misc/`** | 2 | VoiceInk hero, YouTube |
+| **`macwhisper/`** | 0 | *Zatím jen HTML help v `sources/`* |
+
+### Klíčové reference (co otevřít jako první)
+
+1. `whispur/recording-overlay.png` — pill HUD, waveform, Esc  
+2. `whispur/hero-menubar.png` — minimální menu  
+3. `whispur/settings-setup.png` — checklist onboarding  
+4. `glimpse/readme-home.png` — local dictation „dashboard“  
+5. `superduper-whisper/screenshot-1.png` — dense settings (co **nedělat** v 1. vrstvě)  
+6. `wispr-flow/cdn-*.png` — marketing tón Wispr (anti-reference)
+
+**Poznámka:** Wispr Flow a Superwhisper in-app UI jsou v placené appce. Dokumentace Wispr popisuje **Flow Hub**, **Flow Bar**, mikrofon test s audio bary — viz `sources/doc-*-setup-guide` (HTML). Superwhisper docs: `introduction-001.png` atd. na mintcdn (stažení z CLI blokované; doplnit ručně).
+
+Viz kompletní seznam: [`sources/INVENTORY_BY_COMPETITOR.md`](./sources/INVENTORY_BY_COMPETITOR.md).
 
 ---
 
@@ -221,10 +234,11 @@
 
 ## 7. Další kroky (výzkum)
 
-- [ ] Pořídit **reálné in-app screenshoty** Wispr Flow / Superwhisper (trial na Macu) — doplnit složku `screenshots/in-app/`.
-- [ ] Projít **MacWhisper dictation setup** (Help Scout) — jejich guided enable flow.
-- [ ] **Aqua Voice** — stáhnout demo video z webu pro streaming UI frame-by-frame.
-- [ ] Uživatelské testy: 3 kolegové, úkoly „napiš mail / Slack / poznámku“ — měřit čas key-up → text visible.
+- [x] Rozšířit stažené assety (marketing CDN, GitHub README, docs HTML) — viz `SOURCES.md`
+- [ ] Pořídit **reálné in-app screenshoty** Wispr Flow / Superwhisper / MacWhisper (trial) → `screenshots/in-app/`
+- [ ] Uložit Superwhisper docs obrázky z prohlížeče (mintcdn URL v `sources/superwhisper-mintcdn-urls.txt`)
+- [ ] Složka `screenshots/dictator/` — vlastní UI pro side-by-side
+- [ ] Uživatelské testy: 3 kolegové, úkoly „napiš mail / Slack / poznámku“
 
 ---
 
