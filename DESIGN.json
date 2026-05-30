@@ -1,0 +1,43 @@
+{
+  "name": "Dictator",
+  "creativeNorthStar": "The Quiet Study",
+  "register": "product",
+  "colors": {
+    "accent": { "name": "Deep Claret", "srgb": [0.42, 0.13, 0.16, 1] },
+    "brandPaper": { "name": "Cream Paper", "srgb": [0.97, 0.94, 0.91, 1] },
+    "surfaceLight": { "name": "Warm Desk", "srgb": [0.99, 0.98, 0.97, 1] },
+    "surfaceDark": { "srgb": [0.12, 0.10, 0.10, 1] },
+    "panelLight": { "name": "Pressed Paper", "srgb": [0.94, 0.91, 0.88, 1] },
+    "panelDark": { "srgb": [0.17, 0.13, 0.13, 1] },
+    "recording": { "name": "Live Ember", "srgb": [0.82, 0.28, 0.22, 1] },
+    "danger": { "name": "Claret Alert", "srgb": [0.62, 0.18, 0.20, 1] }
+  },
+  "typography": {
+    "family": "system-ui",
+    "logoGlyph": "Georgia-Bold",
+    "scale": {
+      "largeTitle": { "size": 26, "weight": "semibold" },
+      "title": { "size": 20, "weight": "semibold" },
+      "headline": { "size": 14, "weight": "semibold" },
+      "body": { "size": 13, "weight": "regular" },
+      "footnote": { "size": 12, "weight": "regular" },
+      "status": { "size": 14, "weight": "medium" }
+    }
+  },
+  "spacing": {
+    "windowPadding": 40,
+    "stack": 20,
+    "hero": 32,
+    "intimate": 8,
+    "row": 12,
+    "tight": 6,
+    "cardPadding": 24,
+    "section": 14
+  },
+  "elevation": {
+    "philosophy": "flat-layers",
+    "hudMaterial": "hudWindow",
+    "cardRadius": 16
+  },
+  "components": ["AppLogoView", "PanelCardView", "RecordingOverlay", "TranscriptionPanel", "PermissionRow"]
+}
