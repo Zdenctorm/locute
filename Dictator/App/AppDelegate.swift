@@ -145,6 +145,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
         statusBarController.onOpenSetup = { [weak self] in self?.showCurrentSetupWindow() }
         statusBarController.onOpenDiagnostics = { DiagnosticsLogger.openLogDirectory() }
+        statusBarController.onRunAccessibilityAudit = { [weak self] in self?.runAccessibilityAudit() }
         statusBarController.onToggleDictation = { [weak self] in self?.toggleMenuDictation() }
         statusBarController.onTestTranscription = { [weak self] in self?.toggleTranscriptionTest() }
         statusBarController.onShowLastTranscription = { [weak self] in self?.showLastTranscription() }
@@ -892,6 +893,24 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             learnedTermsWindowController = LearnedTermsWindowController()
         }
         learnedTermsWindowController?.showWindow(nil)
+    }
+
+    private func runAccessibilityAudit() {
+        showCurrentSetupWindow()
+        let menu = statusBarController.statusButton?.menu
+        let context = AccessibilityAuditEngine.AuditContext(
+            openWindowTitles: NSApp.windows.map { $0.title.isEmpty ? "(bez titulku)" : $0.title },
+            axTrusted: AccessibilitySettings.isTrusted(),
+            appVersion: Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "?",
+            bundlePath: Bundle.main.bundleURL.path
+        )
+        if let url = AccessibilityAuditEngine.runAndSaveReport(extraMenu: menu, context: context) {
+            statusBarController.showTransientStatus("Analýza zpřístupnění uložena", duration: 4)
+            AccessibilityAuditEngine.openLatestReportInFinder()
+            DiagnosticsLogger.log("Accessibility audit exported: \(url.lastPathComponent)")
+        } else {
+            statusBarController.showTransientStatus("Analýzu se nepodařilo uložit", duration: 4)
+        }
     }
 
     private func showCurrentSetupWindow() {

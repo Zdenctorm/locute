@@ -70,6 +70,8 @@
 		01000000000000000000004C /* HotkeyTriggerLogicTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 02000000000000000000004C /* HotkeyTriggerLogicTests.swift */; };
 		01000000000000000000004D /* CzechDictationFormatterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 02000000000000000000004D /* CzechDictationFormatterTests.swift */; };
 		01000000000000000000004E /* InputMonitoringSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 02000000000000000000004E /* InputMonitoringSettings.swift */; };
+		01000000000000000000004F /* AccessibilityAuditEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 02000000000000000000004F /* AccessibilityAuditEngine.swift */; };
+		010000000000000000000050 /* AccessibilityAuditReportTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 020000000000000000000050 /* AccessibilityAuditReportTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -135,6 +137,8 @@
 		02000000000000000000004C /* HotkeyTriggerLogicTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HotkeyTriggerLogicTests.swift; sourceTree = "<group>"; };
 		02000000000000000000004D /* CzechDictationFormatterTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CzechDictationFormatterTests.swift; sourceTree = "<group>"; };
 		02000000000000000000004E /* InputMonitoringSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InputMonitoringSettings.swift; sourceTree = "<group>"; };
+		02000000000000000000004F /* AccessibilityAuditEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccessibilityAuditEngine.swift; sourceTree = "<group>"; };
+		020000000000000000000050 /* AccessibilityAuditReportTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccessibilityAuditReportTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -224,6 +228,7 @@
 				02000000000000000000001E /* PersistentStorage.swift */,
 				020000000000000000000021 /* AccessibilitySettings.swift */,
 				02000000000000000000004E /* InputMonitoringSettings.swift */,
+				02000000000000000000004F /* AccessibilityAuditEngine.swift */,
 		020000000000000000000016 /* AudioLevelAnalyzer.swift */,
 				020000000000000000000030 /* PostProcessingPreference.swift */,
 				020000000000000000000031 /* PostProcessingEngine.swift */,
@@ -281,6 +286,7 @@
 				020000000000000000000045 /* TranscriptionCaseNormalizerTests.swift */,
 				02000000000000000000004C /* HotkeyTriggerLogicTests.swift */,
 				02000000000000000000004D /* CzechDictationFormatterTests.swift */,
+				020000000000000000000050 /* AccessibilityAuditReportTests.swift */,
 			);
 			path = DictatorTests;
 			sourceTree = "<group>";
@@ -449,6 +455,7 @@
 				010000000000000000000019 /* LearningEngine.swift in Sources */,
 				01000000000000000000001B /* PersistentStorage.swift in Sources */,
 				010000000000000000000021 /* AccessibilitySettings.swift in Sources */,
+				01000000000000000000004F /* AccessibilityAuditEngine.swift in Sources */,
 				01000000000000000000001C /* WordCorrectionPopoverController.swift in Sources */,
 				01000000000000000000001D /* LearnedTermsView.swift in Sources */,
 				010000000000000000000030 /* PostProcessingPreference.swift in Sources */,
@@ -472,6 +479,7 @@
 				010000000000000000000045 /* TranscriptionCaseNormalizerTests.swift in Sources */,
 				01000000000000000000004C /* HotkeyTriggerLogicTests.swift in Sources */,
 				01000000000000000000004D /* CzechDictationFormatterTests.swift in Sources */,
+				010000000000000000000050 /* AccessibilityAuditReportTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

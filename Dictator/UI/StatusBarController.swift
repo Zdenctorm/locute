@@ -8,6 +8,7 @@ final class StatusBarController: NSObject, NSMenuDelegate {
     var onQuit: (() -> Void)?
     var onOpenSetup: (() -> Void)?
     var onOpenDiagnostics: (() -> Void)?
+    var onRunAccessibilityAudit: (() -> Void)?
     var onToggleDictation: (() -> Void)?
     var onTestTranscription: (() -> Void)?
     var onShowLastTranscription: (() -> Void)?
@@ -18,7 +19,7 @@ final class StatusBarController: NSObject, NSMenuDelegate {
 
     var statusButton: NSStatusBarButton? { statusItem.button }
 
-    private let statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
+    private let statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
     private let stateMachine: AppStateMachine
     private let updaterController: SPUStandardUpdaterController
     private let sparkleUpdatesAvailable: Bool
@@ -108,6 +109,18 @@ final class StatusBarController: NSObject, NSMenuDelegate {
         diagnosticsItem.target = self
         menu.addItem(diagnosticsItem)
 
+        let auditItem = NSMenuItem(
+            title: "Analýza zpřístupnění (VoiceOver)…",
+            action: #selector(runAccessibilityAudit),
+            keyEquivalent: ""
+        )
+        auditItem.target = self
+        AccessibilitySupport.configure(
+            auditItem,
+            help: "Projde UI Dictatoru a stručně porovná referenční aplikace. Uloží podrobnou zprávu do složky logů."
+        )
+        menu.addItem(auditItem)
+
         let aboutItem = NSMenuItem(title: "O Dictatoru", action: #selector(showAbout), keyEquivalent: "")
         aboutItem.target = self
         menu.addItem(aboutItem)
@@ -143,6 +156,7 @@ final class StatusBarController: NSObject, NSMenuDelegate {
         statusItem.menu = menu
 
         if let button = statusItem.button {
+            applyIconOnlyPresentation(to: button)
             button.setAccessibilityRole(.button)
             button.setAccessibilityTitle("Dictator")
         }
@@ -322,11 +336,16 @@ final class StatusBarController: NSObject, NSMenuDelegate {
         }
     }
 
+    private func applyIconOnlyPresentation(to button: NSStatusBarButton) {
+        button.title = ""
+        button.imagePosition = .imageOnly
+    }
+
     private func setImage(_ symbolName: String, template: Bool, decorativeDescription: String) {
         guard let button = statusItem.button else { return }
         button.image = NSImage(systemSymbolName: symbolName, accessibilityDescription: decorativeDescription)
         button.image?.isTemplate = template
-        button.title = " Dictator"
+        applyIconOnlyPresentation(to: button)
     }
 
     private func startRecordingPulse() {
@@ -343,6 +362,7 @@ final class StatusBarController: NSObject, NSMenuDelegate {
                     .withSymbolConfiguration(NSImage.SymbolConfiguration(paletteColors: [recording]))
                 button.image = image
                 button.image?.isTemplate = false
+                self.applyIconOnlyPresentation(to: button)
                 self.applyStatusBarAccessibility(for: self.stateMachine.state, button: button)
             }
         }
@@ -398,6 +418,10 @@ final class StatusBarController: NSObject, NSMenuDelegate {
 
     @objc private func openDiagnostics() {
         onOpenDiagnostics?()
+    }
+
+    @objc private func runAccessibilityAudit() {
+        onRunAccessibilityAudit?()
     }
 
     @objc private func showAbout() {
