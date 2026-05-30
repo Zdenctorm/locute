@@ -40,7 +40,11 @@ final class StatusBarController: NSObject, NSMenuDelegate {
         keyEquivalent: ""
     )
     private let launchAtLoginItem = NSMenuItem(title: "Spouštět po přihlášení", action: #selector(toggleLaunchAtLogin), keyEquivalent: "")
-    private let postProcessingItem = NSMenuItem(title: "Oprava přepisu pomocí AI (lokální LLM)", action: #selector(togglePostProcessing), keyEquivalent: "")
+    private let postProcessingItem = NSMenuItem(
+        title: "Oprava přepisu na Macu (lokální LLM)",
+        action: #selector(togglePostProcessing),
+        keyEquivalent: ""
+    )
 
     init(
         stateMachine: AppStateMachine,
@@ -183,10 +187,10 @@ final class StatusBarController: NSObject, NSMenuDelegate {
             button.toolTip = "Vkládám text."
         case .modelDownloading:
             setImage("arrow.down.circle", template: true, decorativeDescription: "Stahování modelu")
-            button.toolTip = "Stahuji a připravuji model Whisper."
+            button.toolTip = "Stahuji lokální model přepisu."
         case .modelLoading:
             setImage("cpu", template: true, decorativeDescription: "Načítání modelu")
-            button.toolTip = "Načítám model Whisper."
+            button.toolTip = "Načítám lokální model přepisu."
         case .permissionsNeeded:
             setImage("mic.slash", template: true, decorativeDescription: "Mikrofon vypnutý")
             button.toolTip = "\(AppBrand.displayName) potřebuje mikrofon a Zpřístupnění."

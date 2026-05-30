@@ -531,14 +531,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                     self.stateMachine.transition(to: .idle)
                     self.recordingOverlay.hide()
                     self.statusBarController.showTransientStatus(
-                        "Mikrofon nic nezachytil — drž Option déle a mluv hlasitěji",
+                        "Mikrofon nic nezachytil — drž \(HotkeyPreference.current.hintLabel) déle a mluv hlasitěji",
                         duration: 5
                     )
                 }
                 if trigger == "test" {
                     self.showTranscriptionTestAlert(
                         text: nil,
-                        errorMessage: "Žádný zvuk — drž Option déle (min. cca půl sekundy) a mluv blíž k mikrofonu."
+                        errorMessage: "Žádný zvuk — drž \(HotkeyPreference.current.hintLabel) déle (min. cca půl sekundy) a mluv blíž k mikrofonu."
                     )
                 }
                 return
@@ -978,11 +978,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             try await postProcessingEngine.load { [weak self] progress in
                 Task { @MainActor in
                     let pct = Int(progress * 100)
-                    self?.statusBarController.showTransientStatus("AI: načítám (\(pct) %)", duration: 3)
+                    self?.statusBarController.showTransientStatus("Oprava textu: načítám (\(pct) %)", duration: 3)
                 }
             }
             await MainActor.run { [weak self] in
-                self?.statusBarController.showTransientStatus("AI: připraveno", duration: 4)
+                self?.statusBarController.showTransientStatus("Oprava textu: připraveno", duration: 4)
             }
         } catch {
             DiagnosticsLogger.log("PostProcessing: background load failed — \(error.localizedDescription)")

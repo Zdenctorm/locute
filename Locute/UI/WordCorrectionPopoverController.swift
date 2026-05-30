@@ -65,9 +65,14 @@ final class WordCorrectionPopoverController: NSObject, NSPopoverDelegate {
         stack.alignment = .leading
         stack.spacing = AppTheme.Spacing.tight
         stack.translatesAutoresizingMaskIntoConstraints = false
-        stack.edgeInsets = NSEdgeInsets(top: 16, left: 16, bottom: 16, right: 16)
+        stack.edgeInsets = NSEdgeInsets(
+            top: AppTheme.Spacing.section,
+            left: AppTheme.Spacing.section,
+            bottom: AppTheme.Spacing.section,
+            right: AppTheme.Spacing.section
+        )
 
-        let container = NSView()
+        let container = AppTheme.popoverRootView()
         AccessibilitySupport.configure(
             container,
             label: "Oprava slova",

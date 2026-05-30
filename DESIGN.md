@@ -14,7 +14,7 @@ Locute vypadá jako **papír a inkoust na stole** — teplé neutrály, jedna hl
 
 - Okna: jeden hlavní vertikální flow (header → obsah → status/actions), padding **40pt** (`windowPadding`).
 - Karty: `PanelCardView` — zaoblení **16pt**, border 1pt warm separator, padding **24pt**.
-- Menu bar popover / word popover: zatím **systémový** vzhled — **NE** v souladu s North Star; sjednotit s `AppTheme` (známý gap).
+- Menu bar popover / word popover: kořen přes `AppTheme.popoverRootView` (warm `surface`), typografie a tlačítka z `AppTheme`.
 
 **Motion**
 
@@ -110,7 +110,7 @@ Pojmenování pro copy a AI — mapování v `AppTheme.Color`.
 
 - Primary: `primaryButton` — rounded, large, keyEquivalent Return.
 - Secondary: `secondaryButton` — regular control size.
-- **Gap:** popovers use raw `NSButton` bez theme — sjednotit.
+- Popovery: `AppTheme` tlačítka a `popoverRootView`; bez dalšího chrome karty (plochý surface).
 
 ### Recording overlay (`RecordingOverlayController`)
 

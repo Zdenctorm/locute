@@ -181,6 +181,36 @@ enum AppTheme {
     static func card(_ views: [NSView]) -> NSView {
         PanelCardView(views: views)
     }
+
+    /// Kořen popoveru — warm surface místo systémového šedého panelu.
+    static func popoverRootView(frame: NSRect = .zero) -> NSView {
+        PopoverChromeView(frame: frame)
+    }
+}
+
+// MARK: - Popover root that tracks light/dark surface
+
+private final class PopoverChromeView: NSView {
+    override init(frame frameRect: NSRect) {
+        super.init(frame: frameRect)
+        wantsLayer = true
+        refreshSurface()
+    }
+
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+
+    override func viewDidChangeEffectiveAppearance() {
+        super.viewDidChangeEffectiveAppearance()
+        refreshSurface()
+    }
+
+    private func refreshSurface() {
+        effectiveAppearance.performAsCurrentDrawingAppearance {
+            layer?.backgroundColor = AppTheme.Color.surface.cgColor
+        }
+    }
 }
 
 // MARK: - Layer-backed card that tracks light/dark appearance

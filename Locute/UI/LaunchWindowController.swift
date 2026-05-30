@@ -234,7 +234,7 @@ final class LaunchWindowController: NSWindowController {
 
     private func updateModelLoadMessage() {
         let preference = TranscriptionModelPreference.current
-        downloadTitleLabel.stringValue = "Stahuji Whisper (\(preference.label))"
+        downloadTitleLabel.stringValue = "Stahuji lokální model (\(preference.label))"
         let elapsed = Int(Date().timeIntervalSince(modelLoadStartedAt ?? Date()))
         let minutes = elapsed / 60
         let seconds = elapsed % 60

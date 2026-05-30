@@ -12,7 +12,7 @@ final class TranscriptionPanelView: NSView {
     var onInsert: ((String) -> Void)?
 
     private let placeholderLabel = AppTheme.label(
-        "Zatím nic — podrž Option (⌥) a mluv. Přepisy se objeví tady; do jiné aplikace je vložíš tlačítkem „Vložit“.",
+        Self.emptyHistoryMessage(),
         font: AppTheme.Font.body,
         color: AppTheme.Color.body,
         lines: 0
@@ -51,6 +51,7 @@ final class TranscriptionPanelView: NSView {
         }
 
         guard !entries.isEmpty else {
+            placeholderLabel.stringValue = Self.emptyHistoryMessage()
             placeholderLabel.isHidden = false
             return
         }
@@ -74,6 +75,10 @@ final class TranscriptionPanelView: NSView {
                 sep.widthAnchor.constraint(equalTo: entriesStack.widthAnchor).isActive = true
             }
         }
+    }
+
+    private static func emptyHistoryMessage() -> String {
+        "Zatím nic — podrž \(HotkeyPreference.current.hintLabel) a mluv. Přepisy se objeví tady; do jiné aplikace je vložíš tlačítkem „Vložit“."
     }
 
     // MARK: - Layout

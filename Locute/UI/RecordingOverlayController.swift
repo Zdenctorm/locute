@@ -327,7 +327,7 @@ final class RecordingOverlayController {
             dotView.layer?.backgroundColor = AppTheme.Color.success.cgColor
         case .injectionFailed:
             statusLabel.stringValue = "Text se nevložil — otevři \(AppBrand.displayName)"
-            dotView.layer?.backgroundColor = NSColor.systemRed.cgColor
+            dotView.layer?.backgroundColor = AppTheme.resolved(AppTheme.Color.danger, for: dotView).cgColor
         case .busy(let message):
             statusLabel.stringValue = message
             dotView.layer?.backgroundColor = AppTheme.Color.warning.cgColor

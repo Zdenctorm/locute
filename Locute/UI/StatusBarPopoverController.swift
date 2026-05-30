@@ -80,9 +80,13 @@ final class StatusBarPopoverController: NSObject, NSPopoverDelegate {
         stack.alignment = .leading
         stack.spacing = AppTheme.Spacing.tight
         stack.translatesAutoresizingMaskIntoConstraints = false
-        stack.edgeInsets = NSEdgeInsets(top: 14, left: 14, bottom: 14, right: 14)
-
-        let root = NSView(frame: NSRect(x: 0, y: 0, width: 360, height: 200))
+        let root = AppTheme.popoverRootView(frame: NSRect(x: 0, y: 0, width: 360, height: 200))
+        stack.edgeInsets = NSEdgeInsets(
+            top: AppTheme.Spacing.section,
+            left: AppTheme.Spacing.section,
+            bottom: AppTheme.Spacing.section,
+            right: AppTheme.Spacing.section
+        )
         root.addSubview(stack)
         NSLayoutConstraint.activate([
             stack.leadingAnchor.constraint(equalTo: root.leadingAnchor),

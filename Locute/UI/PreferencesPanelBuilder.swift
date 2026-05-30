@@ -138,7 +138,7 @@ final class PreferencesPanelBuilder: NSObject {
         modelPicker.target = self
         modelPicker.action = #selector(modelPreferenceChanged(_:))
 
-        let title = AppTheme.label("Model přepisu (Whisper)", font: AppTheme.Font.headline, color: AppTheme.Color.title)
+        let title = AppTheme.label("Model přepisu", font: AppTheme.Font.headline, color: AppTheme.Color.title)
         let speedNote = AppTheme.label(
             "Turbo = rychlejší přepis po puštění klávesy. Přesnost = lepší pro technické termíny, pomalejší.",
             font: AppTheme.Font.footnote,
@@ -177,7 +177,7 @@ final class PreferencesPanelBuilder: NSObject {
         postProcessingSizePicker.target = self
         postProcessingSizePicker.action = #selector(postProcessingSizeChanged(_:))
         postProcessingSizeDetailLabel.stringValue = PostProcessingPreference.modelSize.detail
-        let title = AppTheme.label("AI oprava přepisu (lokální LLM)", font: AppTheme.Font.headline, color: AppTheme.Color.title)
+        let title = AppTheme.label("Oprava přepisu na Macu (lokální LLM)", font: AppTheme.Font.headline, color: AppTheme.Color.title)
         let detail = AppTheme.label(
             "Zapni/vypni v menu baru. Velikost modelu ovlivní kvalitu a rychlost offline úprav textu.",
             font: AppTheme.Font.body,
