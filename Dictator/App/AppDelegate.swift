@@ -32,6 +32,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var keepAliveActivity: NSObjectProtocol?
     private let statusBarPopover = StatusBarPopoverController()
     private var historySaveTimer: Timer?
+    private var audioLevelTimer: Timer?
     private var audioCachePurgeTimer: Timer?
     /// Poslední úspěšný přepis pro retry-detektor.
     private var lastDictation: (entry: TranscriptionHistoryEntry, recordedAt: Date)?
@@ -189,6 +190,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     private func cancelActiveDictation() {
         guard stateMachine.isRecording else { return }
+        stopAudioLevelMeterUpdates()
         hotkeyManager.markDictationSessionActive(false)
         hotkeyManager.cancelToggleSessionIfNeeded()
         microphoneArmTask?.cancel()
@@ -215,6 +217,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
         startupTask?.cancel()
         historySaveTimer?.invalidate()
+        audioLevelTimer?.invalidate()
         audioCachePurgeTimer?.invalidate()
         HistoryStore.save(transcriptionHistory)
         Task { await audioRecorder.cancelRecording() }
@@ -458,6 +461,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             do {
                 try await audioRecorder.startRecording()
                 DiagnosticsLogger.log("Microphone pipeline started (\(trigger))")
+                startAudioLevelMeterUpdates()
                 if DictationPreviewPreference.isEnabled {
                     await startStreamingPipelineIfPossible()
                 }
@@ -496,6 +500,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let targetApp = pendingDictationTarget ?? NSWorkspace.shared.frontmostApplication
         pendingDictationTarget = nil
         DiagnosticsLogger.log("Dictation end (\(trigger)): using target \(targetApp?.localizedName ?? "?") (\(targetApp?.bundleIdentifier ?? "?"))")
+
+        stopAudioLevelMeterUpdates()
 
         let armTask = microphoneArmTask
         microphoneArmTask = nil
@@ -911,6 +917,26 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         } else {
             statusBarController.showTransientStatus("Analýzu se nepodařilo uložit", duration: 4)
         }
+    }
+
+    private func startAudioLevelMeterUpdates() {
+        audioLevelTimer?.invalidate()
+        audioLevelTimer = Timer.scheduledTimer(withTimeInterval: 0.05, repeats: true) { [weak self] _ in
+            Task { [weak self] in
+                guard let self, self.stateMachine.isRecording else { return }
+                let level = await self.audioRecorder.recentLiveLevel()
+                let normalized = min(1, level / 0.02)
+                await MainActor.run {
+                    self.recordingOverlay.updateAudioLevel(normalized)
+                }
+            }
+        }
+    }
+
+    private func stopAudioLevelMeterUpdates() {
+        audioLevelTimer?.invalidate()
+        audioLevelTimer = nil
+        recordingOverlay.updateAudioLevel(0)
     }
 
     private func showCurrentSetupWindow() {

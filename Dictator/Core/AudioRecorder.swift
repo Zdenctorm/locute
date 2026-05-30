@@ -30,6 +30,11 @@ actor AudioRecorder {
         return await session.audioSamplesSnapshot()
     }
 
+    func recentLiveLevel() async -> Float {
+        guard let session else { return 0 }
+        return await session.recentLiveLevel()
+    }
+
     func startRecording() throws {
         guard session == nil else { return }
 
@@ -305,6 +310,7 @@ private final class RecordingSession: @unchecked Sendable {
 
     private var framesWritten = 0
     private var peakRMS: Float = 0
+    private var liveMeterLevel: Float = 0
     private var audioSamples: [Float] = []
 
     init(
@@ -362,6 +368,17 @@ private final class RecordingSession: @unchecked Sendable {
             queue.async {
                 self.stateLock.lock()
                 let value = self.peakRMS
+                self.stateLock.unlock()
+                continuation.resume(returning: value)
+            }
+        }
+    }
+
+    func recentLiveLevel() async -> Float {
+        await withCheckedContinuation { continuation in
+            queue.async {
+                self.stateLock.lock()
+                let value = self.liveMeterLevel
                 self.stateLock.unlock()
                 continuation.resume(returning: value)
             }
@@ -457,9 +474,9 @@ private final class RecordingSession: @unchecked Sendable {
             }
         }
 
-        guard peak > 0 else { return }
         stateLock.lock()
-        if peak > peakRMS { peakRMS = peak }
+        if peak > 0, peak > peakRMS { peakRMS = peak }
+        liveMeterLevel = max(peak, liveMeterLevel * 0.82)
         stateLock.unlock()
     }
 

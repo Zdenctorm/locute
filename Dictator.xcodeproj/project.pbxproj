@@ -72,6 +72,7 @@
 		01000000000000000000004E /* InputMonitoringSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 02000000000000000000004E /* InputMonitoringSettings.swift */; };
 		01000000000000000000004F /* AccessibilityAuditEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 02000000000000000000004F /* AccessibilityAuditEngine.swift */; };
 		010000000000000000000050 /* AccessibilityAuditReportTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 020000000000000000000050 /* AccessibilityAuditReportTests.swift */; };
+		010000000000000000000051 /* AudioLevelMeterView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 020000000000000000000051 /* AudioLevelMeterView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -139,6 +140,7 @@
 		02000000000000000000004E /* InputMonitoringSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InputMonitoringSettings.swift; sourceTree = "<group>"; };
 		02000000000000000000004F /* AccessibilityAuditEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccessibilityAuditEngine.swift; sourceTree = "<group>"; };
 		020000000000000000000050 /* AccessibilityAuditReportTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccessibilityAuditReportTests.swift; sourceTree = "<group>"; };
+		020000000000000000000051 /* AudioLevelMeterView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioLevelMeterView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -252,6 +254,7 @@
 				020000000000000000000018 /* ScrollContentLayout.swift */,
 				02000000000000000000001F /* WordCorrectionPopoverController.swift */,
 				020000000000000000000020 /* LearnedTermsView.swift */,
+				020000000000000000000051 /* AudioLevelMeterView.swift */,
 			);
 			path = UI;
 			sourceTree = "<group>";
@@ -445,6 +448,7 @@
 				010000000000000000000022 /* AccessibilitySupport.swift in Sources */,
 				01000000000000000000000D /* AppLogoView.swift in Sources */,
 				010000000000000000000010 /* RecordingOverlayController.swift in Sources */,
+				010000000000000000000051 /* AudioLevelMeterView.swift in Sources */,
 				010000000000000000000011 /* TranscriptionPanelView.swift in Sources */,
 				010000000000000000000012 /* TranscriptionSanitizer.swift in Sources */,
 				010000000000000000000013 /* AudioLevelAnalyzer.swift in Sources */,
