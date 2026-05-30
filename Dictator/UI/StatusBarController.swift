@@ -6,7 +6,8 @@ import Sparkle
 @MainActor
 final class StatusBarController: NSObject, NSMenuDelegate {
     var onQuit: (() -> Void)?
-    var onOpenSetup: (() -> Void)?
+    var onOpenPreferences: (() -> Void)?
+    var onOpenSetupGuide: (() -> Void)?
     var onOpenDiagnostics: (() -> Void)?
     var onRunAccessibilityAudit: (() -> Void)?
     var onToggleDictation: (() -> Void)?
@@ -33,7 +34,11 @@ final class StatusBarController: NSObject, NSMenuDelegate {
     private let hintMenuItem = NSMenuItem(title: "Podrž diktovací klávesu a mluv", action: nil, keyEquivalent: "")
     private let dictationMenuItem = NSMenuItem(title: "Začít diktování (bez klávesy)", action: #selector(toggleDictation), keyEquivalent: "")
     private let testTranscriptionMenuItem = NSMenuItem(title: "Ověřit přepis (ukáže text)", action: #selector(runTranscriptionTest), keyEquivalent: "")
-    private let lastTranscriptionMenuItem = NSMenuItem(title: "Poslední přepis…", action: #selector(showLastTranscription), keyEquivalent: "")
+    private let lastTranscriptionMenuItem = NSMenuItem(
+        title: "Poslední přepis…",
+        action: #selector(showLastTranscriptionFromMenu),
+        keyEquivalent: ""
+    )
     private let launchAtLoginItem = NSMenuItem(title: "Spouštět po přihlášení", action: #selector(toggleLaunchAtLogin), keyEquivalent: "")
     private let postProcessingItem = NSMenuItem(title: "Oprava přepisu pomocí AI (lokální LLM)", action: #selector(togglePostProcessing), keyEquivalent: "")
 
@@ -67,7 +72,7 @@ final class StatusBarController: NSObject, NSMenuDelegate {
         menu.delegate = self
 
         statusMenuItem.isEnabled = false
-        AccessibilitySupport.configure(statusMenuItem, help: "Aktuální stav Dictatoru")
+        AccessibilitySupport.configure(statusMenuItem, help: "Aktuální stav \(AppBrand.displayName)")
         menu.addItem(statusMenuItem)
 
         hintMenuItem.isEnabled = false
@@ -76,80 +81,19 @@ final class StatusBarController: NSObject, NSMenuDelegate {
         dictationMenuItem.target = self
         menu.addItem(dictationMenuItem)
 
-        testTranscriptionMenuItem.target = self
-        menu.addItem(testTranscriptionMenuItem)
-
         lastTranscriptionMenuItem.target = self
         menu.addItem(lastTranscriptionMenuItem)
 
-        let popoverItem = NSMenuItem(
-            title: "Rychlý náhled přepisu",
-            action: #selector(showTranscriptionPopover),
-            keyEquivalent: ""
-        )
-        popoverItem.target = self
-        menu.addItem(popoverItem)
         menu.addItem(.separator())
 
-        launchAtLoginItem.target = self
-        menu.addItem(launchAtLoginItem)
+        let preferencesItem = NSMenuItem(title: "Nastavení…", action: #selector(openPreferences), keyEquivalent: ",")
+        preferencesItem.target = self
+        menu.addItem(preferencesItem)
 
-        postProcessingItem.target = self
-        menu.addItem(postProcessingItem)
-
-        let learnedItem = NSMenuItem(title: "Co se Dictator naučil…", action: #selector(openLearnedTerms), keyEquivalent: "")
-        learnedItem.target = self
-        menu.addItem(learnedItem)
-
-        let setupItem = NSMenuItem(title: "Nastavení…", action: #selector(openSetup), keyEquivalent: ",")
-        setupItem.target = self
-        menu.addItem(setupItem)
-
-        let diagnosticsItem = NSMenuItem(title: "Otevřít diagnostické logy", action: #selector(openDiagnostics), keyEquivalent: "")
-        diagnosticsItem.target = self
-        menu.addItem(diagnosticsItem)
-
-        let auditItem = NSMenuItem(
-            title: "Analýza zpřístupnění (VoiceOver)…",
-            action: #selector(runAccessibilityAudit),
-            keyEquivalent: ""
-        )
-        auditItem.target = self
-        AccessibilitySupport.configure(
-            auditItem,
-            help: "Projde UI Dictatoru a stručně porovná referenční aplikace. Uloží podrobnou zprávu do složky logů."
-        )
-        menu.addItem(auditItem)
-
-        let aboutItem = NSMenuItem(title: "O Dictatoru", action: #selector(showAbout), keyEquivalent: "")
-        aboutItem.target = self
-        menu.addItem(aboutItem)
-
-        let checkForUpdatesItem: NSMenuItem
-        if sparkleUpdatesAvailable {
-            checkForUpdatesItem = NSMenuItem(
-                title: "Zkontrolovat aktualizace…",
-                action: #selector(SPUStandardUpdaterController.checkForUpdates(_:)),
-                keyEquivalent: ""
-            )
-            checkForUpdatesItem.target = updaterController
-        } else {
-            checkForUpdatesItem = NSMenuItem(
-                title: "Aktualizace nejsou dostupné v lokálním buildu",
-                action: nil,
-                keyEquivalent: ""
-            )
-            checkForUpdatesItem.isEnabled = false
-            AccessibilitySupport.configure(
-                checkForUpdatesItem,
-                help: "Pro automatické aktualizace je potřeba release podepsaný Developer ID."
-            )
-        }
-        menu.addItem(checkForUpdatesItem)
-
+        menu.addItem(advancedSubmenuItem())
         menu.addItem(.separator())
 
-        let quitItem = NSMenuItem(title: "Ukončit Dictator", action: #selector(quit), keyEquivalent: "q")
+        let quitItem = NSMenuItem(title: "Ukončit \(AppBrand.displayName)", action: #selector(quit), keyEquivalent: "q")
         quitItem.target = self
         menu.addItem(quitItem)
 
@@ -158,7 +102,7 @@ final class StatusBarController: NSObject, NSMenuDelegate {
         if let button = statusItem.button {
             applyIconOnlyPresentation(to: button)
             button.setAccessibilityRole(.button)
-            button.setAccessibilityTitle("Dictator")
+            button.setAccessibilityTitle(AppBrand.displayName)
         }
     }
 
@@ -227,7 +171,7 @@ final class StatusBarController: NSObject, NSMenuDelegate {
         switch state {
         case .idle:
             setImage("mic", template: true, decorativeDescription: "Mikrofon, připraveno")
-            button.toolTip = "Dictator je připravený. Podrž \(HotkeyPreference.current.hintLabel) nebo diktuj z menu."
+            button.toolTip = "\(AppBrand.displayName) je připravený. Podrž \(HotkeyPreference.current.hintLabel) nebo diktuj z menu."
         case .recording:
             button.toolTip = "Nahrávám. Pusť klávesu nebo ukonči z menu."
             startRecordingPulse()
@@ -245,13 +189,13 @@ final class StatusBarController: NSObject, NSMenuDelegate {
             button.toolTip = "Načítám model Whisper."
         case .permissionsNeeded:
             setImage("mic.slash", template: true, decorativeDescription: "Mikrofon vypnutý")
-            button.toolTip = "Dictator potřebuje mikrofon a Zpřístupnění."
+            button.toolTip = "\(AppBrand.displayName) potřebuje mikrofon a Zpřístupnění."
         case .error(let message):
             setImage("exclamationmark.triangle", template: true, decorativeDescription: "Varování")
             button.toolTip = message
         case .launching:
             setImage("mic", template: true, decorativeDescription: "Spouštění")
-            button.toolTip = "Spouštím Dictator."
+            button.toolTip = "Spouštím \(AppBrand.displayName)."
         }
 
         applyStatusBarAccessibility(for: state, button: button)
@@ -303,7 +247,7 @@ final class StatusBarController: NSObject, NSMenuDelegate {
         case .injecting:
             return "Vkládám text — pokud to trvá dlouho, zkontroluj Zpřístupnění a log."
         case .permissionsNeeded:
-            return "Doplň mikrofon, Zpřístupnění a Monitorování vstupu (jinak klávesa jen s oknem Dictatoru)."
+            return "Doplň mikrofon, Zpřístupnění a Monitorování vstupu (jinak klávesa jen s oknem \(AppBrand.displayName))."
         case .error:
             return "Je potřeba zásah — nápověda výše v menu."
         }
@@ -315,13 +259,13 @@ final class StatusBarController: NSObject, NSMenuDelegate {
         switch health {
         case .notTrusted:
             if !InputMonitoringSettings.isGranted() {
-                return "Zapni Monitorování vstupu pro Dictator.app — bez toho klávesa nefunguje v jiných appkách."
+                return "Zapni Monitorování vstupu pro \(AppBrand.bundleFileName) — bez toho klávesa nefunguje v jiných appkách."
             }
-            return "Zapni Zpřístupnění pro tuto kopii Dictator.app (Nastavení → Soukromí)."
+            return "Zapni Zpřístupnění pro tuto kopii \(AppBrand.bundleFileName) (Nastavení → Soukromí)."
         case .tapMissing:
-            return "Diktovací klávesa není aktivní — otevři Nastavení Dictatoru."
+            return "Diktovací klávesa není aktivní — otevři Nastavení \(AppBrand.displayName)."
         case .stale:
-            return "Dictator neviděl klávesu — stiskni \(HotkeyPreference.current.hintLabel) jednou."
+            return "\(AppBrand.displayName) neviděl klávesu — stiskni \(HotkeyPreference.current.hintLabel) jednou."
         case .receivingEvents:
             return nil
         }
@@ -348,7 +292,97 @@ final class StatusBarController: NSObject, NSMenuDelegate {
         applyIconOnlyPresentation(to: button)
     }
 
+    private func advancedSubmenuItem() -> NSMenuItem {
+        let advancedMenu = NSMenu(title: "Pokročilé")
+
+        testTranscriptionMenuItem.target = self
+        advancedMenu.addItem(testTranscriptionMenuItem)
+
+        launchAtLoginItem.target = self
+        advancedMenu.addItem(launchAtLoginItem)
+
+        postProcessingItem.target = self
+        advancedMenu.addItem(postProcessingItem)
+
+        let learnedItem = NSMenuItem(
+            title: "Co \(AppBrand.displayName) už umí…",
+            action: #selector(openLearnedTerms),
+            keyEquivalent: ""
+        )
+        learnedItem.target = self
+        advancedMenu.addItem(learnedItem)
+
+        let setupGuideItem = NSMenuItem(
+            title: "Průvodce nastavením (oprávnění)…",
+            action: #selector(openSetupGuide),
+            keyEquivalent: ""
+        )
+        setupGuideItem.target = self
+        advancedMenu.addItem(setupGuideItem)
+
+        let diagnosticsItem = NSMenuItem(
+            title: "Otevřít diagnostické logy",
+            action: #selector(openDiagnostics),
+            keyEquivalent: ""
+        )
+        diagnosticsItem.target = self
+        advancedMenu.addItem(diagnosticsItem)
+
+        let auditItem = NSMenuItem(
+            title: "Analýza zpřístupnění (VoiceOver)…",
+            action: #selector(runAccessibilityAudit),
+            keyEquivalent: ""
+        )
+        auditItem.target = self
+        AccessibilitySupport.configure(
+            auditItem,
+            help: "Projde UI \(AppBrand.displayName) a stručně porovná referenční aplikace. Uloží podrobnou zprávu do složky logů."
+        )
+        advancedMenu.addItem(auditItem)
+
+        let aboutItem = NSMenuItem(title: "O \(AppBrand.displayName)", action: #selector(showAbout), keyEquivalent: "")
+        aboutItem.target = self
+        advancedMenu.addItem(aboutItem)
+
+        let checkForUpdatesItem: NSMenuItem
+        if sparkleUpdatesAvailable {
+            checkForUpdatesItem = NSMenuItem(
+                title: "Zkontrolovat aktualizace…",
+                action: #selector(SPUStandardUpdaterController.checkForUpdates(_:)),
+                keyEquivalent: ""
+            )
+            checkForUpdatesItem.target = updaterController
+        } else {
+            checkForUpdatesItem = NSMenuItem(
+                title: "Aktualizace nejsou dostupné v lokálním buildu",
+                action: nil,
+                keyEquivalent: ""
+            )
+            checkForUpdatesItem.isEnabled = false
+            AccessibilitySupport.configure(
+                checkForUpdatesItem,
+                help: "Pro automatické aktualizace je potřeba release podepsaný Developer ID."
+            )
+        }
+        advancedMenu.addItem(checkForUpdatesItem)
+
+        let item = NSMenuItem(title: "Pokročilé", action: nil, keyEquivalent: "")
+        item.submenu = advancedMenu
+        return item
+    }
+
     private func startRecordingPulse() {
+        guard let button = statusItem.button else { return }
+        if AccessibilitySupport.shouldReduceMotion {
+            setImage("mic.fill", template: false, decorativeDescription: "Mikrofon, nahrávám")
+            let recording = AppTheme.Color.recording
+            button.image = button.image?.withSymbolConfiguration(
+                NSImage.SymbolConfiguration(paletteColors: [recording])
+            )
+            applyStatusBarAccessibility(for: stateMachine.state, button: button)
+            return
+        }
+
         var filled = false
         pulseTimer = Timer.scheduledTimer(withTimeInterval: 0.45, repeats: true) { [weak self] _ in
             Task { @MainActor in
@@ -399,21 +433,25 @@ final class StatusBarController: NSObject, NSMenuDelegate {
         onTestTranscription?()
     }
 
-    @objc private func showLastTranscription() {
-        onShowLastTranscription?()
-    }
-
-    @objc private func showTranscriptionPopover() {
-        guard let button = statusItem.button else { return }
-        onShowTranscriptionPopover?(button)
+    /// „Poslední přepis…“ — rychlý náhled; celá historie je v popoveru nebo hlavním okně.
+    @objc private func showLastTranscriptionFromMenu() {
+        if let button = statusItem.button {
+            onShowTranscriptionPopover?(button)
+        } else {
+            onShowLastTranscription?()
+        }
     }
 
     @objc private func openLearnedTerms() {
         onOpenLearnedTerms?()
     }
 
-    @objc private func openSetup() {
-        onOpenSetup?()
+    @objc private func openPreferences() {
+        onOpenPreferences?()
+    }
+
+    @objc private func openSetupGuide() {
+        onOpenSetupGuide?()
     }
 
     @objc private func openDiagnostics() {
@@ -426,9 +464,9 @@ final class StatusBarController: NSObject, NSMenuDelegate {
 
     @objc private func showAbout() {
         NSApp.orderFrontStandardAboutPanel(options: [
-            .applicationName: "Dictator",
+            .applicationName: AppBrand.displayName,
             .applicationVersion: Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0",
-            .credits: NSAttributedString(string: "Soukromé české diktování. Bez telemetrie, analytiky a backendu. Historie přepisů se ukládá lokálně v ~/Library/Application Support/Dictator/ a přežije restart aplikace.")
+            .credits: NSAttributedString(string: "Soukromé české diktování. Bez telemetrie, analytiky a backendu. Historie přepisů se ukládá lokálně v ~/Library/Application Support/\(AppBrand.storageDirectoryName)/ a přežije restart aplikace.")
         ])
         NSApp.activate(ignoringOtherApps: true)
     }

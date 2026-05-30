@@ -1,4 +1,13 @@
-# Dictator — vývoj na Macu
+# Locute (Dictator) — vývoj na Macu
+
+## Design kontext (Impeccable)
+
+- Hub: [IMPECCABLE.md](./IMPECCABLE.md)
+- Strategie: [PRODUCT.md](./PRODUCT.md), vizuál: [DESIGN.md](./DESIGN.md)
+- Jednorázově: `npx impeccable skills install --yes`
+- Bootstrap: `./scripts/setup-impeccable.sh`
+
+---
 
 ## Zdroj pravdy: GitHub `main`
 

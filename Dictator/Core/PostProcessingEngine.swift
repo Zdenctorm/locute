@@ -42,7 +42,7 @@ actor PostProcessingEngine {
 
     private static var cacheURL: URL {
         let base = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask).first!
-        let dir = base.appendingPathComponent("Dictator/LLM", isDirectory: true)
+        let dir = base.appendingPathComponent("\(AppBrand.storageDirectoryName)/LLM", isDirectory: true)
         try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
         return dir
     }

@@ -59,7 +59,7 @@ final class LearnedTermsView: NSView {
 
     private let listStack = NSStackView()
     private let emptyLabel = AppTheme.label(
-        "Zatím nic — Dictator se učí z oprav v historii nebo když stejnou větu řekneš znovu.",
+        "Zatím nic — \(AppBrand.displayName) se učí z oprav v historii nebo když stejnou větu řekneš znovu.",
         font: AppTheme.Font.body,
         color: AppTheme.Color.body,
         lines: 0
@@ -102,7 +102,7 @@ final class LearnedTermsView: NSView {
         translatesAutoresizingMaskIntoConstraints = false
 
         let intro = AppTheme.label(
-            "Termíny, které Dictator používá při přepisu. Můžeš je smazat nebo přidat ručně.",
+            "Termíny, které \(AppBrand.displayName) používá při přepisu. Můžeš je smazat nebo přidat ručně.",
             font: AppTheme.Font.body,
             color: AppTheme.Color.body,
             lines: 0
@@ -257,7 +257,7 @@ final class LearnedTermsView: NSView {
         guard let canonical = sender.identifier?.rawValue else { return }
         let alert = NSAlert()
         alert.messageText = "Smazat „\(canonical)“?"
-        alert.informativeText = "Dictator přestane tento termín upravovat v přepisech."
+        alert.informativeText = "\(AppBrand.displayName) přestane tento termín upravovat v přepisech."
         alert.addButton(withTitle: "Smazat")
         alert.addButton(withTitle: "Zrušit")
         alert.alertStyle = .warning

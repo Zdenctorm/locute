@@ -4,6 +4,11 @@ enum AccessibilitySupport {
     private static var lastAnnouncement = ""
     private static var lastAnnouncementTime: Date = .distantPast
 
+    /// Systémové „Snížit pohyb“ — vypne pulzující animace v HUD a menu baru.
+    static var shouldReduceMotion: Bool {
+        NSWorkspace.shared.accessibilityDisplayShouldReduceMotion
+    }
+
     static func configure(
         _ view: NSView,
         label: String,
@@ -89,24 +94,24 @@ extension DictatorState {
     var statusBarAccessibilityLabel: String {
         switch self {
         case .launching:
-            return "Dictator, spouštím"
+            return "\(AppBrand.displayName), spouštím"
         case .permissionsNeeded:
-            return "Dictator, chybí oprávnění"
+            return "\(AppBrand.displayName), chybí oprávnění"
         case .modelDownloading(let progress):
             let percent = Int((progress.fraction * 100).rounded())
-            return "Dictator, stahuji model, \(percent) procent"
+            return "\(AppBrand.displayName), stahuji model, \(percent) procent"
         case .modelLoading:
-            return "Dictator, načítám model"
+            return "\(AppBrand.displayName), načítám model"
         case .idle:
-            return "Dictator, připraveno k diktování"
+            return "\(AppBrand.displayName), připraveno k diktování"
         case .recording:
-            return "Dictator, nahrávám"
+            return "\(AppBrand.displayName), nahrávám"
         case .transcribing:
-            return "Dictator, přepisuji"
+            return "\(AppBrand.displayName), přepisuji"
         case .injecting:
-            return "Dictator, vkládám text"
+            return "\(AppBrand.displayName), vkládám text"
         case .error(let message):
-            return "Dictator, chyba: \(message)"
+            return "\(AppBrand.displayName), chyba: \(message)"
         }
     }
 
@@ -123,9 +128,9 @@ extension DictatorState {
         case .modelDownloading, .modelLoading, .launching:
             return "Po dokončení přípravy modelu můžeš diktovat."
         case .permissionsNeeded:
-            return "Otevři Nastavení a oprávnění v menu Dictatoru."
+            return "Otevři Nastavení a oprávnění v menu \(AppBrand.displayName)."
         case .error:
-            return "Podrobnosti najdeš v menu Dictatoru."
+            return "Podrobnosti najdeš v menu \(AppBrand.displayName)."
         }
     }
 
@@ -173,7 +178,7 @@ extension RecordingOverlayMode {
         case .injectionSuccess:
             return "Vloženo"
         case .injectionFailed(let reason):
-            return "Text se nevložil. \(reason). Otevři okno Dictatoru."
+            return "Text se nevložil. \(reason). Otevři okno \(AppBrand.displayName)."
         case .busy(let message):
             return message
         case .wrongKey:

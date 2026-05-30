@@ -9,7 +9,7 @@ enum PersistentStorage {
             appropriateFor: nil,
             create: true
         )) ?? FileManager.default.temporaryDirectory
-        let dir = base.appendingPathComponent("Dictator", isDirectory: true)
+        let dir = base.appendingPathComponent(AppBrand.storageDirectoryName, isDirectory: true)
         try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
         return dir
     }()

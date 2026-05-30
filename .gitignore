@@ -21,4 +21,8 @@ DerivedData/
 
 # Local Claude config
 .claude/
-.impeccable/
+# Impeccable: runtime snapshots; keep README + critique ignore
+.impeccable/*
+!.impeccable/README.md
+!.impeccable/critique/
+!.impeccable/critique/ignore.md

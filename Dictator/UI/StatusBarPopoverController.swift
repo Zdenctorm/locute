@@ -7,6 +7,7 @@ final class StatusBarPopoverController: NSObject, NSPopoverDelegate {
     private let timestampLabel = NSTextField(labelWithString: "")
     private var onCopy: (() -> Void)?
     private var onInsert: (() -> Void)?
+    private var onOpenFullHistory: (() -> Void)?
 
     override init() {
         super.init()
@@ -22,10 +23,12 @@ final class StatusBarPopoverController: NSObject, NSPopoverDelegate {
         relativeTo statusButton: NSStatusBarButton,
         entry: TranscriptionHistoryEntry?,
         onCopy: @escaping () -> Void,
-        onInsert: @escaping () -> Void
+        onInsert: @escaping () -> Void,
+        onOpenFullHistory: @escaping () -> Void
     ) {
         self.onCopy = onCopy
         self.onInsert = onInsert
+        self.onOpenFullHistory = onOpenFullHistory
 
         if let entry {
             previewLabel.stringValue = entry.text
@@ -36,7 +39,7 @@ final class StatusBarPopoverController: NSObject, NSPopoverDelegate {
             timestampLabel.stringValue = formatter.string(from: entry.recordedAt)
             timestampLabel.isHidden = false
         } else {
-            previewLabel.stringValue = "Zatím žádný přepis. Podržte diktovací klávesu a mluvte."
+            previewLabel.stringValue = "Zatím žádný přepis. Podrž \(HotkeyPreference.current.hintLabel) a mluv."
             timestampLabel.isHidden = true
         }
 
@@ -66,7 +69,13 @@ final class StatusBarPopoverController: NSObject, NSPopoverDelegate {
         buttons.orientation = .horizontal
         buttons.spacing = AppTheme.Spacing.row
 
-        let stack = NSStackView(views: [title, timestampLabel, previewLabel, buttons])
+        let historyButton = AppTheme.secondaryButton(
+            "Otevřít celou historii…",
+            target: self,
+            action: #selector(openFullHistoryTapped)
+        )
+
+        let stack = NSStackView(views: [title, timestampLabel, previewLabel, buttons, historyButton])
         stack.orientation = .vertical
         stack.alignment = .leading
         stack.spacing = AppTheme.Spacing.tight
@@ -91,6 +100,11 @@ final class StatusBarPopoverController: NSObject, NSPopoverDelegate {
 
     @objc private func insertTapped() {
         onInsert?()
+        close()
+    }
+
+    @objc private func openFullHistoryTapped() {
+        onOpenFullHistory?()
         close()
     }
 }

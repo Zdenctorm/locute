@@ -17,7 +17,7 @@ final class AppLogoView: NSView {
     }
 
     private func configureAccessibility() {
-        AccessibilitySupport.configure(self, label: "Logo Dictator", role: .image)
+        AccessibilitySupport.configure(self, label: "Logo \(AppBrand.displayName)", role: .image)
     }
 
     override var intrinsicContentSize: NSSize {

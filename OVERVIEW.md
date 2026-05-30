@@ -1,10 +1,10 @@
-# Dictator — přehled
+# Locute — přehled
 
-> Soukromé české diktování pro macOS. Drž Option, mluv, pusť — text se objeví tam, kde máš kurzor.
+> Soukromé české diktování pro macOS (veřejný brand **Locute**). Drž Option, mluv, pusť — text se objeví tam, kde máš kurzor.
 
 ---
 
-## Co Dictator je
+## Co Locute je
 
 Nativní macOS aplikace v menu baru, která umožňuje **diktovat text v češtině do libovolné aplikace** push-to-talk gestem.
 
@@ -13,7 +13,7 @@ Nativní macOS aplikace v menu baru, která umožňuje **diktovat text v češti
 - Podržím **Option (⌥)**, namluvím větu, pustím klávesu
 - Text se objeví na pozici kurzoru
 
-Žádné okno, žádný overhead — Dictator žije v menu baru a aktivuje se jen klávesou.
+Žádné okno, žádný overhead — Locute žije v menu baru a aktivuje se jen klávesou.
 
 ---
 
@@ -43,10 +43,10 @@ Celý proces od pauznutí klávesy po zobrazení textu trvá **typicky 1–3 sek
 |---|---|
 | Zvuk z mikrofonu | RAM aplikace, nikam jinam |
 | WAV soubor nahrávky | `/tmp/` na lokálním Macu, smaže se po přepisu |
-| Přepsaný text | RAM aplikace + cíl (libovolná aplikace), historie v okně Dictatoru |
+| Přepsaný text | RAM aplikace + cíl (libovolná aplikace), historie v okně Locute |
 | Telemetrie / analytika | **Žádná** — neexistuje |
-| Síťová aktivita | **Jediná**: jednorázové stažení Whisper modelu (~630 MB turbo, volitelně ~626 MB přesnost) z Apple's HuggingFace mirroru při prvním spuštění. Po stažení je Dictator plně offline. |
-| Cloud / API | Žádné. Dictator nevolá žádný server, OpenAI ani jiný backend. |
+| Síťová aktivita | **Jediná**: jednorázové stažení Whisper modelu (~630 MB turbo, volitelně ~626 MB přesnost) z Apple's HuggingFace mirroru při prvním spuštění. Po stažení je Locute plně offline. |
+| Cloud / API | Žádné. Locute nevolá žádný server, OpenAI ani jiný backend. |
 
 ### Entitlements (oprávnění aplikace)
 
@@ -56,7 +56,7 @@ Aplikace má jen dvě:
 
 **App sandbox je vypnutý** — nutné pro globální klávesovou zkratku přes CGEventTap (Apple's sandbox neumožňuje sandboxed apps poslouchat keyboard events mimo svoje okno).
 
-### Co Dictator vyloženě nedělá
+### Co Locute vyloženě nedělá
 
 - Nesleduje uživatele
 - Neukládá audio na disk (po přepisu se WAV maže)
@@ -84,7 +84,7 @@ Aplikace má jen dvě:
 
 - Open-source ML framework od Argmax Inc. (postaven nad OpenAI Whisper)
 - **Rychlost (výchozí):** `large-v3-v20240930_turbo` (~630 MB) — streamovací partial přepis během držení Option
-- **Přesnost:** `large-v3-v20240930` (~626 MB) — volitelně v Nastavení Dictatoru
+- **Přesnost:** `large-v3-v20240930` (~626 MB) — volitelně v Nastavení Locute
 - Metriky latence (`rtf`, `ttft`, `keyUpToDecodeMs`) se zapisují do `~/Library/Logs/Dictator/diagnostics.log`
 - Běží **lokálně** na Apple Neural Engine + GPU
 - Stažený jednou z `argmaxinc/whisperkit-coreml` při prvním spuštění
@@ -113,7 +113,7 @@ Aplikace má jen dvě:
 - ✅ Cross-app event tap se rebuilduje po Accessibility re-grant (řeší dev-rebuild quirk)
 - ✅ Explicitní binding na system default input device (bezpečné proti BlackHole / aggregate devices)
 - ✅ Filtrace Whisper halucinací při tichu („Titulky vytvořil JohnYX", „Thanks for watching")
-- ✅ Detekce „audio příliš tiché" — když mikrofon nezachytí dost, Dictator řekne „mluv hlasitěji" místo aby vrátil prázdný přepis
+- ✅ Detekce „audio příliš tiché" — když mikrofon nezachytí dost, Locute řekne „mluv hlasitěji" místo aby vrátil prázdný přepis
 
 ### UX
 - ✅ Brand: tmavě bordó (claret) + cream paper, typografický „ glyph jako ikona
@@ -140,8 +140,8 @@ Aplikace má jen dvě:
 2. Při prvním spuštění:
    - Macos zařve „Apple cannot check this app" → kliknout pravým → Otevřít → Confirm
    - Povolit **mikrofon** (system dialog)
-   - Otevřít **System Settings → Privacy & Security → Accessibility → +** → přidat Dictator
-3. Počkat několik minut, než se stáhne Whisper model (~630 MB)
+   - Otevřít **System Settings → Privacy & Security → Accessibility → +** → přidat Locute (v seznamu může být `Dictator.app` do přejmenování balíčku)
+3. Počkat několik minut, než se stáhne Whisper model (~630 MB turbo)
 4. Hotovo — drž Option v libovolné aplikaci a diktuj
 
 ### Co kolegové dostanou
@@ -151,7 +151,7 @@ Aplikace má jen dvě:
 - Nezávislé na internetu (po stažení modelu)
 - Žádná data nikam neutíkají
 
-### Co Dictator NEDĚLÁ pro klid v duši:
+### Co Locute NEDĚLÁ pro klid v duši:
 
 - Neposílá audio nikam mimo Mac
 - Neukládá audio na disk (jen RAM, dočasný WAV se maže)

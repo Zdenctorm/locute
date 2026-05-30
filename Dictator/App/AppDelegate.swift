@@ -13,7 +13,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var transcriptionEngine: TranscriptionEngine!
     private var postProcessingEngine: PostProcessingEngine!
     private var recordingOverlay: RecordingOverlayController!
-    private var permissionsWindowController: PermissionsWindowController?
+    private var setupWindowController: SetupWindowController?
+    private var preferencesWindowController: PreferencesWindowController?
     private var launchWindowController: LaunchWindowController?
     private var learnedTermsWindowController: LearnedTermsWindowController?
     private var updaterController: SPUStandardUpdaterController!
@@ -48,7 +49,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationDidFinishLaunching(_ notification: Notification) {
         keepAliveActivity = ProcessInfo.processInfo.beginActivity(
             options: [.userInitiated, .idleSystemSleepDisabled],
-            reason: "Dictator global hotkey monitoring"
+            reason: "\(AppBrand.displayName) global hotkey monitoring"
         )
         DiagnosticsLogger.log("App launched. Bundle path: \(Bundle.main.bundleURL.path)")
         DiagnosticsLogger.logStartupContext()
@@ -125,16 +126,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         observeAppState()
         dictationTargetTracker.startObserving()
 
-        if PermissionsWindowController.currentSnapshot.allGranted {
+        if PermissionsSnapshotProvider.current.allGranted {
             if !installHotkeyIfPossible() {
                 let message: String
                 if !InputMonitoringSettings.isGranted() {
-                    message = "Chybí Monitorování vstupu — klávesa funguje jen s oknem Dictatoru. Otevři Nastavení."
+                    message = "Chybí Monitorování vstupu — klávesa funguje jen s oknem \(AppBrand.displayName). Otevři Nastavení."
                 } else {
                     message = "Chybí Zpřístupnění — diktovací klávesa nebude fungovat v jiných aplikacích."
                 }
                 statusBarController.showTransientStatus(message, duration: 10)
-                showPermissionsWindow()
+                showSetupWindow()
             } else {
                 maybeShowCzechHotkeyTip()
             }
@@ -144,7 +145,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         statusBarController.onMenuWillOpen = { [weak self] in
             self?.dictationTargetTracker.snapshotForMenuAction()
         }
-        statusBarController.onOpenSetup = { [weak self] in self?.showCurrentSetupWindow() }
+        statusBarController.onOpenPreferences = { [weak self] in self?.showPreferencesWindow() }
+        statusBarController.onOpenSetupGuide = { [weak self] in self?.showSetupWindow() }
         statusBarController.onOpenDiagnostics = { DiagnosticsLogger.openLogDirectory() }
         statusBarController.onRunAccessibilityAudit = { [weak self] in self?.runAccessibilityAudit() }
         statusBarController.onToggleDictation = { [weak self] in self?.toggleMenuDictation() }
@@ -225,7 +227,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
         if stateMachine.state == .permissionsNeeded {
-            showCurrentSetupWindow()
+            showSetupWindow()
         } else {
             showLaunchWindow()
         }
@@ -266,7 +268,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     private func handleModifierEvent(key: HotkeyKey, down: Bool) {
-        permissionsWindowController?.reportKeyEvent(key: key, isDown: down)
+        setupWindowController?.reportKeyEvent(key: key, isDown: down)
 
         switch key {
         case .option, .leftOption:
@@ -294,7 +296,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         case .permissionsNeeded:
             return .busy("Nejdřív dokončete nastavení oprávnění")
         case .error:
-            return .busy("Dictator vyžaduje pozornost")
+            return .busy("\(AppBrand.displayName) vyžaduje pozornost")
         default:
             return .busy("Počkejte — ještě nejsem připravený")
         }
@@ -341,7 +343,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         stateMachine.transition(to: .launching)
         DiagnosticsLogger.log("Startup started")
 
-        let permissions = PermissionsWindowController.currentSnapshot
+        let permissions = PermissionsSnapshotProvider.current
         DiagnosticsLogger.log(
             "Permissions snapshot. microphone=\(permissions.microphone.label), accessibility=\(permissions.accessibility.label), inputMonitoring=\(permissions.inputMonitoring.label)"
         )
@@ -349,17 +351,17 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             stateMachine.transition(to: .permissionsNeeded)
             DiagnosticsLogger.log("Startup paused: permissions needed")
             installHotkeyIfPossible()
-            showPermissionsWindow()
+            showSetupWindow()
             return
         }
 
-        permissionsWindowController?.close()
-        permissionsWindowController = nil
+        setupWindowController?.close()
+        setupWindowController = nil
         showLaunchWindow()
 
         guard installHotkeyIfPossible() else {
             stateMachine.transition(to: .permissionsNeeded)
-            showPermissionsWindow()
+            showSetupWindow()
             return
         }
 
@@ -722,7 +724,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         case .audioTooQuiet:
             return "Mikrofon skoro nic nezachytil. V Nastavení → Zvuk zkontroluj vstupní zařízení a mluv blíž."
         case .hallucinatedTranscript:
-            return "Whisper slyšel jen šum (falešné „titulky“). Mluv hlasitěji — Dictator to záměrně nevloží."
+            return "Whisper slyšel jen šum (falešné „titulky“). Mluv hlasitěji — \(AppBrand.displayName) to záměrně nevloží."
         case .modelNotLoaded:
             return "Model ještě není načtený — počkejte na dokončení stahování."
         }
@@ -790,6 +792,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             onInsert: { [weak self] in
                 guard let text = entry?.text else { return }
                 self?.startBackgroundInject(text: text, trigger: "menu-popover")
+            },
+            onOpenFullHistory: { [weak self] in
+                self?.showLastTranscription()
             }
         )
     }
@@ -802,11 +807,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 guard let self else { return }
                 SoundFeedbackService.playError()
                 self.recordingOverlay.showTransientFeedback(
-                    "Vložení trvá dlouho — text je v okně Dictatoru",
+                    "Vložení trvá dlouho — text je v okně \(AppBrand.displayName)",
                     duration: 5
                 )
                 self.statusBarController.showTransientStatus(
-                    "Vložení trvá dlouho — text je v okně Dictatoru",
+                    "Vložení trvá dlouho — text je v okně \(AppBrand.displayName)",
                     duration: 4
                 )
             }
@@ -837,7 +842,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             recordingOverlay.scheduleAutoHide(after: 5)
             showLastTranscription()
             statusBarController.showTransientStatus(
-                "Text je v okně Dictatoru — zkopíruj nebo zkus „Vložit“",
+                "Text je v okně \(AppBrand.displayName) — zkopíruj nebo zkus „Vložit“",
                 duration: 5
             )
         }
@@ -890,7 +895,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         case .modelDownloading, .modelLoading:
             return "Počkejte — připravuji model"
         default:
-            return "Počkejte — Dictator není připravený"
+            return "Počkejte — \(AppBrand.displayName) není připravený"
         }
     }
 
@@ -902,7 +907,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     private func runAccessibilityAudit() {
-        showCurrentSetupWindow()
         let menu = statusBarController.statusButton?.menu
         let context = AccessibilityAuditEngine.AuditContext(
             openWindowTitles: NSApp.windows.map { $0.title.isEmpty ? "(bez titulku)" : $0.title },
@@ -939,23 +943,31 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         recordingOverlay.updateAudioLevel(0)
     }
 
-    private func showCurrentSetupWindow() {
-        showPermissionsWindow()
-    }
-
-    private func showPermissionsWindow() {
-        permissionsWindowController?.close()
-        let controller = PermissionsWindowController()
-        controller.hotkeyHealthProvider = { [weak self] in
-            self?.hotkeyManager.currentHealth() ?? .tapMissing
-        }
+    private func showSetupWindow() {
+        setupWindowController?.close()
+        let controller = SetupWindowController()
         controller.onPermissionsGranted = { [weak self] in
-            self?.permissionsWindowController = nil
+            self?.setupWindowController = nil
             self?.hotkeyManager.reinstallAfterAccessibilityGrant()
             self?.startStartupTask()
         }
-        permissionsWindowController = controller
+        setupWindowController = controller
         AppWindowPresenter.present(controller.window)
+    }
+
+    private func showPreferencesWindow() {
+        if preferencesWindowController == nil {
+            let controller = PreferencesWindowController()
+            controller.hotkeyHealthProvider = { [weak self] in
+                self?.hotkeyManager.currentHealth() ?? .tapMissing
+            }
+            preferencesWindowController = controller
+        } else {
+            preferencesWindowController?.hotkeyHealthProvider = { [weak self] in
+                self?.hotkeyManager.currentHealth() ?? .tapMissing
+            }
+        }
+        AppWindowPresenter.present(preferencesWindowController?.window)
     }
 
     private func startPostProcessingLoad() async {
@@ -992,7 +1004,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         )
         Task {
             await transcriptionEngine.unload()
-            if PermissionsWindowController.currentSnapshot.allGranted {
+            if PermissionsSnapshotProvider.current.allGranted {
                 startStartupTask()
             }
         }

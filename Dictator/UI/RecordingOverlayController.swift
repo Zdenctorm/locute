@@ -18,6 +18,7 @@ final class RecordingOverlayController {
     private var panel: NSPanel?
     private let statusLabel = NSTextField(labelWithString: "")
     private let previewLabel = NSTextField(labelWithString: "")
+    private let escHintLabel = NSTextField(labelWithString: "")
     private let dotView = NSView()
     private let statusRow = NSStackView()
     private let levelMeterView = AudioLevelMeterView()
@@ -48,6 +49,7 @@ final class RecordingOverlayController {
         pulseTimer = nil
         previewLabel.stringValue = ""
         previewLabel.isHidden = true
+        escHintLabel.isHidden = true
         setMeterVisible(false)
         panel?.orderOut(nil)
     }
@@ -207,7 +209,13 @@ final class RecordingOverlayController {
         previewLabel.isHidden = true
         previewLabel.setAccessibilityElement(false)
 
-        let textColumn = NSStackView(views: [statusLabel, previewLabel])
+        escHintLabel.font = AppTheme.Font.footnote
+        escHintLabel.textColor = AppTheme.Color.body.withAlphaComponent(0.8)
+        escHintLabel.stringValue = "Esc — zrušit nahrávání"
+        escHintLabel.isHidden = true
+        escHintLabel.setAccessibilityElement(false)
+
+        let textColumn = NSStackView(views: [statusLabel, previewLabel, escHintLabel])
         textColumn.orientation = .vertical
         textColumn.alignment = .leading
         textColumn.spacing = 4
@@ -221,7 +229,7 @@ final class RecordingOverlayController {
         AccessibilitySupport.configure(
             statusRow,
             label: "Stav diktování",
-            help: "Ukazuje, jestli Dictator nahrává, přepisuje nebo vkládá text.",
+            help: "Ukazuje, jestli \(AppBrand.displayName) nahrává, přepisuje nebo vkládá text.",
             role: .group
         )
 
@@ -276,6 +284,9 @@ final class RecordingOverlayController {
     }
 
     private func apply(_ mode: RecordingOverlayMode) {
+        let showsRecordingUI = modeShowsMeter(mode)
+        escHintLabel.isHidden = !showsRecordingUI
+
         switch mode {
         case .keyHeld:
             statusLabel.stringValue = "Držíš \(HotkeyPreference.current.hintLabel)"
@@ -315,7 +326,7 @@ final class RecordingOverlayController {
             statusLabel.stringValue = "Vloženo"
             dotView.layer?.backgroundColor = AppTheme.Color.success.cgColor
         case .injectionFailed:
-            statusLabel.stringValue = "Text se nevložil — otevři Dictator"
+            statusLabel.stringValue = "Text se nevložil — otevři \(AppBrand.displayName)"
             dotView.layer?.backgroundColor = NSColor.systemRed.cgColor
         case .busy(let message):
             statusLabel.stringValue = message
@@ -338,7 +349,7 @@ final class RecordingOverlayController {
             AccessibilitySupport.announce(label)
         }
 
-        setMeterVisible(modeShowsMeter(mode))
+        setMeterVisible(showsRecordingUI)
         positionPanel()
     }
 
@@ -363,7 +374,7 @@ final class RecordingOverlayController {
 
         guard let panel else { return }
         var frame = panel.frame
-        frame.size.height = visible ? 86 : 72
+        frame.size.height = visible ? 98 : 72
         panel.setFrame(frame, display: false)
     }
 
@@ -371,6 +382,11 @@ final class RecordingOverlayController {
         pulseTimer?.invalidate()
         pulseTimer = nil
         guard mode == .keyHeld || mode == .recording || isStreamingPreviewMode(mode) else { return }
+
+        if AccessibilitySupport.shouldReduceMotion {
+            dotView.layer?.backgroundColor = AppTheme.Color.recording.cgColor
+            return
+        }
 
         let recording = AppTheme.Color.recording
         var bright = true

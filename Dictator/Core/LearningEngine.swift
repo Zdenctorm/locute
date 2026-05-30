@@ -235,7 +235,7 @@ final class LearningEngine {
             create: true
         )) ?? FileManager.default.temporaryDirectory
         return base
-            .appendingPathComponent("Dictator", isDirectory: true)
+            .appendingPathComponent(AppBrand.storageDirectoryName, isDirectory: true)
             .appendingPathComponent("learning.json")
     }
 

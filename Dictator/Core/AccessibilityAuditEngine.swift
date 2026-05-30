@@ -4,7 +4,7 @@ import Foundation
 
 // MARK: - Public API
 
-/// Automatická kontrola VoiceOver / NSAccessibility v Dictatoru a stručné srovnání s referenčními macOS appkami.
+/// Automatická kontrola VoiceOver / NSAccessibility v \(AppBrand.displayName) a stručné srovnání s referenčními macOS appkami.
 enum AccessibilityAuditEngine {
     static let reportDirectory: URL = DiagnosticsLogger.logDirectory
 
@@ -91,7 +91,7 @@ enum AccessibilityAuditEngine {
             .first
     }
 
-    // MARK: - Dictator UI
+    // MARK: - \(AppBrand.displayName) UI
 
     @MainActor
     private static func auditDictatorUI(extraMenu: NSMenu?) -> [AccessibilityAuditFinding] {
@@ -107,8 +107,8 @@ enum AccessibilityAuditEngine {
                     severity: .info,
                     surface: "Obecně",
                     path: "NSApp.windows",
-                    issue: "V době auditu nebylo otevřené žádné okno Dictatoru.",
-                    suggestion: "Před auditem otevři Nastavení… a případně Co se Dictator naučil…, pak audit zopakuj."
+                    issue: "V době auditu nebylo otevřené žádné okno \(AppBrand.displayName).",
+                    suggestion: "Před auditem otevři Nastavení… a případně Co se \(AppBrand.displayName) naučil…, pak audit zopakuj."
                 )
             )
         }
@@ -541,7 +541,7 @@ enum AccessibilityAuditReportBuilder {
         referenceSnapshots: [AccessibilityReferenceSnapshot]
     ) -> String {
         var lines: [String] = []
-        lines.append("# Dictator — analýza zpřístupnění (VoiceOver)")
+        lines.append("# \(AppBrand.displayName) — analýza zpřístupnění (VoiceOver)")
         lines.append("")
         lines.append("Vygenerováno: \(isoTimestamp())")
         lines.append("Verze: \(context.appVersion)")
@@ -571,7 +571,7 @@ enum AccessibilityAuditReportBuilder {
         lines.append("")
         lines.append(
             """
-            Dictator začínal jako menu bar utilita s minimálním UI. Každý nový povrch (Nastavení, panel přepisu, overlay, \
+            \(AppBrand.displayName) začínal jako menu bar utilita s minimálním UI. Každý nový povrch (Nastavení, panel přepisu, overlay, \
             globální hotkey) přidává vrstvu, kterou VoiceOver musí popsat **slovně**. Referenční aplikace níže ukazují, \
             jaký podíl prvků má v reálném UI popisek — to není cíl „100 %“, ale signál, kde máme mezery.
             """
@@ -585,7 +585,7 @@ enum AccessibilityAuditReportBuilder {
         lines.append(referenceDetailSection(snapshots: referenceSnapshots))
         lines.append("")
 
-        lines.append("## Inventář povrchů Dictatoru")
+        lines.append("## Inventář povrchů \(AppBrand.displayName)")
         lines.append("")
         for entry in inventory.surfaces {
             lines.append("### \(entry.name)")
@@ -623,14 +623,14 @@ enum AccessibilityAuditReportBuilder {
         lines.append("")
 
         lines.append("---")
-        lines.append("_Soubor uložen v `~/Library/Logs/Dictator/`. Znovu spusť audit z menu po úpravách UI._")
+        lines.append("_Soubor uložen v `~/Library/Logs/\(AppBrand.storageDirectoryName)/`. Znovu spusť audit z menu po úpravách UI._")
         return lines.joined(separator: "\n")
     }
 
     // Exposed for tests
     static func summaryParagraph(critical: Int, warnings: Int, context: AccessibilityAuditEngine.AuditContext) -> String {
         if !context.axTrusted {
-            return "**Pozor:** Dictator nemá povolené Zpřístupnění v System Settings — srovnání s jinými appkami přeskočeno. Referenční metriky vyplň po povolení oprávnění."
+            return "**Pozor:** \(AppBrand.displayName) nemá povolené Zpřístupnění v System Settings — srovnání s jinými appkami přeskočeno. Referenční metriky vyplň po povolení oprávnění."
         }
         if critical > 0 {
             return "**Stav:** Jsou kritické mezery — VoiceOver uživatel může narazit na prvky bez jména nebo mimo strom. Oprav kritické položky dřív než vylepšuješ help texty."
@@ -654,7 +654,7 @@ enum AccessibilityAuditReportBuilder {
         lines.append("|----------|-------------|-----------|------------------|-------------------|")
         lines.append(
             String(
-                format: "| Dictator (viditelné UI) | audit | %d | %.0f %% (orientační) | — |",
+                format: "| \(AppBrand.displayName) (viditelné UI) | audit | %d | %.0f %% (orientační) | — |",
                 dictatorElements,
                 dictatorLabelRatio * 100
             )
@@ -718,14 +718,14 @@ enum AccessibilityAuditReportBuilder {
         var steps: [String] = []
         var n = 1
         if !context.axTrusted {
-            steps.append("\(n). Povolit Dictator v Nastavení → Soukromí → Zpřístupnění (jinak nelze vzorkovat referenční appky).")
+            steps.append("\(n). Povolit \(AppBrand.displayName) v Nastavení → Soukromí → Zpřístupnění (jinak nelze vzorkovat referenční appky).")
             n += 1
         }
         if !critical.isEmpty {
             steps.append("\(n). Opravit všechny **kritické** nálezy (prvky bez label / mimo strom / ikonová tlačítka).")
             n += 1
         }
-        steps.append("\(n). Otevřít všechna okna Dictatoru (Nastavení, Naučené termíny, panel přepisu) a audit zopakovat.")
+        steps.append("\(n). Otevřít všechna okna \(AppBrand.displayName) (Nastavení, Naučené termíny, panel přepisu) a audit zopakovat.")
         n += 1
         if !warnings.isEmpty {
             steps.append("\(n). Doplň `accessibilityHelp` u varování — zejména menu a přepínače v Nastavení.")

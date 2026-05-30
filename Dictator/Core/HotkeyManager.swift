@@ -377,7 +377,7 @@ final class HotkeyManager {
     }
 
     @objc private func handleAppDidBecomeActive() {
-        // Když přepneme Dictator do popředí, je velká šance že jsme se vrátili z System Settings
+        // Když přepneme \(AppBrand.displayName) do popředí, je velká šance že jsme se vrátili z System Settings
         // po grantu Accessibility, nebo že macOS přerušilo crossapp delivery. Recyklujeme tap.
         ensureTapAliveAfterFocusChange(reason: "app became active")
     }
@@ -388,7 +388,7 @@ final class HotkeyManager {
         // jiné výsledky než kernelové ACL.
         ensureTapAliveAfterFocusChange(reason: "workspace app switch")
 
-        // Obnovit tap i po přepnutí do Dictatoru — Option musí fungovat kdykoliv.
+        // Obnovit tap i po přepnutí do \(AppBrand.displayName) — Option musí fungovat kdykoliv.
         prepareForCrossAppUse()
     }
 

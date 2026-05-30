@@ -1,18 +1,22 @@
-# Dictator — PRODUCT.md
+# Locute — PRODUCT.md
 
-> Impeccable design context. Vytvořeno `/impeccable teach` (init) z existujícího kódu, OVERVIEW.md a konkurenční analýzy. Upravte sekce, které neodpovídají vaší vizi.
+> Impeccable design context. Veřejný brand: [BRAND.md](./BRAND.md). Technický Xcode target zatím `Dictator`.
 
 ---
 
 ## Register
 
-**product** — nativní macOS utilita (menu bar + pomocná okna). Design **slouží produktu**: rychlé diktování, důvěra, minimum rušení. Ne marketingový web; žádný „AI SaaS landing“ vzhled.
+product
+
+Nativní macOS utilita (menu bar + pomocná okna). Design **slouží produktu**: rychlé diktování, důvěra, minimum rušení. Ne marketingový web; žádný „AI SaaS landing“ vzhled.
+
+Impeccable: viz [IMPECCABLE.md](./IMPECCABLE.md).
 
 ---
 
 ## What
 
-Dictator je **soukromé české push-to-talk diktování** pro macOS. Uživatel podrží diktovací klávesu, mluví, pustí — text se vloží tam, kde má kurzor, v libovolné aplikaci. Přepis běží **lokálně** (WhisperKit na Apple Silicon). Po jednorázovém stažení modelu **žádná data neopouštějí Mac**.
+**Locute** je **soukromé české push-to-talk diktování** pro macOS. Uživatel podrží diktovací klávesu, mluví, pustí — text se vloží tam, kde má kurzor, v libovolné aplikaci. Přepis běží **lokálně** (WhisperKit na Apple Silicon). Po jednorázovém stažení modelu **žádná data neopouštějí Mac**.
 
 Hlavní loop: **klávesa → mikrofon → přepis → vložení**. Vedlejší: historie přepisů, oprava slov, vlastní slovník, volitelná lokální úprava textu.
 
@@ -65,7 +69,7 @@ Hlavní loop: **klávesa → mikrofon → přepis → vložení**. Vedlejší: h
 
 - **Wispr Flow marketing** — fialové gradienty, „4× faster“, generic AI startup hero.
 - **Superwhisper dark premium SaaS** — těžký „transform your voice“ glow, power-user API grid v první vrstvě.
-- **WhisperClip-style dark sidebar app** jako *primární* shell — Dictator není „další Electron dashboard“.
+- **WhisperClip-style dark sidebar app** jako *primární* shell — Locute není „další Electron dashboard“.
 - **Apple Dictation** frustrace — dlouhé pauzy bez opravy, nutnost diktovat interpunkci.
 - **Diagnostic-first menu bar** — logy, test přepisu, bundle path v hlavním onboardingu (jen pro support režim).
 
@@ -73,7 +77,7 @@ Hlavní loop: **klávesa → mikrofon → přepis → vložení**. Vedlejší: h
 
 ## Design principles
 
-1. **Menu bar is home** — hlavní práce probíhá v cílové aplikaci; Dictator je doprovod.
+1. **Menu bar is home** — hlavní práce probíhá v cílové aplikaci; Locute je doprovod.
 2. **One accent, warm neutrals** — claret + cream/warm gray; systémové success/warning jen pro stav.
 3. **Progressive disclosure** — Setup (permissions + první diktát) ≠ Preferences (model, mikrofon, chování) ≠ Advanced (diagnostika, LLM).
 4. **Status before settings** — uživatel vždy ví: připraveno / nahrávám / přepisuji / chyba; HUD + menu bar souhlasí.
@@ -92,8 +96,17 @@ Hlavní loop: **klávesa → mikrofon → přepis → vložení**. Vedlejší: h
 
 ---
 
+## Accessibility & inclusion
+
+- Cíl: **WCAG 2.1 AA** tam, kde AppKit a VoiceOver umožňují měřitelné chování (labely, oznámení stavů, kontrast textu na `AppTheme` površích).
+- **VoiceOver:** dynamické labely menu baru a HUD (`AccessibilitySupport`); audit z menu „Analýza zpřístupnění“.
+- **Reduced motion:** respektovat systémové nastavení macOS u pulzujícího HUD (roadmap).
+- **Barvoslepost:** stavy nesmí spoléhat jen na červenou/zelenou — ikona + text stavu.
+
+---
+
 ## Open decisions (k doplnění týmem)
 
 - [ ] Výchozí: zobrazovat hlavní okno po startu, nebo jen menu bar?
 - [ ] Výchozí: review-before-paste on nebo off pro firemní rollout?
-- [ ] Veřejný název produktu: Dictator vs jiný (právní / brand)?
+- [x] Veřejný název produktu: **Locute** — viz [BRAND.md](./BRAND.md)

@@ -29,7 +29,7 @@ final class LaunchWindowController: NSWindowController {
             backing: .buffered,
             defer: false
         )
-        AppTheme.configureMainWindow(window, title: "Dictator")
+        AppTheme.configureMainWindow(window, title: AppBrand.displayName)
 
         super.init(window: window)
         buildUI()
@@ -62,7 +62,7 @@ final class LaunchWindowController: NSWindowController {
             logo.heightAnchor.constraint(equalToConstant: 64)
         ])
 
-        let title = AppTheme.label("Dictator běží", font: AppTheme.Font.largeTitle, color: AppTheme.Color.title)
+        let title = AppTheme.label("\(AppBrand.displayName) běží", font: AppTheme.Font.largeTitle, color: AppTheme.Color.title)
 
         let detail = AppTheme.label(
             "Soukromé diktování v češtině. Podržte \(HotkeyPreference.current.hintLabel), mluvte a pusťte — text se vloží do aplikace, kde máte kurzor. Historie přepisů je níže (záloha a opravy slov).",
@@ -168,7 +168,7 @@ final class LaunchWindowController: NSWindowController {
     private func update(for state: DictatorState) {
         switch state {
         case .idle:
-            statusLabel.stringValue = "Připraveno. Okno můžete skrýt, Dictator zůstane dostupný v horní liště."
+            statusLabel.stringValue = "Připraveno. Okno můžete skrýt, \(AppBrand.displayName) zůstane dostupný v horní liště."
             statusLabel.textColor = AppTheme.Color.title
             retryButton.isHidden = true
         case .modelDownloading(let progress):

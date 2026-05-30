@@ -36,7 +36,7 @@ final class AccessibilityAuditReportTests: XCTestCase {
             referenceSnapshots: [snapshot]
         )
 
-        XCTAssertTrue(markdown.contains("# Dictator — analýza zpřístupnění"))
+        XCTAssertTrue(markdown.contains("# Locute — analýza zpřístupnění"))
         XCTAssertTrue(markdown.contains("Kritické nálezy | 1"))
         XCTAssertTrue(markdown.contains("Menu bar"))
         XCTAssertTrue(markdown.contains("Inventář povrchů"))

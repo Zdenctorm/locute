@@ -1,6 +1,6 @@
-# Dictator — DESIGN.md
+# Locute — DESIGN.md
 
-> Google Stitch format (Impeccable). Generováno ze `Dictator/UI/AppTheme.swift` a implementovaných komponent. Aktualizujte po změně vizuálního systému; příkazy `/impeccable *` čtou tento soubor.
+> Google Stitch format (Impeccable). Generováno ze `Dictator/UI/AppTheme.swift` a implementovaných komponent. Aktualizujte po změně vizuálního systému; příkazy `/impeccable *` čtou tento soubor. Hub: [IMPECCABLE.md](./IMPECCABLE.md).
 
 ---
 
@@ -8,7 +8,7 @@
 
 **Creative North Star: „The Quiet Study.“**
 
-Dictator vypadá jako **papír a inkoust na stole** — teplé neutrály, jedna hluboká bordó barva, žádný vizuální hluk. Utilita v menu baru, která se objeví jen když mluvíte: HUD nahoře, případně okno historie. Pocit: **důvěryhodný nástroj pro práci**, ne AI experiment.
+Locute vypadá jako **papír a inkoust na stole** — teplé neutrály, jedna hluboká bordó barva, žádný vizuální hluk. Utilita v menu baru, která se objeví jen když mluvíte: HUD nahoře, případně okno historie. Pocit: **důvěryhodný nástroj pro práci**, ne AI experiment.
 
 **Layout philosophy**
 
@@ -99,7 +99,7 @@ Pojmenování pro copy a AI — mapování v `AppTheme.Color`.
 ### Logo (`AppLogoView`)
 
 - 64×64 (settings/launch), rounded rect **22%** radius, fill **Deep Claret**, glyph **Cream Paper** „.
-- Accessibility: „Logo Dictator“, role image.
+- Accessibility: „Logo Locute“, role image.
 
 ### Cards (`AppTheme.card` / `PanelCardView`)
 

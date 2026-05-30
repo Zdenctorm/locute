@@ -5,7 +5,7 @@ import Foundation
 enum DiagnosticsLogger {
     static let logDirectory: URL = {
         let base = FileManager.default.urls(for: .libraryDirectory, in: .userDomainMask).first!
-        return base.appendingPathComponent("Logs/Dictator", isDirectory: true)
+        return base.appendingPathComponent("Logs/\(AppBrand.storageDirectoryName)", isDirectory: true)
     }()
 
     static let logFileURL = logDirectory.appendingPathComponent("diagnostics.log")
