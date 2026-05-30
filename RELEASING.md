@@ -1,4 +1,4 @@
-# Releasing Dictator
+# Releasing Locute
 
 Jak vydat novou verzi tak, aby se nainstalovaným klientům propsala automaticky přes Sparkle.
 
@@ -6,7 +6,7 @@ Jak vydat novou verzi tak, aby se nainstalovaným klientům propsala automaticky
 
 - Sparkle 2.9 jako SPM dependency
 - EdDSA klíče vygenerované přes `generate_keys` — privátní v Keychain, veřejný v `Info.plist` (`SUPublicEDKey`)
-- `SUFeedURL` v `Info.plist` ukazuje na `https://raw.githubusercontent.com/Zdenctorm/dictator/main/appcast.xml`
+- `SUFeedURL` v `Info.plist` ukazuje na `https://raw.githubusercontent.com/Zdenctorm/locute/main/appcast.xml`
 - Repo public (jinak by Sparkle u klientů dostal 401/404)
 - Sparkle tools v `build/sparkle-tools/bin/` (`sign_update`, `generate_appcast`)
 - `gh` CLI přihlášený
@@ -46,12 +46,12 @@ Sparkle určuje „je tohle novější verze?" podle `sparkle:version`. Epoch za
 
 **Klienti nevidí update**
 - Otevři appcast URL v prohlížeči — měl by tam být nový `<item>` nahoře
-- Cache: Sparkle si pamatuje 24h. V appce: `defaults delete ai.anycoin.dictator SULastCheckTime`
+- Cache: Sparkle si pamatuje 24h. V appce: `defaults delete ai.anycoin.locute SULastCheckTime`
 - Manuální check: menu → „Zkontrolovat aktualizace…"
 
 **Build failne**
 - Smaž `build/` a zkus znovu (`rm -rf build/DerivedData build/SourcePackages`)
-- Chyba `no XCFramework found at .../claude/dictator/build/SourcePackages/...` = projekt byl přesunut, ale SPM cache má starou absolutní cestu. `rm -rf build/SourcePackages` stačí (`build_release.sh` to od teď detekuje sám)
+- Chyba `no XCFramework found at .../claude/locute/build/SourcePackages/...` = projekt byl přesunut, ale SPM cache má starou absolutní cestu. `rm -rf build/SourcePackages` stačí (`build_release.sh` to od teď detekuje sám)
 - `build_release.sh` nově failne při nevalidním strict codesign verify. Pro lokální-only test lze použít `ALLOW_UNVERIFIED_LOCAL_BUILD=1 ./scripts/build_release.sh`
 - `xcodebuild -resolvePackageDependencies` ručně
 
@@ -68,11 +68,11 @@ Sparkle určuje „je tohle novější verze?" podle `sparkle:version`. Epoch za
 - Typicky rozbitý code signing: hlavní binárka a `Sparkle.framework` mají různé Team ID (dyld: `different Team IDs`)
 - Nepoužívej `codesign --deep` ani ruční přepodpis jen části bundle — `scripts/sign_and_notarize.sh` podepisuje inside-out jedním Developer ID
 - Lokální `build_release.sh` nechává podpis z xcodebuild (linker-signed main + adhoc Sparkle) — to je v pořádku
-- Pokud máš v `/tmp/Dictator-resign.app` nebo po experimentu s `codesign`, smaž kopii a spusť čerstvý build z `dist/Dictator.app` nebo Xcode Debug
+- Pokud máš v `/tmp/Locute-resign.app` nebo po experimentu s `codesign`, smaž kopii a spusť čerstvý build z `dist/Locute.app` nebo Xcode Debug
 
 ## Distribuce kolegům
 
-První DMG pošli ručně (Slack/Drive). Stáhne se z `https://github.com/Zdenctorm/dictator/releases/latest`.
+První DMG pošli ručně (Slack/Drive). Stáhne se z `https://github.com/Zdenctorm/locute/releases/latest`.
 
 Od té chvíle dostávají všichni další updaty automaticky.
 

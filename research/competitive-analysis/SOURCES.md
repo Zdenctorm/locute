@@ -71,7 +71,7 @@ Další videa k ručnímu doplnění: MacWhisper review, Superwhisper demo, Aqua
 |--------|-------|------------|
 | `wispr-flow/` | 44 | CDN marketing, app ikony, integrace, OG |
 | `aqua-voice/` | 25 | Framer marketing, logo, UI mockup |
-| `whispur/` | 9 | **Nejlepší in-app reference** pro Dictator |
+| `whispur/` | 9 | **Nejlepší in-app reference** pro Locute |
 | `glimpse/` | 5 | Tauri app — home, dictionary, library |
 | `superduper-whisper/` | 5 | Settings + mini recording bar |
 | `whisperclip/` | 3 | Ikony |
@@ -91,7 +91,7 @@ Popis po složkách: `sources/INVENTORY_BY_COMPETITOR.md`
 2. **Superwhisper in-app** — modes UI, recording overlay (trial nebo docs save-as)
 3. **MacWhisper** — dictation settings, global mode (Gumroad / app)
 4. **Apple Dictation** — System Settings screenshot (vlastní)
-5. **Dictator** — vlastní screenshoty pro side-by-side složku `screenshots/dictator/`
+5. **Locute** — vlastní screenshoty pro side-by-side složku `screenshots/locute/`
 
 ---
 

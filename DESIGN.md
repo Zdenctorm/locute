@@ -1,6 +1,6 @@
 # Locute — DESIGN.md
 
-> Google Stitch format (Impeccable). Generováno ze `Dictator/UI/AppTheme.swift` a implementovaných komponent. Aktualizujte po změně vizuálního systému; příkazy `/impeccable *` čtou tento soubor. Hub: [IMPECCABLE.md](./IMPECCABLE.md).
+> Google Stitch format (Impeccable). Generováno ze `Locute/UI/AppTheme.swift` a implementovaných komponent. Aktualizujte po změně vizuálního systému; příkazy `/impeccable *` čtou tento soubor. Hub: [IMPECCABLE.md](./IMPECCABLE.md).
 
 ---
 
@@ -173,9 +173,9 @@ Pojmenování pro copy a AI — mapování v `AppTheme.Color`.
 
 ## Source of truth in code
 
-- `Dictator/UI/AppTheme.swift` — tokens, spacing, fonts, card chrome
-- `Dictator/UI/AppLogoView.swift` — brand mark
-- `Dictator/UI/RecordingOverlayController.swift` — HUD behavior
+- `Locute/UI/AppTheme.swift` — tokens, spacing, fonts, card chrome
+- `Locute/UI/AppLogoView.swift` — brand mark
+- `Locute/UI/RecordingOverlayController.swift` — HUD behavior
 - `research/competitive-analysis/COMPETITIVE_ANALYSIS.md` — UX benchmarks
 
 **Refresh:** po větší UI změně spusť `/impeccable document` (scan) nebo ručně sladit tento soubor s `AppTheme`.

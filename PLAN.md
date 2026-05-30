@@ -1,4 +1,4 @@
-# Dictator — implementační plán pro Cursor
+# Locute — implementační plán pro Cursor
 
 ## Context
 
@@ -8,8 +8,8 @@ Nativní macOS menu bar appka pro push-to-talk hlasové diktování v češtině
 
 ## Projekt
 
-**Xcode projekt:** `Dictator`
-**Bundle ID:** `com.example.dictator`
+**Xcode projekt:** `Locute`
+**Bundle ID:** `com.example.locute`
 **Jazyk:** Swift
 **Min. macOS:** 14.0 (Sonoma) — požadavek WhisperKit 1.0.0
 **Distribuce:** Mimo App Store (sandbox musí být vypnutý)
@@ -20,9 +20,9 @@ Nativní macOS menu bar appka pro push-to-talk hlasové diktování v češtině
 ## Struktura souborů
 
 ```
-Dictator/
-├── Dictator.xcodeproj/
-├── Dictator/
+Locute/
+├── Locute.xcodeproj/
+├── Locute/
 │   ├── App/
 │   │   └── AppDelegate.swift
 │   ├── Core/
@@ -39,7 +39,7 @@ Dictator/
 │   │   │   ├── icon_idle.imageset/
 │   │   │   └── icon_recording.imageset/
 │   │   ├── Info.plist
-│   │   └── Dictator.entitlements
+│   │   └── Locute.entitlements
 ```
 
 **Žádný SwiftUI App protokol.** `AppDelegate` je `@main`, žádné scény, žádné hlavní okno.
@@ -51,11 +51,11 @@ Dictator/
 ```xml
 <key>LSUIElement</key><true/>
 <key>NSMicrophoneUsageDescription</key>
-<string>Dictator needs microphone access to record your voice for transcription.</string>
+<string>Locute needs microphone access to record your voice for transcription.</string>
 <key>NSPrincipalClass</key><string>NSApplication</string>
 ```
 
-## Dictator.entitlements
+## Locute.entitlements
 
 ```xml
 <key>com.apple.security.device.audio-input</key><true/>
@@ -71,14 +71,14 @@ Dictator/
 - App Sandbox: **OFF**
 - Hardened Runtime: ON, Audio Input: checked
 - `MACOSX_DEPLOYMENT_TARGET = 14.0`
-- `CODE_SIGN_ENTITLEMENTS = Dictator/Dictator.entitlements`
+- `CODE_SIGN_ENTITLEMENTS = Locute/Locute.entitlements`
 
 ---
 
 ## State machine — `AppState.swift`
 
 ```swift
-enum DictatorState: Equatable {
+enum LocuteState: Equatable {
     case launching
     case permissionsNeeded
     case modelDownloading(progress: Double)
@@ -92,9 +92,9 @@ enum DictatorState: Equatable {
 
 @MainActor
 final class AppStateMachine: ObservableObject {
-    @Published private(set) var state: DictatorState = .launching
+    @Published private(set) var state: LocuteState = .launching
 
-    func transition(to newState: DictatorState) {
+    func transition(to newState: LocuteState) {
         print("[State] \(state) → \(newState)")
         state = newState
     }
@@ -377,7 +377,7 @@ actor AudioRecorder {
         guard Double(totalFrames) / targetSampleRate >= 0.3 else { return nil }
 
         let url = FileManager.default.temporaryDirectory
-            .appendingPathComponent("dictator_\(UUID().uuidString).wav")
+            .appendingPathComponent("locute_\(UUID().uuidString).wav")
         let format = AVAudioFormat(commonFormat: .pcmFormatFloat32,
                                     sampleRate: targetSampleRate, channels: 1, interleaved: false)!
         do {
@@ -432,7 +432,7 @@ actor TranscriptionEngine {
     private func warmUp() async {
         guard let kit = whisperKit else { return }
         // 1s tichého audia — prohřeje Neural Engine
-        let url = FileManager.default.temporaryDirectory.appendingPathComponent("dictator_warmup.wav")
+        let url = FileManager.default.temporaryDirectory.appendingPathComponent("locute_warmup.wav")
         let fmt = AVAudioFormat(commonFormat: .pcmFormatFloat32, sampleRate: 16_000, channels: 1, interleaved: false)!
         let silence = AVAudioPCMBuffer(pcmFormat: fmt, frameCapacity: 16_000)!
         silence.frameLength = 16_000
@@ -536,7 +536,7 @@ final class StatusBarController {
             .store(in: &cancellables)
     }
 
-    private func update(for state: DictatorState) {
+    private func update(for state: LocuteState) {
         pulseTimer?.invalidate()
         pulseTimer = nil
         guard let btn = statusItem.button else { return }
@@ -584,7 +584,7 @@ final class StatusBarController {
 
     private func setupMenu() {
         let menu = NSMenu()
-        let title = NSMenuItem(title: "Dictator", action: nil, keyEquivalent: "")
+        let title = NSMenuItem(title: "Locute", action: nil, keyEquivalent: "")
         title.isEnabled = false
         menu.addItem(title)
         menu.addItem(.separator())
@@ -592,7 +592,7 @@ final class StatusBarController {
         hint.isEnabled = false
         menu.addItem(hint)
         menu.addItem(.separator())
-        menu.addItem(NSMenuItem(title: "Quit Dictator", action: #selector(quit), keyEquivalent: "q"))
+        menu.addItem(NSMenuItem(title: "Quit Locute", action: #selector(quit), keyEquivalent: "q"))
         statusItem.menu = menu
     }
 
@@ -616,7 +616,7 @@ final class PermissionsWindowController: NSWindowController {
     init(micGranted: Bool, accessGranted: Bool) {
         let win = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 420, height: 300),
                            styleMask: [.titled, .closable], backing: .buffered, defer: false)
-        win.title = "Dictator — Setup Required"
+        win.title = "Locute — Setup Required"
         win.center()
         win.isReleasedWhenClosed = false
         super.init(window: win)

@@ -200,7 +200,7 @@
 
 | Název | Proč ne | Σ |
 |-------|---------|---|
-| **Dictator** | toxický EN/CS, nesouvisí s SP/LO | 13 |
+| **Locute** | toxický EN/CS, nesouvisí s SP/LO | 13 |
 | **WhisperKit** | technologie, ne produkt | 12 |
 | **VocaMac** | už existuje konkurent | — |
 | **FlowType** | Wispr kolize | 14 |
@@ -298,7 +298,7 @@ Pro top 3 kandidáty:
 | Okamžitě srozumitelný offline | **Lokal** |
 | Český tým / interní rollout | **Rychlopis** (CS) + EN **Locute** |
 | Maximum unikátnosti coined | **Vellis** nebo **Pressay** |
-| Nepoužívat | Dictator, Voca*, Flow, Whisper*, Willow |
+| Nepoužívat | Locute, Voca*, Flow, Whisper*, Willow |
 
 **Osobní pořadí po druhé analýze:**  
 1. **Locute** — nejvyváženější na bilingual + positioning  
@@ -425,7 +425,7 @@ quadrantChart
     Marginal: [0.86, 0.88]
     Pressay: [0.82, 0.55]
     Rychlopis: [0.90, 0.40]
-    Dictator: [0.70, 0.35]
+    Locute: [0.70, 0.35]
 ```
 
 **Čtení:** Cíl produktu = **kvadrant 1** (local + quiet). Vyhnout kvadrantu 3 (Wispr-style glow marketing). **Pressay / Rychlopis** jsou spíš střed — jasné, ale hlučnější.
@@ -545,7 +545,7 @@ quadrantChart
 | 4 | **Pressay** | Když chcete okamžitě vysvětlitelný PTT produkt |
 | 5 | **Rychlopis** + EN **Locute** | CZ firma, globální About |
 
-**Vyřadit z finálu:** Locutor (pokud zůstane Locute), Dictator, Voca*, Type*, Whisper*, Willow, Pindrop.
+**Vyřadit z finálu:** Locutor (pokud zůstane Locute), Locute, Voca*, Type*, Whisper*, Willow, Pindrop.
 
 ---
 
@@ -553,6 +553,6 @@ quadrantChart
 
 - [ ] Týmové hlasování **shortlist A** (5 jmen) + volitelně jedno z B/C  
 - [ ] Trademark + App Store pro: Locute, Locaris, Quietype, Marginal, Pressay  
-- [ ] `screenshots/dictator/` mockupy menu bar + HUD pro top 3  
+- [ ] `screenshots/locute/` mockupy menu bar + HUD pro top 3  
 - [ ] Aktualizace `PRODUCT.md` → `BRAND.md` po výběru  
 - [ ] Zapsat finální název do `COMPETITIVE_ANALYSIS.md` § positioning

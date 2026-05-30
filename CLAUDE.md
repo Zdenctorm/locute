@@ -2,7 +2,7 @@
 
 ## Co je tento projekt
 
-Nativní macOS appka pro hlasové diktování. **Veřejný brand: Locute** (viz `BRAND.md`). Repo / Xcode target: `Dictator`.
+Nativní macOS appka pro hlasové diktování. **Veřejný brand: Locute** (viz `BRAND.md`). Repo / Xcode target: `Locute`.
 
 **Design / UX:** `PRODUCT.md`, `DESIGN.md`, příkazy `/impeccable` — viz `IMPECCABLE.md`.
 

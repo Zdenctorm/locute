@@ -3,9 +3,9 @@ set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 DIST_DIR="${ROOT_DIR}/dist"
-APP_PATH="${APP_PATH:-${DIST_DIR}/Dictator.app}"
-DMG_PATH="${DMG_PATH:-${DIST_DIR}/Dictator.dmg}"
-ENTITLEMENTS="${ROOT_DIR}/Dictator/Resources/Dictator.entitlements"
+APP_PATH="${APP_PATH:-${DIST_DIR}/Locute.app}"
+DMG_PATH="${DMG_PATH:-${DIST_DIR}/Locute.dmg}"
+ENTITLEMENTS="${ROOT_DIR}/Locute/Resources/Locute.entitlements"
 
 IDENTITY="${DEVELOPER_ID_APPLICATION:-}"
 KEYCHAIN_PROFILE="${NOTARY_KEYCHAIN_PROFILE:-}"

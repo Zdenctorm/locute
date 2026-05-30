@@ -1,19 +1,19 @@
 # Analýza zpřístupnění (VoiceOver)
 
-Dictator umí vygenerovat **podrobnou analýzu zpřístupnění** přímo z menu — bez externích nástrojů a bez odesílání dat ze zařízení.
+Locute umí vygenerovat **podrobnou analýzu zpřístupnění** přímo z menu — bez externích nástrojů a bez odesílání dat ze zařízení.
 
 ## Spuštění
 
-1. Spusť Dictator z Xcode nebo z `/Applications/Dictator.app`.
-2. V menu baru klikni na ikonu Dictatoru.
+1. Spusť Locute z Xcode nebo z `/Applications/Locute.app`.
+2. V menu baru klikni na ikonu Locute.
 3. Zvol **Analýza zpřístupnění (VoiceOver)…**
 
 Aplikace:
 
 - otevře okno **Nastavení** (aby audit viděl hlavní UI),
 - projde viditelné okna a položky menu,
-- stručně vzorkuje referenční macOS aplikace (pokud máš povolené **Zpřístupnění** pro Dictator),
-- uloží Markdown zprávu do `~/Library/Logs/Dictator/accessibility-audit-*.md`,
+- stručně vzorkuje referenční macOS aplikace (pokud máš povolené **Zpřístupnění** pro Locute),
+- uloží Markdown zprávu do `~/Library/Logs/Locute/accessibility-audit-*.md`,
 - otevře složku v Finderu.
 
 ## Referenční aplikace
@@ -34,7 +34,7 @@ Audit porovnává metriky (podíl prvků s popiskem a nápovědou) s těmito app
 Zpráva obsahuje:
 
 1. **Shrnutí** — počty kritických/varovných nálezů.
-2. **Srovnání** — tabulka Dictator vs. referenční appky.
+2. **Srovnání** — tabulka Locute vs. referenční appky.
 3. **Inventář povrchů** — co všechno appka má (menu bar, overlay, hotkey, panel přepisu) a **ruční kontrolní body** pro VoiceOver.
 4. **Automatické nálezy** — konkrétní cesta v UI + návrh opravy.
 5. **Doporučený postup úprav** — prioritizovaný roadmap.
@@ -52,9 +52,9 @@ Po změnách v `AccessibilitySupport.swift` nebo konkrétních view:
 
 ## Oprávnění Zpřístupnění
 
-Bez povolení Dictatoru v **Nastavení → Soukromí a zabezpečení → Zpřístupnění**:
+Bez povolení Locute v **Nastavení → Soukromí a zabezpečení → Zpřístupnění**:
 
-- audit Dictator UI stále proběhne,
+- audit Locute UI stále proběhne,
 - srovnání s jinými aplikacemi bude přeskočeno (status `skippedNoAXTrust`).
 
 Pro plnou analýzu povol Zpřístupnění stejně jako pro diktování a vkládání textu.

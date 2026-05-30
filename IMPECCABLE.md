@@ -26,7 +26,7 @@ Kompletní kontext pro příkazy `/impeccable *` v tomto repozitáři. Agent př
 ## Instalace skillu (jednou na stroji)
 
 ```bash
-cd /path/to/dictator
+cd /path/to/locute
 npx impeccable skills install --yes
 ```
 
@@ -50,12 +50,12 @@ Bootstrap lokální složky (volitelné, obnoví `.impeccable`):
 
 | Surface | Soubor(y) | Příkaz |
 |---------|-----------|--------|
-| Menu bar | `Dictator/UI/StatusBarController.swift` | `/impeccable critique Dictator/UI/StatusBarController.swift` |
-| Onboarding / oprávnění | `Dictator/UI/SetupWindowController.swift` | `/impeccable onboard Dictator/UI/SetupWindowController.swift` |
-| Nastavení (prefs) | `Dictator/UI/PreferencesWindowController.swift` | `/impeccable clarify Dictator/UI/PreferencesWindowController.swift` |
-| Recording HUD | `Dictator/UI/RecordingOverlayController.swift` | `/impeccable polish Dictator/UI/RecordingOverlayController.swift` |
-| Design tokens | `Dictator/UI/AppTheme.swift` | `/impeccable document` (refresh DESIGN.md) |
-| Celé UI | `Dictator/UI/` | `/impeccable critique Dictator/UI` |
+| Menu bar | `Locute/UI/StatusBarController.swift` | `/impeccable critique Locute/UI/StatusBarController.swift` |
+| Onboarding / oprávnění | `Locute/UI/SetupWindowController.swift` | `/impeccable onboard Locute/UI/SetupWindowController.swift` |
+| Nastavení (prefs) | `Locute/UI/PreferencesWindowController.swift` | `/impeccable clarify Locute/UI/PreferencesWindowController.swift` |
+| Recording HUD | `Locute/UI/RecordingOverlayController.swift` | `/impeccable polish Locute/UI/RecordingOverlayController.swift` |
+| Design tokens | `Locute/UI/AppTheme.swift` | `/impeccable document` (refresh DESIGN.md) |
+| Celé UI | `Locute/UI/` | `/impeccable critique Locute/UI` |
 
 Detektor antipatternů (`detect.mjs`) je určen pro HTML/CSS — u Swift UI spoléhej na **critique** + čtení `AppTheme.swift`.
 
@@ -69,8 +69,8 @@ Detektor antipatternů (`detect.mjs`) je určen pro HTML/CSS — u Swift UI spol
 /impeccable polish <soubor>          → opravy podle poslední critique
 /impeccable distill StatusBarController   → zjednodušit menu
 /impeccable onboard SetupWindowController
-/impeccable clarify Dictator/UI
-/impeccable audit Dictator/UI        → a11y (VoiceOver copy v AccessibilitySupport)
+/impeccable clarify Locute/UI
+/impeccable audit Locute/UI        → a11y (VoiceOver copy v AccessibilitySupport)
 /impeccable document                → aktualizovat DESIGN.md z kódu
 ```
 
@@ -100,7 +100,7 @@ Z [PRODUCT.md](./PRODUCT.md) a [DESIGN.md](./DESIGN.md):
 Snapshoty: `.impeccable/critique/<timestamp>__<slug>.md`
 
 ```bash
-node .cursor/skills/impeccable/scripts/critique-storage.mjs latest dictator-ui-statusbarcontroller-swift
+node .cursor/skills/impeccable/scripts/critique-storage.mjs latest locute-ui-statusbarcontroller-swift
 ```
 
 Uprav [`.impeccable/critique/ignore.md`](./.impeccable/critique/ignore.md), pokud je nález záměrný (např. systémový popover).

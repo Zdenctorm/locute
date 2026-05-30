@@ -46,11 +46,11 @@ fi
 # Build number = epoch seconds. Monotonically increasing, easy to read.
 BUILD_NUMBER="$(date +%s)"
 
-PROJECT="${ROOT_DIR}/Dictator.xcodeproj/project.pbxproj"
+PROJECT="${ROOT_DIR}/Locute.xcodeproj/project.pbxproj"
 
 # Bump MARKETING_VERSION and CURRENT_PROJECT_VERSION across all configurations.
 # pbxproj uses semicolon-terminated assignments; replace_all-style sed is safe here
-# because both keys appear exactly twice (Debug + Release for Dictator target, and
+# because both keys appear exactly twice (Debug + Release for Locute target, and
 # twice more for the test target which we want to keep in lockstep).
 /usr/bin/sed -i '' \
   -e "s/MARKETING_VERSION = [^;]*;/MARKETING_VERSION = ${VERSION};/g" \
@@ -62,8 +62,8 @@ echo "Bumped to version ${VERSION} (build ${BUILD_NUMBER})"
 # Build + DMG via existing scripts.
 "${ROOT_DIR}/scripts/build_release.sh"
 
-DMG_PATH="${ROOT_DIR}/dist/Dictator.dmg"
-VERSIONED_DMG="${ROOT_DIR}/dist/Dictator-${VERSION}.dmg"
+DMG_PATH="${ROOT_DIR}/dist/Locute.dmg"
+VERSIONED_DMG="${ROOT_DIR}/dist/Locute-${VERSION}.dmg"
 cp "${DMG_PATH}" "${VERSIONED_DMG}"
 
 # Sign DMG with Sparkle EdDSA key (private key is in Keychain).
@@ -85,11 +85,11 @@ NOTES_TEXT=""
 if [[ -n "${NOTES_FILE}" && -f "${NOTES_FILE}" ]]; then
   NOTES_TEXT="$(cat "${NOTES_FILE}")"
 else
-  NOTES_TEXT="Nová verze Dictatoru."
+  NOTES_TEXT="Nová verze Locute."
 fi
 
 PUB_DATE="$(LC_ALL=C TZ=GMT date '+%a, %d %b %Y %H:%M:%S +0000')"
-DOWNLOAD_URL="https://github.com/Zdenctorm/dictator/releases/download/v${VERSION}/Dictator-${VERSION}.dmg"
+DOWNLOAD_URL="https://github.com/Zdenctorm/locute/releases/download/v${VERSION}/Locute-${VERSION}.dmg"
 
 APPCAST="${ROOT_DIR}/appcast.xml"
 
@@ -107,9 +107,9 @@ cat > "${APPCAST}" <<EOF
 <?xml version="1.0" encoding="utf-8"?>
 <rss version="2.0" xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle">
     <channel>
-        <title>Dictator</title>
-        <link>https://github.com/Zdenctorm/dictator</link>
-        <description>Most recent updates to Dictator</description>
+        <title>Locute</title>
+        <link>https://github.com/Zdenctorm/locute</link>
+        <description>Most recent updates to Locute</description>
         <language>cs</language>
         <item>
             <title>Verze ${VERSION}</title>
@@ -134,7 +134,7 @@ EOF
 echo "appcast.xml updated"
 
 # Commit version bump + appcast.
-git add Dictator.xcodeproj/project.pbxproj appcast.xml
+git add Locute.xcodeproj/project.pbxproj appcast.xml
 git commit -m "Release v${VERSION}" || echo "(nothing to commit)"
 git tag -f "v${VERSION}"
 git push origin main
@@ -149,7 +149,7 @@ else
 fi
 
 gh release create "v${VERSION}" \
-  --title "Dictator ${VERSION}" \
+  --title "Locute ${VERSION}" \
   "${RELEASE_NOTES_ARG[@]}" \
   "${VERSIONED_DMG}"
 
@@ -157,4 +157,4 @@ echo ""
 echo "Released v${VERSION}."
 echo "  DMG:      ${VERSIONED_DMG}"
 echo "  Download: ${DOWNLOAD_URL}"
-echo "  Appcast:  https://raw.githubusercontent.com/Zdenctorm/dictator/main/appcast.xml"
+echo "  Appcast:  https://raw.githubusercontent.com/Zdenctorm/locute/main/appcast.xml"

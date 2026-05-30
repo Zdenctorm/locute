@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Build Dictator from this repo and install a single canonical copy (default: /Applications).
+# Build Locute from this repo and install a single canonical copy (default: /Applications).
 # Use this instead of running ad-hoc builds from Xcode DerivedData or multiple DMG installs.
 set -euo pipefail
 
@@ -8,7 +8,7 @@ SCRIPT_PATH="${BASH_SOURCE[0]}"
 
 # When the checkout is behind origin, pull and re-exec so new script flags (e.g. --clean) work.
 maybe_reexec_if_behind_origin() {
-  [[ "${DICTATOR_INSTALL_REEXEC:-0}" == "1" ]] && return 0
+  [[ "${LOCUTE_INSTALL_REEXEC:-0}" == "1" ]] && return 0
   git -C "${ROOT_DIR}" rev-parse --is-inside-work-tree >/dev/null 2>&1 || return 0
 
   local branch
@@ -26,13 +26,13 @@ maybe_reexec_if_behind_origin() {
 
   echo "Repo je ${behind} commit(y) za ${upstream}; stahuji a spouštím instalaci znovu…"
   git -C "${ROOT_DIR}" pull --ff-only origin "${branch}"
-  export DICTATOR_INSTALL_REEXEC=1
+  export LOCUTE_INSTALL_REEXEC=1
   exec "${ROOT_DIR}/scripts/$(basename "${SCRIPT_PATH}")" "$@"
 }
 maybe_reexec_if_behind_origin "$@"
 
-BUILT_APP="${ROOT_DIR}/dist/Dictator.app"
-INSTALL_PATH="${DICTATOR_INSTALL_PATH:-/Applications/Dictator.app}"
+BUILT_APP="${ROOT_DIR}/dist/Locute.app"
+INSTALL_PATH="${LOCUTE_INSTALL_PATH:-/Applications/Locute.app}"
 PULL=false
 OPEN=true
 SKIP_BUILD=false
@@ -43,18 +43,18 @@ usage() {
   cat <<'EOF'
 Usage: scripts/install_latest.sh [options]
 
-Builds Release from the current checkout and replaces the canonical Dictator.app.
+Builds Release from the current checkout and replaces the canonical Locute.app.
 
 Options:
   --pull        git fetch + pull --ff-only for the current branch before building
   --clean       remove build/DerivedData before building (full recompile)
-  --skip-build  install existing dist/Dictator.app (must exist)
-  --no-open     do not launch Dictator after install
-  --list        print other Dictator.app copies on disk and exit
+  --skip-build  install existing dist/Locute.app (must exist)
+  --no-open     do not launch Locute after install
+  --list        print other Locute.app copies on disk and exit
   -h, --help    show this help
 
 Environment:
-  DICTATOR_INSTALL_PATH   install target (default: /Applications/Dictator.app)
+  LOCUTE_INSTALL_PATH   install target (default: /Applications/Locute.app)
 
 After install, grant Accessibility to THIS copy (see path in Nastavení → Oprávnění).
 EOF
@@ -84,14 +84,14 @@ while [[ $# -gt 0 ]]; do
 done
 
 if [[ "$(uname -s)" != "Darwin" ]]; then
-  echo "Dictator can only be built and installed on macOS." >&2
+  echo "Locute can only be built and installed on macOS." >&2
   exit 1
 fi
 
-if [[ ! -f "${ROOT_DIR}/Dictator.xcodeproj/project.pbxproj" ]]; then
-  echo "Tady není Dictator repo: ${ROOT_DIR}" >&2
-  echo "Použij např.: cd ~/dictator && ./scripts/install_latest.sh" >&2
-  echo "(NE cd ~/anycoin/dictator — to zdvojí jméno složky uživatele.)" >&2
+if [[ ! -f "${ROOT_DIR}/Locute.xcodeproj/project.pbxproj" ]]; then
+  echo "Tady není Locute repo: ${ROOT_DIR}" >&2
+  echo "Použij např.: cd ~/locute && ./scripts/install_latest.sh" >&2
+  echo "(NE cd ~/anycoin/locute — to zdvojí jméno složky uživatele.)" >&2
   exit 1
 fi
 
@@ -99,7 +99,7 @@ print_git_head() {
   if git -C "${ROOT_DIR}" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
     echo "Git: $(git -C "${ROOT_DIR}" rev-parse --short HEAD) ($(git -C "${ROOT_DIR}" log -1 --format='%s'))"
   else
-    echo "Git: (není git repo — clone z github.com/Zdenctorm/dictator)" >&2
+    echo "Git: (není git repo — clone z github.com/Zdenctorm/locute)" >&2
     exit 1
   fi
 }
@@ -136,7 +136,7 @@ find_other_copies() {
       [[ -z "${path}" ]] && continue
       [[ -n "${canonical}" && "${path}" == "${canonical}" ]] && continue
       printf '%s\n' "${path}"
-    done < <(mdfind "kMDItemCFBundleIdentifier == 'com.example.dictator'" 2>/dev/null || true)
+    done < <(mdfind "kMDItemCFBundleIdentifier == 'com.example.locute'" 2>/dev/null || true)
   fi
 
   while IFS= read -r path; do
@@ -147,7 +147,7 @@ find_other_copies() {
     find /Applications "${HOME}/Applications" \
       "${ROOT_DIR}/dist" "${ROOT_DIR}/build" \
       "${HOME}/Library/Developer/Xcode/DerivedData" \
-      -name 'Dictator.app' -type d 2>/dev/null || true
+      -name 'Locute.app' -type d 2>/dev/null || true
   )
 }
 
@@ -202,7 +202,7 @@ sync_git_if_requested() {
 if [[ "${LIST_ONLY}" == true ]]; then
   echo "Kanonická kopie (cíl instalace): ${INSTALL_PATH}"
   echo ""
-  echo "Ostatní kopie Dictator.app:"
+  echo "Ostatní kopie Locute.app:"
   print_other_copies "${INSTALL_PATH}"
   exit 0
 fi
@@ -226,14 +226,14 @@ if [[ ! -d "${BUILT_APP}" ]]; then
   exit 1
 fi
 
-if pgrep -x Dictator >/dev/null 2>&1; then
-  osascript -e 'tell application "Dictator" to quit' 2>/dev/null || true
+if pgrep -x Locute >/dev/null 2>&1; then
+  osascript -e 'tell application "Locute" to quit' 2>/dev/null || true
   for _ in {1..40}; do
-    pgrep -x Dictator >/dev/null || break
+    pgrep -x Locute >/dev/null || break
     sleep 0.25
   done
-  if pgrep -x Dictator >/dev/null 2>&1; then
-    pkill -x Dictator 2>/dev/null || true
+  if pgrep -x Locute >/dev/null 2>&1; then
+    pkill -x Locute 2>/dev/null || true
     sleep 0.5
   fi
 fi
@@ -251,7 +251,7 @@ BUILD="$(
     "${INSTALL_PATH}/Contents/Info.plist" 2>/dev/null || echo "?"
 )"
 
-echo "Installed Dictator ${VERSION} (build ${BUILD})"
+echo "Installed Locute ${VERSION} (build ${BUILD})"
 echo "  → ${INSTALL_PATH}"
 
 OTHERS_COUNT=0

@@ -1,4 +1,4 @@
-# Dictator
+# Locute
 
 Soukromé české diktování pro macOS (menu bar, offline WhisperKit).
 
@@ -7,8 +7,8 @@ Soukromé české diktování pro macOS (menu bar, offline WhisperKit).
 Aktuální kód je na **GitHubu, větev `main`** — ne v posledním DMG z Releases.
 
 ```bash
-git clone https://github.com/Zdenctorm/dictator.git
-cd dictator
+git clone https://github.com/Zdenctorm/locute.git
+cd locute
 ./scripts/install_latest.sh
 ```
 

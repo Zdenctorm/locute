@@ -1,15 +1,15 @@
 #!/usr/bin/env bash
-# Re-sign a Dictator.app bundle so every Mach-O shares the same Team ID.
+# Re-sign a Locute.app bundle so every Mach-O shares the same Team ID.
 # Required after Release builds with CODE_SIGNING_ALLOWED=NO (linker-signed main +
 # adhoc Sparkle helpers otherwise crash dyld with "different Team IDs").
 #
 # Usage:
-#   scripts/codesign_app_bundle.sh /path/to/Dictator.app [signing_identity]
+#   scripts/codesign_app_bundle.sh /path/to/Locute.app [signing_identity]
 #
 # signing_identity must be a Developer ID Application certificate (not "-").
 set -euo pipefail
 
-APP_PATH="${1:?Usage: $0 /path/to/Dictator.app <signing_identity>}"
+APP_PATH="${1:?Usage: $0 /path/to/Locute.app <signing_identity>}"
 SIGN_ID="${2:?Signing identity required (Developer ID Application: …)}"
 
 if [[ "${SIGN_ID}" == "-" ]]; then
@@ -67,7 +67,7 @@ sign_target "${SPARKLE_B}/XPCServices/Installer.xpc"
 sign_target "${SPARKLE_B}/Updater.app"
 sign_target "${SPARKLE_B}/Autoupdate"
 sign_target "${SPARKLE_FW}"
-sign_target "${APP_PATH}/Contents/MacOS/Dictator"
+sign_target "${APP_PATH}/Contents/MacOS/Locute"
 sign_target "${APP_PATH}"
 
 codesign --verify --strict --verbose=2 "${APP_PATH}"

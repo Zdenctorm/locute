@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <rss version="2.0" xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle">
     <channel>
-        <title>Dictator</title>
-        <link>https://github.com/Zdenctorm/dictator</link>
-        <description>Most recent updates to Dictator</description>
+        <title>Locute</title>
+        <link>https://github.com/Zdenctorm/locute</link>
+        <description>Most recent updates to Locute</description>
         <language>cs</language>
         <item>
             <title>Verze 1.0.0</title>
@@ -12,10 +12,10 @@
             <sparkle:shortVersionString>1.0.0</sparkle:shortVersionString>
             <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
             <description><![CDATA[
-Nová verze Dictatoru.
+Nová verze Locute.
 ]]></description>
             <enclosure
-                url="https://github.com/Zdenctorm/dictator/releases/download/v1.0.0/Dictator-1.0.0.dmg"
+                url="https://github.com/Zdenctorm/locute/releases/download/v1.0.0/Locute-1.0.0.dmg"
                 length="2773674"
                 type="application/octet-stream"
                 sparkle:edSignature="HpYaE2V1xgChEjDRj9yl3nXCROaeWT57U/Q7pYVyOsGJqs9KsCt8hutoiCZI4MXrIJpPITqTaCq8phJrBFtjDA==" />

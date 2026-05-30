@@ -85,7 +85,7 @@ Aplikace má jen dvě:
 - Open-source ML framework od Argmax Inc. (postaven nad OpenAI Whisper)
 - **Rychlost (výchozí):** `large-v3-v20240930_turbo` (~630 MB) — streamovací partial přepis během držení Option
 - **Přesnost:** `large-v3-v20240930` (~626 MB) — volitelně v Nastavení Locute
-- Metriky latence (`rtf`, `ttft`, `keyUpToDecodeMs`) se zapisují do `~/Library/Logs/Dictator/diagnostics.log`
+- Metriky latence (`rtf`, `ttft`, `keyUpToDecodeMs`) se zapisují do `~/Library/Logs/Locute/diagnostics.log`
 - Běží **lokálně** na Apple Neural Engine + GPU
 - Stažený jednou z `argmaxinc/whisperkit-coreml` při prvním spuštění
 - Po stažení žádné API volání — model je v `~/Library/Caches/`
@@ -140,7 +140,7 @@ Aplikace má jen dvě:
 2. Při prvním spuštění:
    - Macos zařve „Apple cannot check this app" → kliknout pravým → Otevřít → Confirm
    - Povolit **mikrofon** (system dialog)
-   - Otevřít **System Settings → Privacy & Security → Accessibility → +** → přidat Locute (v seznamu může být `Dictator.app` do přejmenování balíčku)
+   - Otevřít **System Settings → Privacy & Security → Accessibility → +** → přidat Locute (v seznamu může být `Locute.app` do přejmenování balíčku)
 3. Počkat několik minut, než se stáhne Whisper model (~630 MB turbo)
 4. Hotovo — drž Option v libovolné aplikaci a diktuj
 
@@ -177,7 +177,7 @@ Aplikace má jen dvě:
 ## Repo struktura
 
 ```
-Dictator/
+Locute/
 ├── Core/                   # Audio, transkripce, klávesnice, vkládání textu
 │   ├── AudioRecorder.swift          # AVCaptureSession capture
 │   ├── TranscriptionEngine.swift    # WhisperKit wrapper
@@ -185,7 +185,7 @@ Dictator/
 │   ├── HotkeyManager.swift          # CGEventTap + hotkey preference
 │   ├── TextInjector.swift           # AX paste / Cmd+V paste
 │   ├── PasteInsertionPlan.swift     # Per-app paste strategie
-│   └── DiagnosticsLogger.swift      # Lokální log v ~/Library/Logs/Dictator/
+│   └── DiagnosticsLogger.swift      # Lokální log v ~/Library/Logs/Locute/
 ├── UI/                     # Okna, status bar, HUD overlay
 └── App/AppDelegate.swift   # Lifecycle, wiring komponent
 ```

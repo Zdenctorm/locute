@@ -1,8 +1,8 @@
 ---
 description: Impeccable design context pro Locute — vždy načti před UI/UX úpravami
 globs:
-  - Dictator/UI/**
-  - Dictator/App/**
+  - Locute/UI/**
+  - Locute/App/**
   - PRODUCT.md
   - DESIGN.md
   - DESIGN.json
@@ -16,7 +16,7 @@ alwaysApply: false
 Před jakoukoli UX/UI změnou v menu baru, oknech nebo HUD:
 
 1. Přečti [IMPECCABLE.md](../../IMPECCABLE.md), [PRODUCT.md](../../PRODUCT.md), [DESIGN.md](../../DESIGN.md), [BRAND.md](../../BRAND.md).
-2. Veřejný název v UI: **Locute** (`AppBrand.displayName`), ne Dictator.
+2. Veřejný název v UI: **Locute** (`AppBrand.displayName`), v UI vždy používej `AppBrand.displayName`.
 3. Register: **product** — design slouží utilitě, ne marketingovému webu.
 4. North Star: **The Quiet Study** (claret + cream, minimum vizuálního hluku).
 5. Pro design review použij `/impeccable critique <soubor>` — ne `/impeccable live` (AppKit, ne HTML).

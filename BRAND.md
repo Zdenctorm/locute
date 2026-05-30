@@ -1,6 +1,6 @@
 # Locute — BRAND.md
 
-> Rozhodnutí: **2026-05-30** · veřejný název **Locute** (nahrazuje pracovní název Dictator)
+> Rozhodnutí: **2026-05-30** · veřejný název **Locute**
 
 ---
 
@@ -29,16 +29,16 @@
 
 ---
 
-## Technické jméno vs. brand (záměrně oddělené)
+## Technické jméno
 
 | Vrstva | Hodnota | Poznámka |
 |--------|---------|----------|
 | Veřejný název | **Locute** | `CFBundleDisplayName`, UI, dokumentace |
-| Xcode target / `.app` | `Dictator` | Přejmenování na `Locute.app` = samostatný release task |
-| Bundle ID | beze změny | Stabilita oprávnění a Sparkle |
-| Application Support | `~/Library/Application Support/Dictator/` | Migrace dat až při přejmenování složky |
-| Logy | `~/Library/Logs/Dictator/` | totéž |
-| GitHub repo | `dictator` | URL beze změny |
+| Xcode target / `.app` | `Locute` | `Locute.app` |
+| Bundle ID | `com.example.locute` | Sparkle a systémová oprávnění |
+| Application Support | `~/Library/Application Support/Locute/` | při prvním spuštění migrace ze staré složky |
+| Logy | `~/Library/Logs/Locute/` | totéž |
+| GitHub repo | [Zdenctorm/locute](https://github.com/Zdenctorm/locute) | |
 
 V kódu: `AppBrand.displayName` pro UI, `AppBrand.storageDirectoryName` pro cesty.
 
@@ -46,7 +46,6 @@ V kódu: `AppBrand.displayName` pro UI, `AppBrand.storageDirectoryName` pro cest
 
 ## Co neříkat
 
-- Dictator (toxický / zavádějící)
 - „Whisper app“ / WhisperKit jako produktový název
 - Konkurenční vzory: *Flow*, *Super*, *Voca*, *Whisper* v názvu
 
@@ -55,5 +54,4 @@ V kódu: `AppBrand.displayName` pro UI, `AppBrand.storageDirectoryName` pro cest
 ## Další kroky (volitelné)
 
 - [ ] Trademark / App Store: `"Locute" mac dictation`
-- [ ] Přejmenovat Xcode produkt → `Locute.app` + migrační skript pro Application Support
 - [ ] Doména / marketing (`locute.app` apod.)

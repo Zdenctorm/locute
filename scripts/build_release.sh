@@ -5,8 +5,8 @@ ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 DERIVED_DATA_PATH="${ROOT_DIR}/build/DerivedData"
 SOURCE_PACKAGES_PATH="${ROOT_DIR}/build/SourcePackages"
 DIST_DIR="${ROOT_DIR}/dist"
-APP_SOURCE="${DERIVED_DATA_PATH}/Build/Products/Release/Dictator.app"
-APP_DIST="${DIST_DIR}/Dictator.app"
+APP_SOURCE="${DERIVED_DATA_PATH}/Build/Products/Release/Locute.app"
+APP_DIST="${DIST_DIR}/Locute.app"
 
 mkdir -p "${DIST_DIR}" "${SOURCE_PACKAGES_PATH}"
 rm -rf "${APP_DIST}"
@@ -28,8 +28,8 @@ if ! xcrun --find metal >/dev/null 2>&1; then
 fi
 
 xcodebuild \
-  -project "${ROOT_DIR}/Dictator.xcodeproj" \
-  -scheme "Dictator" \
+  -project "${ROOT_DIR}/Locute.xcodeproj" \
+  -scheme "Locute" \
   -configuration "Release" \
   -derivedDataPath "${DERIVED_DATA_PATH}" \
   -clonedSourcePackagesDirPath "${SOURCE_PACKAGES_PATH}" \
@@ -56,4 +56,4 @@ fi
 "${ROOT_DIR}/scripts/create_dmg.sh"
 
 echo "Release app: ${APP_DIST}"
-echo "DMG: ${DIST_DIR}/Dictator.dmg"
+echo "DMG: ${DIST_DIR}/Locute.dmg"

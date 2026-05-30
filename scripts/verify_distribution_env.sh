@@ -17,7 +17,7 @@ check() {
   fi
 }
 
-echo "Dictator distribution environment check"
+echo "Locute distribution environment check"
 echo "---------------------------------------"
 
 check "xcodebuild" "command -v xcodebuild"

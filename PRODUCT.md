@@ -1,6 +1,6 @@
 # Locute — PRODUCT.md
 
-> Impeccable design context. Veřejný brand: [BRAND.md](./BRAND.md). Technický Xcode target zatím `Dictator`.
+> Impeccable design context. Veřejný brand: [BRAND.md](./BRAND.md). Technický Xcode target zatím `Locute`.
 
 ---
 

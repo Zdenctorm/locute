@@ -11,7 +11,7 @@ Formát: jeden vzor na řádek (substring v textu nálezu, case-insensitive).
 ```
 systémový vzhled popover
 menu bar má mnoho položek — power user
-Dictator.app v cestě oprávnění
+Locute.app v cestě oprávnění
 legacy název složky Application Support
 ```
 
