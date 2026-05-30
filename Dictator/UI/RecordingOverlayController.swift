@@ -20,6 +20,10 @@ final class RecordingOverlayController {
     private let previewLabel = NSTextField(labelWithString: "")
     private let dotView = NSView()
     private let statusRow = NSStackView()
+    private let levelMeterView = AudioLevelMeterView()
+    private var statusRowBottomConstraint: NSLayoutConstraint?
+    private var meterBottomConstraint: NSLayoutConstraint?
+    private var meterVisible = false
     private var pulseTimer: Timer?
     private var currentMode: RecordingOverlayMode = .hidden
     private var lastSyncedState: DictatorState = .idle
@@ -44,6 +48,7 @@ final class RecordingOverlayController {
         pulseTimer = nil
         previewLabel.stringValue = ""
         previewLabel.isHidden = true
+        setMeterVisible(false)
         panel?.orderOut(nil)
     }
 
@@ -60,6 +65,11 @@ final class RecordingOverlayController {
         ensurePanel()
         apply(currentMode)
         panel?.orderFrontRegardless()
+    }
+
+    func updateAudioLevel(_ normalized: Float) {
+        guard meterVisible else { return }
+        levelMeterView.setLevel(normalized)
     }
 
     private func isStreamingPreviewMode(_ mode: RecordingOverlayMode) -> Bool {
@@ -218,7 +228,17 @@ final class RecordingOverlayController {
         let root = NSView()
         root.addSubview(container)
         container.addSubview(statusRow)
+
+        levelMeterView.translatesAutoresizingMaskIntoConstraints = false
+        levelMeterView.isHidden = true
+        container.addSubview(levelMeterView)
+
         panel.contentView = root
+
+        let statusBottom = statusRow.bottomAnchor.constraint(equalTo: container.bottomAnchor, constant: -12)
+        let meterBottom = levelMeterView.bottomAnchor.constraint(equalTo: container.bottomAnchor, constant: -12)
+        statusRowBottomConstraint = statusBottom
+        meterBottomConstraint = meterBottom
 
         NSLayoutConstraint.activate([
             container.leadingAnchor.constraint(equalTo: root.leadingAnchor),
@@ -229,7 +249,10 @@ final class RecordingOverlayController {
             statusRow.leadingAnchor.constraint(equalTo: container.leadingAnchor, constant: 16),
             statusRow.trailingAnchor.constraint(equalTo: container.trailingAnchor, constant: -16),
             statusRow.topAnchor.constraint(equalTo: container.topAnchor, constant: 12),
-            statusRow.bottomAnchor.constraint(equalTo: container.bottomAnchor, constant: -12)
+
+            levelMeterView.leadingAnchor.constraint(equalTo: statusRow.leadingAnchor),
+            levelMeterView.topAnchor.constraint(equalTo: statusRow.bottomAnchor, constant: 8),
+            statusBottom
         ])
 
         self.panel = panel
@@ -315,7 +338,33 @@ final class RecordingOverlayController {
             AccessibilitySupport.announce(label)
         }
 
+        setMeterVisible(modeShowsMeter(mode))
         positionPanel()
+    }
+
+    private func modeShowsMeter(_ mode: RecordingOverlayMode) -> Bool {
+        switch mode {
+        case .recording, .streamingPreview:
+            return true
+        default:
+            return false
+        }
+    }
+
+    private func setMeterVisible(_ visible: Bool) {
+        guard meterVisible != visible else { return }
+        meterVisible = visible
+        levelMeterView.isHidden = !visible
+        statusRowBottomConstraint?.isActive = !visible
+        meterBottomConstraint?.isActive = visible
+        if !visible {
+            levelMeterView.setLevel(0)
+        }
+
+        guard let panel else { return }
+        var frame = panel.frame
+        frame.size.height = visible ? 86 : 72
+        panel.setFrame(frame, display: false)
     }
 
     private func startPulseIfNeeded(for mode: RecordingOverlayMode) {

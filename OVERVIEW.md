@@ -99,7 +99,7 @@ Aplikace má jen dvě:
 - ✅ Lokální Whisper přepis v češtině
 - ✅ Vložení do aktivního okna (Accessibility nebo Cmd+V podle aplikace)
 - ✅ Menu bar ikona se stavovými indikátory (idle / nahrávám / přepisuji / vkládám / chyba)
-- ✅ HUD overlay nahoře obrazovky během nahrávání („Držíš Option", „Nahrávám", „Vloženo")
+- ✅ HUD overlay nahoře obrazovky během nahrávání („Držíš Option", „Nahrávám", „Vloženo") včetně live audio level metru
 - ✅ Historie přepisů (per-řádek, kopírovat / vložit znovu)
 - ✅ Zachytávání cílové aplikace na začátku nahrávání (text vždy jde tam, kde uživatel stiskl klávesu)
 
