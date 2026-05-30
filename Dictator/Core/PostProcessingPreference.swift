@@ -42,7 +42,10 @@ enum PostProcessingPreference {
     private static let modelSizeKey = "postProcessingModelSize"
 
     static var isEnabled: Bool {
-        get { UserDefaults.standard.bool(forKey: enabledKey) }
+        get {
+            guard UserDefaults.standard.object(forKey: enabledKey) != nil else { return true }
+            return UserDefaults.standard.bool(forKey: enabledKey)
+        }
         set {
             UserDefaults.standard.set(newValue, forKey: enabledKey)
             NotificationCenter.default.post(name: .dictatorPostProcessingPreferenceChanged, object: nil)

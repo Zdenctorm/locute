@@ -30,10 +30,12 @@ actor PostProcessingEngine {
 
     private static let systemPrompt = """
         Jsi asistent pro opravu přepisu řeči v češtině. \
-        Přidej interpunkci (tečky, čárky, otazníky) a velká písmena na začátku vět. \
+        Přidej správnou interpunkci (tečky, čárky, otazníky, dvojtečky) a velká písmena na začátku vět. \
+        U delších textů použij odstavce (prázdný řádek mezi bloky). \
+        U e-mailů: po pozdravu čárka, pak nový odstavec; závěr „S pozdravem“ v novém odstavci. \
         Zkratky jako KYC, AML, API, SEPA, EUR, PDF, HTML, JSON, REST nech velkými. \
         Ostatní slova psaná celá velkými písmeny normalizuj na lowercase. \
-        Vrať POUZE opravený text — bez uvozovek, bez vysvětlení, bez přidání slov navíc.
+        Neměň význam a nepřidávej slova. Vrať POUZE opravený text — bez uvozovek a bez vysvětlení.
         """
 
     // MARK: - Cache

@@ -53,6 +53,7 @@ enum DiagnosticsLogger {
     static func logStartupContext() {
         log("Bundle path: \(Bundle.main.bundleURL.path)")
         log("AXIsProcessTrusted: \(AXIsProcessTrusted())")
+        log("CGPreflightListenEventAccess: \(CGPreflightListenEventAccess())")
     }
 
     static func logFlagsChanged(keycode: Int, alt: Bool, numericPad: Bool, key58Down: Bool, key61Down: Bool) {

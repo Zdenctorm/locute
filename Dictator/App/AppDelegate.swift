@@ -29,6 +29,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var wrongModifierHeld = false
     private var transcriptionTestMode = false
     private var escapeMonitor: Any?
+    private var keepAliveActivity: NSObjectProtocol?
     private let statusBarPopover = StatusBarPopoverController()
     private var historySaveTimer: Timer?
     private var audioCachePurgeTimer: Timer?
@@ -44,6 +45,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private let logger = Logger(subsystem: "com.example.dictator", category: "app")
 
     func applicationDidFinishLaunching(_ notification: Notification) {
+        keepAliveActivity = ProcessInfo.processInfo.beginActivity(
+            options: [.userInitiated, .idleSystemSleepDisabled],
+            reason: "Dictator global hotkey monitoring"
+        )
         DiagnosticsLogger.log("App launched. Bundle path: \(Bundle.main.bundleURL.path)")
         DiagnosticsLogger.logStartupContext()
 
@@ -96,6 +101,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             updaterController: updaterController,
             sparkleUpdatesAvailable: sparkleUpdatesAvailable
         )
+        statusBarController.hotkeyHealthProvider = { [weak self] in
+            self?.hotkeyManager.currentHealth() ?? .tapMissing
+        }
         launchWindowController = LaunchWindowController(stateMachine: stateMachine)
 
         NotificationCenter.default.addObserver(
@@ -117,7 +125,18 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         dictationTargetTracker.startObserving()
 
         if PermissionsWindowController.currentSnapshot.allGranted {
-            _ = installHotkeyIfPossible()
+            if !installHotkeyIfPossible() {
+                let message: String
+                if !InputMonitoringSettings.isGranted() {
+                    message = "Chybí Monitorování vstupu — klávesa funguje jen s oknem Dictatoru. Otevři Nastavení."
+                } else {
+                    message = "Chybí Zpřístupnění — diktovací klávesa nebude fungovat v jiných aplikacích."
+                }
+                statusBarController.showTransientStatus(message, duration: 10)
+                showPermissionsWindow()
+            } else {
+                maybeShowCzechHotkeyTip()
+            }
         }
 
         statusBarController.onQuit = { NSApp.terminate(nil) }
@@ -170,6 +189,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     private func cancelActiveDictation() {
         guard stateMachine.isRecording else { return }
+        hotkeyManager.markDictationSessionActive(false)
         hotkeyManager.cancelToggleSessionIfNeeded()
         microphoneArmTask?.cancel()
         microphoneArmTask = nil
@@ -190,6 +210,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     func applicationWillTerminate(_ notification: Notification) {
+        if let keepAliveActivity {
+            ProcessInfo.processInfo.endActivity(keepAliveActivity)
+        }
         startupTask?.cancel()
         historySaveTimer?.invalidate()
         audioCachePurgeTimer?.invalidate()
@@ -316,7 +339,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         DiagnosticsLogger.log("Startup started")
 
         let permissions = PermissionsWindowController.currentSnapshot
-        DiagnosticsLogger.log("Permissions snapshot. microphone=\(permissions.microphone.label), accessibility=\(permissions.accessibility.label)")
+        DiagnosticsLogger.log(
+            "Permissions snapshot. microphone=\(permissions.microphone.label), accessibility=\(permissions.accessibility.label), inputMonitoring=\(permissions.inputMonitoring.label)"
+        )
         guard permissions.allGranted else {
             stateMachine.transition(to: .permissionsNeeded)
             DiagnosticsLogger.log("Startup paused: permissions needed")
@@ -355,10 +380,23 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         stateMachine.transition(to: .idle)
         hotkeyManager.prepareForCrossAppUse()
         DiagnosticsLogger.log("Startup completed. App is idle.")
+        maybeShowCzechHotkeyTip()
 
         if PostProcessingPreference.isEnabled {
             Task { [weak self] in await self?.startPostProcessingLoad() }
         }
+    }
+
+    private func maybeShowCzechHotkeyTip() {
+        let tipKey = "didShowCzechHotkeyTip"
+        guard !UserDefaults.standard.bool(forKey: tipKey) else { return }
+        guard HotkeyPreference.recommendedDefault == .rightCommand else { return }
+        guard HotkeyPreference.current == .rightOption || HotkeyPreference.current == .eitherOption else { return }
+        UserDefaults.standard.set(true, forKey: tipKey)
+        statusBarController.showTransientStatus(
+            "Na české klávesnici zvol v Nastavení „pravý Command (⌘)“ — pravý Option často nefunguje v jiných appkách.",
+            duration: 12
+        )
     }
 
     @discardableResult
@@ -387,9 +425,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     private func beginDictation(trigger: String) {
+        hotkeyManager.ensureReadyForDictation()
         hotkeyManager.prepareForCrossAppUse()
         guard stateMachine.canStartDictation else {
             DiagnosticsLogger.log("Dictation start ignored (\(trigger)): not idle (state=\(stateMachine.state.displayText))")
+            hotkeyManager.resetAfterFailedStart()
             statusBarController.showTransientStatus(busyStatusMessage(), duration: 2)
             recordingOverlay.show(busyOverlayMode())
             return
@@ -403,6 +443,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         DiagnosticsLogger.log("Dictation start (\(trigger)): target captured as \(pendingDictationTarget?.localizedName ?? "?") (\(pendingDictationTarget?.bundleIdentifier ?? "?"))")
 
         stateMachine.transition(to: .recording)
+        hotkeyManager.markDictationSessionActive(true)
+        hotkeyManager.confirmDictationStarted()
         DiagnosticsLogger.enterDictationSession(id: UUID())
         recordingOverlay.show(.recording)
         SoundFeedbackService.playRecordingStart()
@@ -416,11 +458,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             do {
                 try await audioRecorder.startRecording()
                 DiagnosticsLogger.log("Microphone pipeline started (\(trigger))")
-                await startStreamingPipelineIfPossible()
+                if DictationPreviewPreference.isEnabled {
+                    await startStreamingPipelineIfPossible()
+                }
             } catch {
                 logger.error("Recording start failed: \(error.localizedDescription, privacy: .public)")
                 DiagnosticsLogger.log("Microphone start failed (\(trigger)): \(error.localizedDescription)")
                 await MainActor.run {
+                    self.hotkeyManager.markDictationSessionActive(false)
+                    self.hotkeyManager.cancelToggleSessionIfNeeded()
+                    self.hotkeyManager.resetAfterFailedStart()
                     stateMachine.transition(to: .error("Nahrávání se nepodařilo spustit."))
                 }
                 try? await Task.sleep(for: .seconds(3))
@@ -437,6 +484,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         guard stateMachine.isRecording else {
             DiagnosticsLogger.log("Dictation end ignored (\(trigger)): not recording (state=\(stateMachine.state.displayText))")
             return
+        }
+
+        hotkeyManager.markDictationSessionActive(false)
+        if trigger != "hotkey" {
+            hotkeyManager.syncToggleStateAfterExternalStop()
         }
 
         // Use target captured at beginDictation. Fallback to current frontmost if missing
@@ -519,18 +571,22 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                     vocabularyCanonicals: activeVocab.entries.map(\.canonical)
                 )
                 let caseNormalized = TranscriptionCaseNormalizer.normalize(joinedText, whitelist: caseWhitelist)
+                let formatted = CzechDictationFormatter.format(
+                    caseNormalized,
+                    targetAppBundleID: targetApp?.bundleIdentifier
+                )
 
                 let finalText: String
                 if PostProcessingPreference.isEnabled, await postProcessingEngine.isLoaded {
                     let processed: String? = await withTaskGroup(of: String?.self) { group in
                         group.addTask { [weak self] in
                             try? await self?.postProcessingEngine.process(
-                                caseNormalized,
+                                formatted,
                                 targetAppBundleID: targetApp?.bundleIdentifier
                             )
                         }
                         group.addTask {
-                            try? await Task.sleep(for: .milliseconds(2_500))
+                            try? await Task.sleep(for: .milliseconds(7_000))
                             return nil
                         }
                         for await result in group {
@@ -543,11 +599,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                         finalText = processed.trimmingCharacters(in: .whitespacesAndNewlines)
                         DiagnosticsLogger.log("PostProcessing: applied (\(caseNormalized.count)c → \(finalText.count)c)")
                     } else {
-                        finalText = caseNormalized
-                        DiagnosticsLogger.log("PostProcessing: timeout or error — using original")
+                        finalText = formatted
+                        DiagnosticsLogger.log("PostProcessing: timeout or error — using rule-based format")
                     }
                 } else {
-                    finalText = caseNormalized
+                    finalText = formatted
                 }
 
                 if finalText.isEmpty {
@@ -864,10 +920,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private func showPermissionsWindow() {
         permissionsWindowController?.close()
         let controller = PermissionsWindowController()
+        controller.hotkeyHealthProvider = { [weak self] in
+            self?.hotkeyManager.currentHealth() ?? .tapMissing
+        }
         controller.onPermissionsGranted = { [weak self] in
             self?.permissionsWindowController = nil
-            _ = self?.hotkeyManager.install()
-            self?.hotkeyManager.prepareForCrossAppUse()
+            self?.hotkeyManager.reinstallAfterAccessibilityGrant()
             self?.startStartupTask()
         }
         permissionsWindowController = controller
@@ -945,6 +1003,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     private func runStreamingPartialUpdate() async {
+        guard DictationPreviewPreference.isEnabled else { return }
         guard stateMachine.isRecording else { return }
         let samples = await audioRecorder.currentAudioSamples()
         guard !samples.isEmpty else { return }

@@ -26,9 +26,10 @@ enum PermissionCheckState: Equatable {
 struct PermissionsSnapshot: Equatable {
     let microphone: PermissionCheckState
     let accessibility: PermissionCheckState
+    let inputMonitoring: PermissionCheckState
 
     var allGranted: Bool {
-        microphone == .allowed && accessibility == .allowed
+        microphone == .allowed && accessibility == .allowed && inputMonitoring == .allowed
     }
 }
 
@@ -50,6 +51,12 @@ final class PermissionsWindowController: NSWindowController {
     private let microphoneButton = AppTheme.secondaryButton("Povolit mikrofon", target: nil, action: nil)
     private let accessibilityButton = AppTheme.secondaryButton(
         "Přidat do Zpřístupnění…",
+        target: nil,
+        action: nil
+    )
+    private let inputMonitoringBadge = AppTheme.badge("Chybí", color: AppTheme.Color.warning)
+    private let inputMonitoringButton = AppTheme.secondaryButton(
+        "Povolit monitorování vstupu…",
         target: nil,
         action: nil
     )
@@ -78,6 +85,20 @@ final class PermissionsWindowController: NSWindowController {
         action: nil
     )
     private let soundFeedbackCheckbox = NSButton(checkboxWithTitle: "Zvuková zpětná vazba", target: nil, action: nil)
+    private let livePreviewCheckbox = NSButton(
+        checkboxWithTitle: "Zobrazovat průběžný přepis při držení klávesy",
+        target: nil,
+        action: nil
+    )
+    private let hotkeyTapHealthLabel = AppTheme.label(
+        "",
+        font: AppTheme.Font.footnote,
+        color: AppTheme.Color.body,
+        lines: 0
+    )
+
+    /// Poskytuje stav event tapu (nastaví AppDelegate).
+    var hotkeyHealthProvider: (() -> HotkeyHealth)?
 
     init() {
         let window = NSWindow(
@@ -145,20 +166,27 @@ final class PermissionsWindowController: NSWindowController {
     private func buildHotkeyCard() -> NSView {
         hotkeyPicker.removeAllItems()
         hotkeyPicker.addItems(withTitles: HotkeyChoice.allCases.map(\.label))
-        let currentIndex = HotkeyChoice.allCases.firstIndex(of: HotkeyPreference.current) ?? 0
+        let currentIndex = HotkeyChoice.allCases.firstIndex(of: HotkeyPreference.current)
+            ?? HotkeyChoice.allCases.firstIndex(of: HotkeyPreference.recommendedDefault)
+            ?? 0
         hotkeyPicker.selectItem(at: currentIndex)
         hotkeyPicker.target = self
         hotkeyPicker.action = #selector(hotkeyChoiceChanged(_:))
 
         let title = AppTheme.label("Klávesa pro diktování", font: AppTheme.Font.headline, color: AppTheme.Color.title)
         let detail = AppTheme.label(
-            "Defaultně levý nebo pravý Option (⌥). Pokud používáš pravý Option jako AltGr pro české znaky (@, #, &), zvol jinou klávesu.",
+            "Doporučeno na českém Macu: pravý Command (⌘). Pravý Option (⌥) je často AltGr (@, #, &) a v jiných aplikacích (Linear, Cursor) nemusí spustit diktování.",
             font: AppTheme.Font.body,
             color: AppTheme.Color.body,
             lines: 0
         )
 
-        return AppTheme.card([title, detail, hotkeyPicker])
+        let recommendButton = AppTheme.secondaryButton(
+            "Použít doporučenou klávesu (\(HotkeyPreference.recommendedDefault.label))",
+            target: self,
+            action: #selector(useRecommendedHotkey(_:))
+        )
+        return AppTheme.card([title, detail, hotkeyPicker, recommendButton, hotkeyTapHealthLabel])
     }
 
     @objc private func hotkeyChoiceChanged(_ sender: NSPopUpButton) {
@@ -166,6 +194,14 @@ final class PermissionsWindowController: NSWindowController {
         guard idx >= 0, idx < HotkeyChoice.allCases.count else { return }
         HotkeyPreference.current = HotkeyChoice.allCases[idx]
         DiagnosticsLogger.log("Hotkey preference changed to \(HotkeyChoice.allCases[idx].rawValue)")
+    }
+
+    @objc private func useRecommendedHotkey(_ sender: NSButton) {
+        HotkeyPreference.current = HotkeyPreference.recommendedDefault
+        let idx = HotkeyChoice.allCases.firstIndex(of: HotkeyPreference.current) ?? 0
+        hotkeyPicker.selectItem(at: idx)
+        keyTestStatusLabel.stringValue = "Nastaveno: \(HotkeyPreference.current.label). Vyzkoušej ve Linearu nebo Cursoru."
+        keyTestStatusLabel.textColor = AppTheme.Color.success
     }
 
     private func buildModelCard() -> NSView {
@@ -178,7 +214,7 @@ final class PermissionsWindowController: NSWindowController {
 
         let title = AppTheme.label("Model přepisu (Whisper)", font: AppTheme.Font.headline, color: AppTheme.Color.title)
         let speedNote = AppTheme.label(
-            "Turbo = rychlejší odezva při držení klávesy (streaming). Přesnost = lepší pro technické termíny, pomalejší.",
+            "Turbo = rychlejší přepis po puštění klávesy. Přesnost = lepší pro technické termíny, pomalejší.",
             font: AppTheme.Font.footnote,
             color: AppTheme.Color.body,
             lines: 0
@@ -282,8 +318,11 @@ final class PermissionsWindowController: NSWindowController {
         soundFeedbackCheckbox.state = SoundFeedbackService.isEnabled ? .on : .off
         soundFeedbackCheckbox.target = self
         soundFeedbackCheckbox.action = #selector(soundFeedbackChanged(_:))
+        livePreviewCheckbox.state = DictationPreviewPreference.isEnabled ? .on : .off
+        livePreviewCheckbox.target = self
+        livePreviewCheckbox.action = #selector(livePreviewChanged(_:))
         let title = AppTheme.label("Chování aplikace", font: AppTheme.Font.headline, color: AppTheme.Color.title)
-        return AppTheme.card([title, showInDockCheckbox, reviewBeforePasteCheckbox, soundFeedbackCheckbox])
+        return AppTheme.card([title, showInDockCheckbox, reviewBeforePasteCheckbox, livePreviewCheckbox, soundFeedbackCheckbox])
     }
 
     @objc private func showInDockChanged(_ sender: NSButton) {
@@ -296,6 +335,10 @@ final class PermissionsWindowController: NSWindowController {
 
     @objc private func soundFeedbackChanged(_ sender: NSButton) {
         SoundFeedbackService.isEnabled = sender.state == .on
+    }
+
+    @objc private func livePreviewChanged(_ sender: NSButton) {
+        DictationPreviewPreference.isEnabled = sender.state == .on
     }
 
     @objc private func modelPreferenceChanged(_ sender: NSPopUpButton) {
@@ -320,7 +363,7 @@ final class PermissionsWindowController: NSWindowController {
             color: AppTheme.Color.title
         )
         let subtitle = AppTheme.label(
-            "Povolte dvě lokální oprávnění. Jakmile budou hotová, Dictator bude připravený k diktování.",
+            "Povolte tři oprávnění. Bez „Monitorování vstupu“ diktovací klávesa funguje jen s otevřeným oknem Dictatoru.",
             font: AppTheme.Font.body,
             color: AppTheme.Color.body,
             lines: 0
@@ -347,6 +390,17 @@ final class PermissionsWindowController: NSWindowController {
         )
 
         bundlePathLabel.lineBreakMode = .byTruncatingMiddle
+
+        let inputMonitoringRow = permissionRow(
+            number: "3",
+            title: "Monitorování vstupu",
+            detail: """
+            Nutné pro globální diktovací klávesu v Linearu, Cursoru a dalších appkách. Klepni na tlačítko, \
+            povol Dictator v seznamu Monitorování vstupu (stejná .app jako u Zpřístupnění).
+            """,
+            badge: inputMonitoringBadge,
+            button: inputMonitoringButton
+        )
 
         let accessibilityRow = permissionRow(
             number: "2",
@@ -375,7 +429,7 @@ final class PermissionsWindowController: NSWindowController {
         ])
 
         let helper = AppTheme.label(
-            "Pokud už je Dictator v Nastavení povolený a stále svítí problém, odeberte starou položku Dictatoru a přidejte aktuální aplikaci z Finderu.",
+            "Pokud klávesa funguje jen s otevřeným Dictatorem, chybí Monitorování vstupu. Odeber staré záznamy Dictatoru a přidej /Applications/Dictator.app do obou seznamů.",
             font: AppTheme.Font.footnote,
             color: AppTheme.Color.body,
             lines: 0
@@ -399,6 +453,7 @@ final class PermissionsWindowController: NSWindowController {
                 header,
                 microphoneRow,
                 accessibilityRow,
+                inputMonitoringRow,
                 hotkeyCard,
                 activationCard,
                 modelCard,
@@ -476,6 +531,8 @@ final class PermissionsWindowController: NSWindowController {
         microphoneButton.action = #selector(requestMicrophone)
         accessibilityButton.target = self
         accessibilityButton.action = #selector(openAccessibilitySettings)
+        inputMonitoringButton.target = self
+        inputMonitoringButton.action = #selector(openInputMonitoringSettings)
         checkAgainButton.target = self
         checkAgainButton.action = #selector(checkAgain)
         revealAppButton.target = self
@@ -512,7 +569,7 @@ final class PermissionsWindowController: NSWindowController {
         if snapshot != lastLoggedSnapshot {
             lastLoggedSnapshot = snapshot
             DiagnosticsLogger.log(
-                "Permissions refreshed. microphone=\(snapshot.microphone.label), accessibility=\(snapshot.accessibility.label)"
+                "Permissions refreshed. microphone=\(snapshot.microphone.label), accessibility=\(snapshot.accessibility.label), inputMonitoring=\(snapshot.inputMonitoring.label)"
             )
         }
 
@@ -537,6 +594,39 @@ final class PermissionsWindowController: NSWindowController {
                 : "Přidej tuto kopii Dictator.app do Soukromí a zabezpečení → Zpřístupnění."
         )
         accessibilityButton.isHidden = snapshot.accessibility == .allowed
+
+        inputMonitoringBadge.stringValue = snapshot.inputMonitoring.label
+        inputMonitoringBadge.textColor = snapshot.inputMonitoring.color
+        inputMonitoringButton.isHidden = snapshot.inputMonitoring == .allowed
+        refreshHotkeyTapHealthLabel()
+    }
+
+    private func refreshHotkeyTapHealthLabel() {
+        if !InputMonitoringSettings.isGranted() {
+            hotkeyTapHealthLabel.stringValue =
+                "Bez Monitorování vstupu klávesa funguje jen když je Dictator v popředí — povol v kroku 3 výše."
+            hotkeyTapHealthLabel.textColor = AppTheme.Color.danger
+            return
+        }
+        guard let health = hotkeyHealthProvider?() else {
+            hotkeyTapHealthLabel.stringValue = ""
+            return
+        }
+        switch health {
+        case .notTrusted:
+            hotkeyTapHealthLabel.stringValue = "Klávesu nelze sledovat — nejdřív povol Zpřístupnění pro tuto kopii aplikace."
+            hotkeyTapHealthLabel.textColor = AppTheme.Color.danger
+        case .tapMissing:
+            hotkeyTapHealthLabel.stringValue = "Sledování klávesy není aktivní — restartuj Dictator po povolení Zpřístupnění."
+            hotkeyTapHealthLabel.textColor = AppTheme.Color.warning
+        case .receivingEvents:
+            hotkeyTapHealthLabel.stringValue = "Sledování klávesy je aktivní. Otestuj stiskem níže (funguje i v jiné aplikaci)."
+            hotkeyTapHealthLabel.textColor = AppTheme.Color.success
+        case .stale(let seconds):
+            hotkeyTapHealthLabel.stringValue =
+                "Klávesu dlouho nevidím (\(Int(seconds)) s) — stiskni diktovací klávesu jednou pro probuzení."
+            hotkeyTapHealthLabel.textColor = AppTheme.Color.warning
+        }
     }
 
     @objc private func requestMicrophone() {
@@ -545,6 +635,18 @@ final class PermissionsWindowController: NSWindowController {
             Task { @MainActor in self?.refreshPermissionState() }
         }
         openMicrophoneSettings()
+    }
+
+    @objc private func openInputMonitoringSettings() {
+        DiagnosticsLogger.log("Input Monitoring onboarding flow started")
+        AppWindowPresenter.activateApp()
+        AppWindowPresenter.present(window)
+        InputMonitoringSettings.revealRunningAppBundle()
+        _ = InputMonitoringSettings.requestAccess()
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
+            InputMonitoringSettings.openPrivacyPane()
+            self.refreshPermissionState()
+        }
     }
 
     @objc private func openAccessibilitySettings() {
@@ -597,7 +699,8 @@ final class PermissionsWindowController: NSWindowController {
     static var currentSnapshot: PermissionsSnapshot {
         PermissionsSnapshot(
             microphone: microphoneState,
-            accessibility: AccessibilitySettings.isTrusted() ? .allowed : .needsReview
+            accessibility: AccessibilitySettings.isTrusted() ? .allowed : .needsReview,
+            inputMonitoring: InputMonitoringSettings.isGranted() ? .allowed : .needsReview
         )
     }
 

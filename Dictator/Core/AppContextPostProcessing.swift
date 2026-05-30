@@ -37,7 +37,14 @@ enum AppContextPostProcessingStore {
     private static let defaultPresets: [AppContextPostProcessingPreset] = [
         AppContextPostProcessingPreset(
             bundleID: "com.apple.mail",
-            instruction: "Formátuj jako e-mail: zdvořilý tón, celé věty, správná interpunkce."
+            instruction: """
+            Formátuj jako e-mail: zdvořilý tón, celé věty, správná interpunkce. \
+            Po pozdravu čárka a nový odstavec; závěr v samostatném odstavci (např. S pozdravem).
+            """
+        ),
+        AppContextPostProcessingPreset(
+            bundleID: "com.todesktop.230313mzl4w4u92",
+            instruction: "Formátuj jako text v editoru kódu: stručně, bez zdvořilostních frází, zachovej technické termíny."
         ),
         AppContextPostProcessingPreset(
             bundleID: "com.tinyspeck.slackmacgap",

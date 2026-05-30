@@ -4,12 +4,40 @@
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+SCRIPT_PATH="${BASH_SOURCE[0]}"
+
+# When the checkout is behind origin, pull and re-exec so new script flags (e.g. --clean) work.
+maybe_reexec_if_behind_origin() {
+  [[ "${DICTATOR_INSTALL_REEXEC:-0}" == "1" ]] && return 0
+  git -C "${ROOT_DIR}" rev-parse --is-inside-work-tree >/dev/null 2>&1 || return 0
+
+  local branch
+  branch="$(git -C "${ROOT_DIR}" symbolic-ref -q --short HEAD 2>/dev/null || true)"
+  [[ -n "${branch}" ]] || return 0
+
+  git -C "${ROOT_DIR}" fetch origin "${branch}" 2>/dev/null || return 0
+
+  local upstream="origin/${branch}"
+  git -C "${ROOT_DIR}" rev-parse --verify "${upstream}" >/dev/null 2>&1 || return 0
+
+  local behind
+  behind="$(git -C "${ROOT_DIR}" rev-list --count "HEAD..${upstream}" 2>/dev/null || echo 0)"
+  [[ "${behind}" -gt 0 ]] || return 0
+
+  echo "Repo je ${behind} commit(y) za ${upstream}; stahuji a spouštím instalaci znovu…"
+  git -C "${ROOT_DIR}" pull --ff-only origin "${branch}"
+  export DICTATOR_INSTALL_REEXEC=1
+  exec "${ROOT_DIR}/scripts/$(basename "${SCRIPT_PATH}")" "$@"
+}
+maybe_reexec_if_behind_origin "$@"
+
 BUILT_APP="${ROOT_DIR}/dist/Dictator.app"
 INSTALL_PATH="${DICTATOR_INSTALL_PATH:-/Applications/Dictator.app}"
 PULL=false
 OPEN=true
 SKIP_BUILD=false
 LIST_ONLY=false
+CLEAN=false
 
 usage() {
   cat <<'EOF'
@@ -18,7 +46,8 @@ Usage: scripts/install_latest.sh [options]
 Builds Release from the current checkout and replaces the canonical Dictator.app.
 
 Options:
-  --pull        git pull --ff-only origin main before building
+  --pull        git fetch + pull --ff-only for the current branch before building
+  --clean       remove build/DerivedData before building (full recompile)
   --skip-build  install existing dist/Dictator.app (must exist)
   --no-open     do not launch Dictator after install
   --list        print other Dictator.app copies on disk and exit
@@ -34,6 +63,7 @@ EOF
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --pull) PULL=true; shift ;;
+    --clean) CLEAN=true; shift ;;
     --skip-build) SKIP_BUILD=true; shift ;;
     --no-open) OPEN=false; shift ;;
     --list) LIST_ONLY=true; shift ;;
@@ -43,6 +73,10 @@ while [[ $# -gt 0 ]]; do
       ;;
     *)
       echo "Unknown option: $1" >&2
+      if [[ "$1" == "--clean" ]]; then
+        echo "Tip: nejdřív aktualizuj repo (skript je starší než origin):" >&2
+        echo "  git pull --ff-only origin $(git -C "${ROOT_DIR}" symbolic-ref -q --short HEAD 2>/dev/null || echo '<větev>')" >&2
+      fi
       usage >&2
       exit 1
       ;;
@@ -70,6 +104,29 @@ print_git_head() {
   fi
 }
 
+current_git_branch() {
+  git -C "${ROOT_DIR}" symbolic-ref -q --short HEAD 2>/dev/null || true
+}
+
+# Bash 3.2 (macOS default) has no mapfile — print paths one per line.
+print_other_copies() {
+  local canonical="${1:-}"
+  local path
+  local found=false
+
+  while IFS= read -r path; do
+    [[ -z "${path}" ]] && continue
+    if [[ "${found}" == false ]]; then
+      found=true
+    fi
+    printf '  - %s\n' "${path}"
+  done < <(find_other_copies "${canonical}" | sort -u)
+
+  if [[ "${found}" == false ]]; then
+    echo "  (žádné další nalezené)"
+  fi
+}
+
 find_other_copies() {
   local canonical="${1:-}"
   local path
@@ -94,29 +151,72 @@ find_other_copies() {
   )
 }
 
+ensure_branch_not_behind_origin() {
+  local branch="$1"
+  local upstream="origin/${branch}"
+  local behind
+
+  if ! git -C "${ROOT_DIR}" rev-parse --verify "${upstream}" >/dev/null 2>&1; then
+    return 0
+  fi
+
+  behind="$(git -C "${ROOT_DIR}" rev-list --count "HEAD..${upstream}" 2>/dev/null || echo 0)"
+  if [[ "${behind}" -eq 0 ]]; then
+    return 0
+  fi
+
+  echo "" >&2
+  echo "Chyba: větev '${branch}' je ${behind} commit(y) za ${upstream}." >&2
+  echo "  git pull --ff-only origin ${branch}" >&2
+  echo "nebo spusť znovu s: ./scripts/install_latest.sh --pull" >&2
+  echo "" >&2
+  exit 1
+}
+
+sync_git_if_requested() {
+  local branch
+  branch="$(current_git_branch)"
+  if [[ -z "${branch}" ]]; then
+    if [[ "${PULL}" == true ]]; then
+      echo "Nelze použít --pull v detached HEAD — checkout větev nejdřív." >&2
+      exit 1
+    fi
+    return 0
+  fi
+
+  git -C "${ROOT_DIR}" fetch origin "${branch}" 2>/dev/null || {
+    echo "Varování: git fetch origin ${branch} selhalo (offline?)." >&2
+    return 0
+  }
+
+  if [[ "${PULL}" == true ]]; then
+    git -C "${ROOT_DIR}" pull --ff-only origin "${branch}"
+    echo "Po pull:"
+    print_git_head
+    return 0
+  fi
+
+  ensure_branch_not_behind_origin "${branch}"
+}
+
 if [[ "${LIST_ONLY}" == true ]]; then
   echo "Kanonická kopie (cíl instalace): ${INSTALL_PATH}"
   echo ""
   echo "Ostatní kopie Dictator.app:"
-  mapfile -t OTHERS < <(find_other_copies "${INSTALL_PATH}" | sort -u)
-  if [[ ${#OTHERS[@]} -eq 0 ]]; then
-    echo "  (žádné další nalezené)"
-  else
-    printf '  - %s\n' "${OTHERS[@]}"
-  fi
+  print_other_copies "${INSTALL_PATH}"
   exit 0
 fi
 
 echo "Repo: ${ROOT_DIR}"
 print_git_head
 
-if [[ "${PULL}" == true ]]; then
-  git -C "${ROOT_DIR}" pull --ff-only origin main
-  echo "Po pull:"
-  print_git_head
-fi
+sync_git_if_requested
 
 if [[ "${SKIP_BUILD}" != true ]]; then
+  if [[ "${CLEAN}" == true ]]; then
+    echo "Čistý build: mažu ${ROOT_DIR}/build/DerivedData …"
+    rm -rf "${ROOT_DIR}/build/DerivedData"
+  fi
   "${ROOT_DIR}/scripts/build_release.sh"
 fi
 
@@ -154,11 +254,15 @@ BUILD="$(
 echo "Installed Dictator ${VERSION} (build ${BUILD})"
 echo "  → ${INSTALL_PATH}"
 
-mapfile -t OTHERS < <(find_other_copies "${INSTALL_PATH}" | sort -u)
-if [[ ${#OTHERS[@]} -gt 0 ]]; then
+OTHERS_COUNT=0
+while IFS= read -r _; do
+  OTHERS_COUNT=$((OTHERS_COUNT + 1))
+done < <(find_other_copies "${INSTALL_PATH}" | sort -u)
+
+if [[ "${OTHERS_COUNT}" -gt 0 ]]; then
   echo ""
   echo "Další kopie na disku (nepoužívej je — smaž nebo ignoruj):"
-  printf '  - %s\n' "${OTHERS[@]}"
+  print_other_copies "${INSTALL_PATH}"
   echo ""
   echo "V Nastavení → Soukromí → Zpřístupnění nech jen tuto kopii."
 fi
