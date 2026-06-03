@@ -124,7 +124,7 @@ final class PreferencesPanelBuilder: NSObject {
 
         let title = AppTheme.label("Klávesa pro diktování", font: AppTheme.Font.headline, color: AppTheme.Color.title)
         let detail = AppTheme.label(
-            "Doporučeno na českém Macu: pravý Command (⌘). Pravý Option (⌥) je často AltGr (@, #, &) a v jiných aplikacích (Linear, Cursor) nemusí spustit diktování.",
+            "Výchozí: pravý Command (⌘). Option (⌥) je volitelný — na české klávesnici bývá AltGr.",
             font: AppTheme.Font.body,
             color: AppTheme.Color.body,
             lines: 0

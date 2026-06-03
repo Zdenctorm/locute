@@ -27,16 +27,4 @@ final class HotkeyTriggerLogicTests: XCTestCase {
         XCTAssertTrue(HotkeyTriggerLogic.isTriggerDown(preference: .eitherOption, snap: right))
         XCTAssertTrue(HotkeyTriggerLogic.isTriggerDown(preference: .eitherOption, snap: left))
     }
-
-    func testWrongModifierForRightOptionPreference() {
-        let leftOnly = HotkeyTriggerLogic.Snapshot(
-            keyCode: 58, alternateDown: true, commandDown: false,
-            key54Down: false, key58Down: true, key61Down: false
-        )
-        XCTAssertTrue(HotkeyTriggerLogic.wrongModifierActive(
-            preference: .rightOption,
-            snap: leftOnly,
-            sessionActive: false
-        ))
-    }
 }

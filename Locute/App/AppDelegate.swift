@@ -28,7 +28,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var streamingTranscriptionTask: Task<Void, Never>?
     private var stateCancellable: AnyCancellable?
     private var optionHeld = false
-    private var wrongModifierHeld = false
     private var transcriptionTestMode = false
     private var escapeMonitor: Any?
     private var keepAliveActivity: NSObjectProtocol?
@@ -138,8 +137,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 }
                 statusBarController.showTransientStatus(message, duration: 10)
                 showSetupWindow()
-            } else {
-                maybeShowCzechHotkeyTip()
             }
         }
 
@@ -255,23 +252,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         hotkeyManager.onModifierEvent = { [weak self] key, down in
             self?.handleModifierEvent(key: key, down: down)
         }
-        hotkeyManager.onWrongModifierHint = { [weak self] active in
-            self?.handleWrongModifierHint(active: active)
-        }
         hotkeyManager.onKeyDown = { [weak self] in self?.beginDictation(trigger: "hotkey") }
         hotkeyManager.onKeyUp = { [weak self] in self?.endDictation(trigger: "hotkey") }
-    }
-
-    private func handleWrongModifierHint(active: Bool) {
-        wrongModifierHeld = active
-        guard !stateMachine.isRecording else { return }
-        if active {
-            recordingOverlay.show(.wrongKey)
-        } else if optionHeld {
-            recordingOverlay.sync(appState: stateMachine.state, rightOptionHeld: true)
-        } else {
-            recordingOverlay.hide()
-        }
     }
 
     private func observeAppState() {
@@ -408,23 +390,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         hotkeyManager.prepareForCrossAppUse()
         DiagnosticsLogger.log("Startup completed. App is idle.")
         launchWindowController?.dismissIfIdle()
-        maybeShowCzechHotkeyTip()
 
         if PostProcessingPreference.isEnabled {
             Task { [weak self] in await self?.startPostProcessingLoad() }
         }
-    }
-
-    private func maybeShowCzechHotkeyTip() {
-        let tipKey = "didShowCzechHotkeyTip"
-        guard !UserDefaults.standard.bool(forKey: tipKey) else { return }
-        guard HotkeyPreference.recommendedDefault == .rightCommand else { return }
-        guard HotkeyPreference.current == .rightOption || HotkeyPreference.current == .eitherOption else { return }
-        UserDefaults.standard.set(true, forKey: tipKey)
-        statusBarController.showTransientStatus(
-            "Na české klávesnici zvol v Nastavení „pravý Command (⌘)“ — pravý Option často nefunguje v jiných appkách.",
-            duration: 12
-        )
     }
 
     @discardableResult

@@ -10,7 +10,6 @@ enum RecordingOverlayMode: Equatable {
     case injectionSuccess
     case injectionFailed(String)
     case busy(String)
-    case wrongKey
 }
 
 /// Kompaktní recording pill (Whispur vzor) — ne banner. Tečka + waveform + krátký stav + Esc.
@@ -294,9 +293,6 @@ final class RecordingOverlayController {
             dotView.layer?.backgroundColor = AppTheme.resolved(AppTheme.Color.danger, for: dotView).cgColor
         case .busy(let message):
             statusLabel.stringValue = Self.truncate(message, max: 36)
-            dotView.layer?.backgroundColor = AppTheme.Color.warning.cgColor
-        case .wrongKey:
-            statusLabel.stringValue = "Drž \(HotkeyPreference.current.hintLabel)"
             dotView.layer?.backgroundColor = AppTheme.Color.warning.cgColor
         case .hidden:
             break

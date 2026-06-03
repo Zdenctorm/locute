@@ -28,7 +28,7 @@ Jednoduchá, offline, soukromá diktovací appka. Žádná data neopouštějí z
 ## Klíčové funkce (MVP)
 
 1. **Menu bar icon** — appka žije v menu baru, nemá hlavní okno
-2. **Push-to-talk** — přidrž klávesu (výchozí: Right Option) → nahrává mikrofon → pusť → přepíše → napíše text do aktivního okna
+2. **Push-to-talk** — přidrž klávesu (výchozí: pravý Command ⌘) → nahrává mikrofon → pusť → přepíše → napíše text do aktivního okna
 3. **Vizuální feedback** — ikona/overlay indikuje nahrávání
 4. **Offline only** — WhisperKit lokálně, nic se neposílá ven
 5. **Čeština** — model fixně nastaven na `cs`

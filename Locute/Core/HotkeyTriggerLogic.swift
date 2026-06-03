@@ -32,18 +32,4 @@ enum HotkeyTriggerLogic {
             return snap.commandDown && (snap.key54Down || snap.keyCode == Snapshot.rightCommandKeyCode)
         }
     }
-
-    static func wrongModifierActive(preference: HotkeyChoice, snap: Snapshot, sessionActive: Bool) -> Bool {
-        guard !sessionActive else { return false }
-        switch preference {
-        case .eitherOption:
-            return false
-        case .rightOption:
-            return snap.alternateDown && snap.key58Down && !snap.key61Down
-        case .leftOption:
-            return snap.alternateDown && snap.key61Down && !snap.key58Down
-        case .rightCommand:
-            return snap.alternateDown && (snap.key58Down || snap.key61Down)
-        }
-    }
 }
