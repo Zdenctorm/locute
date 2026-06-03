@@ -9,8 +9,8 @@ final class DictationTargetTracker {
     private var menuSessionExternalTarget: NSRunningApplication?
     private let ownBundleID = Bundle.main.bundleIdentifier
     /// Když `frontmostApplication` při hotkey down dočasně vrátí `nil` nebo vlastní appku,
-    /// dovolíme krátký fallback na poslední externí appku.
-    private let recentExternalFallbackWindow: TimeInterval = 8
+    /// dovolíme krátký fallback na poslední externí appku (Open-Wispr „paste again“ recovery).
+    private let recentExternalFallbackWindow: TimeInterval = 30
 
     func startObserving() {
         NotificationCenter.default.addObserver(
@@ -54,16 +54,15 @@ final class DictationTargetTracker {
             updateLastExternal(frontmost)
             return frontmost
         }
-        // Když API vrátí nil, může jít o krátký focus race. V tom případě je bezpečné
-        // použít čerstvě viděnou externí appku. Pokud je frontmost Locute, fallback
-        // neděláme, aby diktování zůstalo "history only".
-        if frontmost == nil, let fallback = recentExternalTarget() {
+        // Hotkey: frontmost může být krátce nil (focus race) nebo Locute (okno/HUD).
+        // Pro push-to-talk preferujeme poslední externí appku — jinak se text nevloží.
+        if let fallback = recentExternalTarget() {
+            let reason = frontmost.map { isOwnApp($0) ? "frontmost=Locute" : "frontmost=?" } ?? "frontmost=nil"
             DiagnosticsLogger.log(
-                "Dictation target fallback to recent external app: \(fallback.localizedName ?? "?") (\(fallback.bundleIdentifier ?? "?"))"
+                "Dictation target fallback (\(reason)) → \(fallback.localizedName ?? "?") (\(fallback.bundleIdentifier ?? "?"))"
             )
             return fallback
         }
-        // Uživatel diktuje z okna Locute nebo neznáme bezpečný externí cíl.
         return nil
     }
 

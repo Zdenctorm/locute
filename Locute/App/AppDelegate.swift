@@ -170,6 +170,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         statusBarController.onOpenLearnedTerms = { [weak self] in self?.showLearnedTermsWindow() }
         statusBarController.onOpenHistory = { [weak self] in self?.showHistoryWindow() }
         launchWindowController?.onRetry = { [weak self] in self?.startStartupTask() }
+        launchWindowController?.onRetryInsert = { [weak self] text in
+            self?.retryInsert(text: text)
+        }
         launchWindowController?.onOpenHistory = { [weak self] in self?.showHistoryWindow() }
         launchWindowController?.onOpenSetupGuide = { [weak self] in self?.showSetupWindow() }
         historyWindowController?.onRetryInsert = { [weak self] text in
@@ -656,7 +659,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                     if reviewBeforePaste {
                         DiagnosticsLogger.log("Dictation (\(trigger)): review-before-paste")
                         self.stateMachine.transition(to: .idle)
-                        self.showHistoryWindow()
+                        self.presentLaunchHistory()
                         self.recordingOverlay.showTransientFeedback(
                             "Přepis v historii — zkontroluj.",
                             duration: 5
@@ -666,6 +669,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                     } else {
                         DiagnosticsLogger.log("Dictation (\(trigger)): history only — skipping external inject")
                         self.stateMachine.transition(to: .idle)
+                        self.presentLaunchHistory()
+                        self.recordingOverlay.showTransientFeedback(
+                            "Přepis v historii — klepni Vložit.",
+                            duration: 4
+                        )
                     }
                 }
 
@@ -700,9 +708,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             self.transcriptionTestMode = false
             self.stateMachine.transition(to: .idle)
             SoundFeedbackService.playError()
+            self.recordingOverlay.hide()
             self.recordingOverlay.showTransientFeedback(message, duration: 5)
             self.statusBarController.showTransientStatus(message, duration: 6)
-            self.showLaunchWindow()
         }
         if trigger == "test" {
             await MainActor.run { [weak self] in
@@ -733,7 +741,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     private func pushTranscriptionHistoryToPanels() {
+        launchWindowController?.setTranscriptionHistory(transcriptionHistory)
         historyWindowController?.setTranscriptionHistory(transcriptionHistory)
+    }
+
+    private func presentLaunchHistory() {
+        launchWindowController?.setTranscriptionHistory(transcriptionHistory)
+        launchWindowController?.focusTranscriptionPanel()
     }
 
     private func scheduleHistoryPersist() {
@@ -766,7 +780,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             statusBarController.showTransientStatus("Zatím žádný přepis — nejdřív něco nadiktuj", duration: 3)
             return
         }
-        showHistoryWindow()
+        presentLaunchHistory()
     }
 
     private func showTranscriptionPopover(from statusButton: NSStatusBarButton) {
@@ -810,8 +824,19 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         DispatchQueue.global(qos: .userInitiated).asyncAfter(deadline: .now() + 5, execute: watchdog)
         defer { watchdog.cancel() }
 
-        try? await Task.sleep(for: .milliseconds(200))
+        await waitForDictationHotkeyReleaseIfNeeded()
+        try? await Task.sleep(for: .milliseconds(150))
         return await TextInjector.inject(text: text, into: targetApp)
+    }
+
+    /// Po puštění pravého ⌘ jako hotkey musíme počkat, než se modifier uvolní — jinak Cmd+V selže.
+    private func waitForDictationHotkeyReleaseIfNeeded() async {
+        guard HotkeyPreference.current == .rightCommand else { return }
+        let keyCode: CGKeyCode = 54
+        for _ in 0..<60 {
+            if !CGEventSource.keyState(.hidSystemState, key: keyCode) { return }
+            try? await Task.sleep(for: .milliseconds(10))
+        }
     }
 
     @MainActor

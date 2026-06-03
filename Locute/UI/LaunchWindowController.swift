@@ -1,10 +1,11 @@
 import Cocoa
 import Combine
 
-/// Stav aplikace při startu a stahování modelu — bez historie (ta je v `HistoryWindowController`).
+/// Domovské okno: stav při startu/stahování modelu + historie přepisů (Glimpse/Whispur recovery pattern).
 @MainActor
 final class LaunchWindowController: NSWindowController {
     var onRetry: (() -> Void)?
+    var onRetryInsert: ((String) -> Void)?
     var onOpenHistory: (() -> Void)?
     var onOpenSetupGuide: (() -> Void)?
 
@@ -34,19 +35,20 @@ final class LaunchWindowController: NSWindowController {
     private let setupGuideButton = AppTheme.primaryButton("Průvodce nastavením…", target: nil, action: nil)
     private let historyButton = AppTheme.secondaryButton("Historie…", target: nil, action: nil)
     private let closeButton = AppTheme.secondaryButton("Skrýt okno", target: nil, action: nil)
+    private let transcriptionPanel = TranscriptionPanelView()
 
     init(stateMachine: AppStateMachine) {
         self.stateMachine = stateMachine
 
         let window = NSWindow(
-            contentRect: NSRect(x: 0, y: 0, width: 520, height: 360),
-            styleMask: [.titled, .closable, .miniaturizable],
+            contentRect: NSRect(x: 0, y: 0, width: 560, height: 520),
+            styleMask: [.titled, .closable, .miniaturizable, .resizable],
             backing: .buffered,
             defer: false
         )
         AppTheme.configureMainWindow(window, title: AppBrand.displayName)
-        window.minSize = NSSize(width: 480, height: 280)
-        window.contentMinSize = NSSize(width: 480, height: 280)
+        window.minSize = NSSize(width: 480, height: 360)
+        window.contentMinSize = NSSize(width: 480, height: 360)
 
         super.init(window: window)
         buildUI()
@@ -72,7 +74,7 @@ final class LaunchWindowController: NSWindowController {
 
     private func refreshHotkeyCopy() {
         heroDetailLabel.stringValue =
-            "Podrž \(HotkeyPreference.current.hintLabel), mluv, pusť."
+            "Podrž \(HotkeyPreference.current.hintLabel), mluv, pusť. Historie je níže."
     }
 
     required init?(coder: NSCoder) {
@@ -89,6 +91,14 @@ final class LaunchWindowController: NSWindowController {
         window?.orderOut(nil)
     }
 
+    func setTranscriptionHistory(_ entries: [TranscriptionHistoryEntry]) {
+        transcriptionPanel.setHistory(entries)
+    }
+
+    func focusTranscriptionPanel() {
+        showWindow(nil)
+    }
+
     private func buildUI() {
         let logo = AppLogoView()
         logo.translatesAutoresizingMaskIntoConstraints = false
@@ -99,8 +109,6 @@ final class LaunchWindowController: NSWindowController {
 
         let title = AppTheme.label("\(AppBrand.displayName) běží", font: AppTheme.Font.largeTitle, color: AppTheme.Color.title)
 
-        heroDetailLabel.stringValue =
-            "Podrž \(HotkeyPreference.current.hintLabel), mluv, pusť."
         AccessibilitySupport.configure(statusLabel, label: "Stav aplikace")
         AccessibilitySupport.configure(downloadProgressIndicator, label: "Průběh stahování modelu")
 
@@ -110,6 +118,10 @@ final class LaunchWindowController: NSWindowController {
         downloadProgressIndicator.isIndeterminate = false
         downloadProgressIndicator.style = .bar
         downloadProgressIndicator.controlSize = .regular
+
+        transcriptionPanel.onInsert = { [weak self] text in
+            self?.onRetryInsert?(text)
+        }
 
         let modelCard = AppTheme.card([
             downloadTitleLabel,
@@ -160,9 +172,10 @@ final class LaunchWindowController: NSWindowController {
         bottomStack.setCustomSpacing(AppTheme.Spacing.intimate, after: statusLabel)
         bottomStack.translatesAutoresizingMaskIntoConstraints = false
 
-        header.translatesAutoresizingMaskIntoConstraints = false
+        transcriptionPanel.translatesAutoresizingMaskIntoConstraints = false
 
         contentView.addSubview(header)
+        contentView.addSubview(transcriptionPanel)
         contentView.addSubview(bottomStack)
 
         let pad = AppTheme.Spacing.windowPadding
@@ -171,10 +184,14 @@ final class LaunchWindowController: NSWindowController {
             header.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: pad),
             header.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -pad),
 
-            bottomStack.topAnchor.constraint(equalTo: header.bottomAnchor, constant: AppTheme.Spacing.hero),
+            transcriptionPanel.topAnchor.constraint(equalTo: header.bottomAnchor, constant: AppTheme.Spacing.hero),
+            transcriptionPanel.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: pad),
+            transcriptionPanel.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -pad),
+            transcriptionPanel.bottomAnchor.constraint(equalTo: bottomStack.topAnchor, constant: -AppTheme.Spacing.stack),
+
             bottomStack.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: pad),
             bottomStack.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -pad),
-            bottomStack.bottomAnchor.constraint(lessThanOrEqualTo: contentView.bottomAnchor, constant: -pad),
+            bottomStack.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -pad),
 
             modelCard.widthAnchor.constraint(equalTo: bottomStack.widthAnchor),
             statusLabel.widthAnchor.constraint(equalTo: bottomStack.widthAnchor)
