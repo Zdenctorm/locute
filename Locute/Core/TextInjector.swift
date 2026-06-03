@@ -69,7 +69,7 @@ enum TextInjector {
 
     private static func activateTargetAppIfNeeded(_ targetApp: NSRunningApplication?) async {
         guard let targetApp else { return }
-        await MainActor.run { _ = targetApp.activate(options: .activateIgnoringOtherApps) }
+        await MainActor.run { _ = targetApp.activate() }
         try? await Task.sleep(for: .milliseconds(150))
     }
 
