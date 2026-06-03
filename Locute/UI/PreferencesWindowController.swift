@@ -77,7 +77,9 @@ final class PreferencesWindowController: NSWindowController {
         window?.contentView = contentView
         AppTheme.pinScrollViewToWindow(scrollView, in: contentView)
 
-        advancedDisclosure.setButtonType(.disclosure)
+        advancedDisclosure.setButtonType(.toggle)
+        advancedDisclosure.bezelStyle = .inline
+        advancedDisclosure.font = AppTheme.Font.footnote
         advancedDisclosure.state = .off
         advancedDisclosure.target = self
         advancedDisclosure.action = #selector(toggleAdvancedPanel)

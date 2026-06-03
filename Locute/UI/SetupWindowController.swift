@@ -221,7 +221,9 @@ final class SetupWindowController: NSWindowController {
         bundlePathLabel.lineBreakMode = .byTruncatingMiddle
         logStatusLabel.isHidden = true
 
-        helpDisclosure.setButtonType(.disclosure)
+        helpDisclosure.setButtonType(.toggle)
+        helpDisclosure.bezelStyle = .inline
+        helpDisclosure.font = AppTheme.Font.footnote
         helpDisclosure.state = .off
         helpDisclosure.target = self
         helpDisclosure.action = #selector(toggleHelpPanel)
