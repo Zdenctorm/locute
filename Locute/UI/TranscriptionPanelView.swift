@@ -11,12 +11,7 @@ final class TranscriptionPanelView: NSView {
     /// Called with the text of the row whose "vložit" button was tapped.
     var onInsert: ((String) -> Void)?
 
-    private let placeholderLabel = AppTheme.label(
-        "",
-        font: AppTheme.Font.body,
-        color: AppTheme.Color.body,
-        lines: 0
-    )
+    private let placeholderLabel: NSTextField
 
     private let scrollView = NSScrollView()
     private let entriesStack = NSStackView()
