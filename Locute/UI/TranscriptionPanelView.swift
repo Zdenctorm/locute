@@ -137,7 +137,6 @@ final class TranscriptionPanelView: NSView {
             content.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -pad),
 
             titleLabel.widthAnchor.constraint(equalTo: content.widthAnchor),
-            helperLabel.widthAnchor.constraint(equalTo: content.widthAnchor),
 
             scrollView.widthAnchor.constraint(equalTo: content.widthAnchor),
             scrollView.heightAnchor.constraint(greaterThanOrEqualToConstant: 140),
