@@ -13,6 +13,8 @@ Locute vypadá jako **papír a inkoust na stole** — teplé neutrály, jedna hl
 **Layout philosophy**
 
 - Okna: jeden hlavní vertikální flow (header → obsah → status/actions), padding **40pt** (`windowPadding`).
+- **Historie přepisů:** samostatné okno `HistoryWindowController` — ne v launch okně.
+- **Launch okno:** jen stav / stahování modelu; po idle se skryje, menu bar zůstane domovem.
 - Karty: `PanelCardView` — zaoblení **16pt**, border 1pt warm separator, padding **24pt**.
 - Menu bar popover / word popover: kořen přes `AppTheme.popoverRootView` (warm `surface`), typografie a tlačítka z `AppTheme`.
 

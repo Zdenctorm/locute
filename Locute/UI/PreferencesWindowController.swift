@@ -100,7 +100,7 @@ final class PreferencesWindowController: NSWindowController {
 
         let contentStack = ScrollContentLayout.install(
             in: scrollView,
-            arrangedSubviews: [header] + panelBuilder.buildAllCards() + [advancedDisclosure, advancedPanel]
+            arrangedSubviews: [header] + panelBuilder.buildGroupedSections() + [advancedDisclosure, advancedPanel]
         )
         contentStack.setCustomSpacing(AppTheme.Spacing.hero, after: header)
         contentStack.setCustomSpacing(AppTheme.Spacing.tight, after: advancedDisclosure)

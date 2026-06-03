@@ -157,6 +157,22 @@ enum AppTheme {
         return field
     }
 
+    /// Sekční nadpis ve scrollovatelném nastavení (Diktování / Přepis).
+    static func sectionHeader(_ title: String) -> NSView {
+        let label = label(title, font: Font.title, color: Color.title)
+        let wrapper = NSView()
+        wrapper.translatesAutoresizingMaskIntoConstraints = false
+        label.translatesAutoresizingMaskIntoConstraints = false
+        wrapper.addSubview(label)
+        NSLayoutConstraint.activate([
+            label.leadingAnchor.constraint(equalTo: wrapper.leadingAnchor),
+            label.trailingAnchor.constraint(lessThanOrEqualTo: wrapper.trailingAnchor),
+            label.topAnchor.constraint(equalTo: wrapper.topAnchor, constant: Spacing.tight),
+            label.bottomAnchor.constraint(equalTo: wrapper.bottomAnchor)
+        ])
+        return wrapper
+    }
+
     /// Resolves dynamic theme colors for the view's current appearance.
     /// Use instead of bare `color.cgColor` on layers — assignment can freeze the wrong variant.
     static func resolved(_ color: NSColor, for view: NSView) -> NSColor {

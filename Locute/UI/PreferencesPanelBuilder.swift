@@ -42,6 +42,18 @@ final class PreferencesPanelBuilder: NSObject {
         ]
     }
 
+    func buildGroupedSections() -> [NSView] {
+        [
+            AppTheme.sectionHeader("Diktování"),
+            buildHotkeyCard(),
+            buildActivationCard(),
+            buildMicrophoneCard(),
+            buildBehaviorCard(),
+            AppTheme.sectionHeader("Přepis"),
+            buildModelCard()
+        ]
+    }
+
     /// Pokročilé nastavení (mimo hlavní scroll) — oprava textu na Macu.
     func buildAdvancedCards() -> [NSView] {
         [buildPostProcessingCard()]

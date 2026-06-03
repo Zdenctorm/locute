@@ -1,10 +1,12 @@
 import Cocoa
 import Combine
 
+/// Stav aplikace při startu a stahování modelu — bez historie (ta je v `HistoryWindowController`).
 @MainActor
 final class LaunchWindowController: NSWindowController {
     var onRetry: (() -> Void)?
-    var onRetryInsert: ((String) -> Void)?
+    var onOpenHistory: (() -> Void)?
+    var onOpenSetupGuide: (() -> Void)?
 
     private let stateMachine: AppStateMachine
     private var cancellables = Set<AnyCancellable>()
@@ -29,19 +31,22 @@ final class LaunchWindowController: NSWindowController {
     private var downloadCard: NSView?
     private var latestDownloadProgress = ModelDownloadProgress.empty
     private let retryButton = AppTheme.primaryButton("Zkusit znovu", target: nil, action: nil)
-    private let transcriptionPanel = TranscriptionPanelView()
-    private var transcriptionCard: NSView!
+    private let setupGuideButton = AppTheme.secondaryButton("Otevřít průvodce nastavením…", target: nil, action: nil)
+    private let historyButton = AppTheme.secondaryButton("Historie přepisů…", target: nil, action: nil)
+    private let closeButton = AppTheme.primaryButton("Skrýt okno", target: nil, action: nil)
 
     init(stateMachine: AppStateMachine) {
         self.stateMachine = stateMachine
 
         let window = NSWindow(
-            contentRect: NSRect(x: 0, y: 0, width: 560, height: 520),
+            contentRect: NSRect(x: 0, y: 0, width: 520, height: 360),
             styleMask: [.titled, .closable, .miniaturizable],
             backing: .buffered,
             defer: false
         )
         AppTheme.configureMainWindow(window, title: AppBrand.displayName)
+        window.minSize = NSSize(width: 480, height: 280)
+        window.contentMinSize = NSSize(width: 480, height: 280)
 
         super.init(window: window)
         buildUI()
@@ -67,7 +72,7 @@ final class LaunchWindowController: NSWindowController {
 
     private func refreshHotkeyCopy() {
         heroDetailLabel.stringValue =
-            "Soukromé diktování v češtině. Podrž \(HotkeyPreference.current.hintLabel), mluv a pusť — text se vloží tam, kde máš kurzor. Historie přepisů je níže (záloha a opravy slov)."
+            "Soukromé diktování v češtině. Podrž \(HotkeyPreference.current.hintLabel), mluv a pusť — text se vloží tam, kde máš kurzor. Historii najdeš v menu baru."
     }
 
     required init?(coder: NSCoder) {
@@ -79,12 +84,9 @@ final class LaunchWindowController: NSWindowController {
         AppWindowPresenter.present(window)
     }
 
-    func setTranscriptionHistory(_ entries: [TranscriptionHistoryEntry]) {
-        transcriptionPanel.setHistory(entries)
-    }
-
-    func focusTranscriptionPanel() {
-        showWindow(nil)
+    func dismissIfIdle() {
+        guard case .idle = stateMachine.state else { return }
+        window?.orderOut(nil)
     }
 
     private func buildUI() {
@@ -98,7 +100,7 @@ final class LaunchWindowController: NSWindowController {
         let title = AppTheme.label("\(AppBrand.displayName) běží", font: AppTheme.Font.largeTitle, color: AppTheme.Color.title)
 
         heroDetailLabel.stringValue =
-            "Soukromé diktování v češtině. Podrž \(HotkeyPreference.current.hintLabel), mluv a pusť — text se vloží tam, kde máš kurzor. Historie přepisů je níže (záloha a opravy slov)."
+            "Soukromé diktování v češtině. Podrž \(HotkeyPreference.current.hintLabel), mluv a pusť — text se vloží tam, kde máš kurzor. Historii najdeš v menu baru."
         AccessibilitySupport.configure(statusLabel, label: "Stav aplikace")
         AccessibilitySupport.configure(downloadProgressIndicator, label: "Průběh stahování modelu")
 
@@ -109,11 +111,6 @@ final class LaunchWindowController: NSWindowController {
         downloadProgressIndicator.style = .bar
         downloadProgressIndicator.controlSize = .regular
 
-        transcriptionCard = transcriptionPanel
-        transcriptionPanel.onInsert = { [weak self] text in
-            self?.onRetryInsert?(text)
-        }
-
         let modelCard = AppTheme.card([
             downloadTitleLabel,
             downloadProgressIndicator,
@@ -122,12 +119,21 @@ final class LaunchWindowController: NSWindowController {
         modelCard.isHidden = true
         downloadCard = modelCard
 
-        let closeButton = AppTheme.primaryButton("Skrýt okno", target: self, action: #selector(hideWindow))
         retryButton.target = self
         retryButton.action = #selector(retry)
         retryButton.isHidden = true
 
-        let actions = NSStackView(views: [retryButton, closeButton])
+        setupGuideButton.target = self
+        setupGuideButton.action = #selector(openSetupGuide)
+        setupGuideButton.isHidden = true
+
+        historyButton.target = self
+        historyButton.action = #selector(openHistory)
+
+        closeButton.target = self
+        closeButton.action = #selector(hideWindow)
+
+        let actions = NSStackView(views: [retryButton, setupGuideButton, historyButton, closeButton])
         actions.orientation = .horizontal
         actions.alignment = .centerY
         actions.spacing = AppTheme.Spacing.row
@@ -143,11 +149,7 @@ final class LaunchWindowController: NSWindowController {
         header.alignment = .top
         header.spacing = AppTheme.Spacing.stack
         header.translatesAutoresizingMaskIntoConstraints = false
-        headerText.setContentHuggingPriority(.defaultLow, for: .horizontal)
 
-        // Window layout: header pinned to top, bottomStack pinned to bottom, transcript panel
-        // fills the middle and grows with the window. No outer scroll — the transcript panel
-        // has its own internal scroll for entries, so single-scroll experience.
         let contentView = NSView()
         window?.contentView = contentView
 
@@ -159,10 +161,8 @@ final class LaunchWindowController: NSWindowController {
         bottomStack.translatesAutoresizingMaskIntoConstraints = false
 
         header.translatesAutoresizingMaskIntoConstraints = false
-        transcriptionCard.translatesAutoresizingMaskIntoConstraints = false
 
         contentView.addSubview(header)
-        contentView.addSubview(transcriptionCard)
         contentView.addSubview(bottomStack)
 
         let pad = AppTheme.Spacing.windowPadding
@@ -171,14 +171,10 @@ final class LaunchWindowController: NSWindowController {
             header.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: pad),
             header.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -pad),
 
-            transcriptionCard.topAnchor.constraint(equalTo: header.bottomAnchor, constant: AppTheme.Spacing.hero),
-            transcriptionCard.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: pad),
-            transcriptionCard.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -pad),
-            transcriptionCard.bottomAnchor.constraint(equalTo: bottomStack.topAnchor, constant: -AppTheme.Spacing.stack),
-
+            bottomStack.topAnchor.constraint(equalTo: header.bottomAnchor, constant: AppTheme.Spacing.hero),
             bottomStack.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: pad),
             bottomStack.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -pad),
-            bottomStack.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -pad),
+            bottomStack.bottomAnchor.constraint(lessThanOrEqualTo: contentView.bottomAnchor, constant: -pad),
 
             modelCard.widthAnchor.constraint(equalTo: bottomStack.widthAnchor),
             statusLabel.widthAnchor.constraint(equalTo: bottomStack.widthAnchor)
@@ -195,9 +191,9 @@ final class LaunchWindowController: NSWindowController {
     private func update(for state: LocuteState) {
         switch state {
         case .idle:
-            statusLabel.stringValue = "Připraveno. Okno můžeš skrýt, \(AppBrand.displayName) zůstane v horní liště."
+            statusLabel.stringValue = "Připraveno. Okno můžeš skrýt — \(AppBrand.displayName) zůstane v horní liště."
             statusLabel.textColor = AppTheme.Color.title
-            AccessibilitySupport.announce("Připraveno k diktování")
+            setupGuideButton.isHidden = true
             retryButton.isHidden = true
         case .modelDownloading(let progress):
             if modelLoadStartedAt == nil {
@@ -211,19 +207,22 @@ final class LaunchWindowController: NSWindowController {
             downloadProgressIndicator.setAccessibilityValue("\(pct) procent")
             updateModelLoadMessage()
             statusLabel.textColor = AppTheme.Color.title
+            setupGuideButton.isHidden = true
             retryButton.isHidden = true
         case .modelLoading:
             stopModelLoadTimer()
             downloadCard?.isHidden = true
             statusLabel.stringValue = "Model je stažený. Připravuji lokální přepis."
             statusLabel.textColor = AppTheme.Color.title
+            setupGuideButton.isHidden = true
             retryButton.isHidden = true
         case .permissionsNeeded:
             stopModelLoadTimer()
             downloadCard?.isHidden = true
             statusLabel.stringValue =
-                "Je potřeba povolit mikrofon, Zpřístupnění a Monitorování vstupu — otevři Průvodce nastavením z menu."
-            statusLabel.textColor = AppTheme.Color.title
+                "Chybí oprávnění — mikrofon, Zpřístupnění a Monitorování vstupu. Otevři průvodce níže."
+            statusLabel.textColor = AppTheme.Color.warning
+            setupGuideButton.isHidden = false
             retryButton.isHidden = true
         case .error(let message):
             stopModelLoadTimer()
@@ -231,18 +230,28 @@ final class LaunchWindowController: NSWindowController {
             statusLabel.stringValue = message
             statusLabel.textColor = AppTheme.Color.danger
             AccessibilitySupport.announce("Chyba: \(message)")
+            setupGuideButton.isHidden = true
             retryButton.isHidden = false
         default:
             stopModelLoadTimer()
             downloadCard?.isHidden = true
             statusLabel.stringValue = state.displayText
             statusLabel.textColor = AppTheme.Color.title
+            setupGuideButton.isHidden = true
             retryButton.isHidden = true
         }
     }
 
     @objc private func hideWindow() {
         window?.orderOut(nil)
+    }
+
+    @objc private func openHistory() {
+        onOpenHistory?()
+    }
+
+    @objc private func openSetupGuide() {
+        onOpenSetupGuide?()
     }
 
     @objc private func retry() {
@@ -276,7 +285,8 @@ final class LaunchWindowController: NSWindowController {
         let percent = Int((latestDownloadProgress.fraction * 100).rounded())
 
         downloadDetailLabel.stringValue = "Staženo \(downloaded) z \(total) (\(percent) %)."
-        statusLabel.stringValue = "První spuštění stahuje lokální model (~\(preference.label.lowercased())). Můžete už diktovat — přepis dokončíme po stažení. Příště se model nestahuje. Probíhá už \(elapsedText). Nezavírejte aplikaci."
+        statusLabel.stringValue =
+            "První spuštění stahuje lokální model. Můžeš už diktovat — přepis doběhne po stažení. Probíhá \(elapsedText). Neukončuj \(AppBrand.displayName)."
     }
 
     private static let byteFormatter: ByteCountFormatter = {

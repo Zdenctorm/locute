@@ -16,6 +16,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var setupWindowController: SetupWindowController?
     private var preferencesWindowController: PreferencesWindowController?
     private var launchWindowController: LaunchWindowController?
+    private var historyWindowController: HistoryWindowController?
     private var learnedTermsWindowController: LearnedTermsWindowController?
     private var updaterController: SPUStandardUpdaterController!
     private var lastTranscriptionText: String?
@@ -107,6 +108,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             self?.hotkeyManager.currentHealth() ?? .tapMissing
         }
         launchWindowController = LaunchWindowController(stateMachine: stateMachine)
+        historyWindowController = HistoryWindowController()
 
         NotificationCenter.default.addObserver(
             forName: .locuteLearnedTermsChanged,
@@ -170,7 +172,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
         statusBarController.onOpenLearnedTerms = { [weak self] in self?.showLearnedTermsWindow() }
         launchWindowController?.onRetry = { [weak self] in self?.startStartupTask() }
-        launchWindowController?.onRetryInsert = { [weak self] text in
+        launchWindowController?.onOpenHistory = { [weak self] in self?.showHistoryWindow() }
+        launchWindowController?.onOpenSetupGuide = { [weak self] in self?.showSetupWindow() }
+        historyWindowController?.onRetryInsert = { [weak self] text in
             self?.retryInsert(text: text)
         }
 
@@ -344,6 +348,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         AppWindowPresenter.present(launchWindowController?.window)
     }
 
+    private func showHistoryWindow() {
+        historyWindowController?.setTranscriptionHistory(transcriptionHistory)
+        historyWindowController?.showWindow(nil)
+    }
+
     private func startStartupTask() {
         startupTask?.cancel()
         DiagnosticsLogger.log("Startup task scheduled")
@@ -398,6 +407,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         stateMachine.transition(to: .idle)
         hotkeyManager.prepareForCrossAppUse()
         DiagnosticsLogger.log("Startup completed. App is idle.")
+        launchWindowController?.dismissIfIdle()
         maybeShowCzechHotkeyTip()
 
         if PostProcessingPreference.isEnabled {
@@ -676,8 +686,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                     if reviewBeforePaste {
                         DiagnosticsLogger.log("Dictation (\(trigger)): review-before-paste")
                         self.stateMachine.transition(to: .idle)
-                        self.showLaunchWindow()
-                        self.launchWindowController?.focusTranscriptionPanel()
+                        self.showHistoryWindow()
                         self.recordingOverlay.showTransientFeedback(
                             "Přepis je v historii — zkontroluj a klepni „Vložit“",
                             duration: 5
@@ -754,7 +763,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     private func pushTranscriptionHistoryToPanels() {
-        launchWindowController?.setTranscriptionHistory(transcriptionHistory)
+        historyWindowController?.setTranscriptionHistory(transcriptionHistory)
     }
 
     private func scheduleHistoryPersist() {
@@ -787,8 +796,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             statusBarController.showTransientStatus("Zatím žádný přepis — nejdřív něco nadiktuj", duration: 3)
             return
         }
-        launchWindowController?.setTranscriptionHistory(transcriptionHistory)
-        launchWindowController?.focusTranscriptionPanel()
+        showHistoryWindow()
     }
 
     private func showTranscriptionPopover(from statusButton: NSStatusBarButton) {

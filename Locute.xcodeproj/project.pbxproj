@@ -21,6 +21,7 @@
 		010000000000000000000054 /* PreferencesWindowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 020000000000000000000054 /* PreferencesWindowController.swift */; };
 		010000000000000000000055 /* PreferencesPanelBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 020000000000000000000055 /* PreferencesPanelBuilder.swift */; };
 		010000000000000000000056 /* PermissionsPanelBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 020000000000000000000056 /* PermissionsPanelBuilder.swift */; };
+		01000000000000000000005A /* HistoryWindowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 02000000000000000000005A /* HistoryWindowController.swift */; };
 		01000000000000000000000A /* LaunchWindowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 02000000000000000000000C /* LaunchWindowController.swift */; };
 		01000000000000000000000B /* AppTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = 02000000000000000000000D /* AppTheme.swift */; };
 		01000000000000000000000D /* AppLogoView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 020000000000000000000010 /* AppLogoView.swift */; };
@@ -101,6 +102,7 @@
 		020000000000000000000009 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		02000000000000000000000A /* Locute.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Locute.entitlements; sourceTree = "<group>"; };
 		02000000000000000000000B /* Locute.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Locute.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		02000000000000000000005A /* HistoryWindowController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HistoryWindowController.swift; sourceTree = "<group>"; };
 		02000000000000000000000C /* LaunchWindowController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LaunchWindowController.swift; sourceTree = "<group>"; };
 		02000000000000000000000D /* AppTheme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppTheme.swift; sourceTree = "<group>"; };
 		020000000000000000000010 /* AppLogoView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppLogoView.swift; sourceTree = "<group>"; };
@@ -267,6 +269,7 @@
 				020000000000000000000056 /* PermissionsPanelBuilder.swift */,
 				020000000000000000000058 /* AudioLevelMeterView.swift */,
 				02000000000000000000000C /* LaunchWindowController.swift */,
+				02000000000000000000005A /* HistoryWindowController.swift */,
 				020000000000000000000013 /* RecordingOverlayController.swift */,
 				020000000000000000000014 /* TranscriptionPanelView.swift */,
 				020000000000000000000017 /* AppWindowPresenter.swift */,
@@ -469,6 +472,7 @@
 				010000000000000000000056 /* PermissionsPanelBuilder.swift in Sources */,
 				010000000000000000000058 /* AudioLevelMeterView.swift in Sources */,
 				01000000000000000000000A /* LaunchWindowController.swift in Sources */,
+				01000000000000000000005A /* HistoryWindowController.swift in Sources */,
 				01000000000000000000000B /* AppTheme.swift in Sources */,
 				010000000000000000000022 /* AccessibilitySupport.swift in Sources */,
 				01000000000000000000000D /* AppLogoView.swift in Sources */,
