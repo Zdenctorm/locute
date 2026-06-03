@@ -12,7 +12,7 @@ final class TranscriptionPanelView: NSView {
     var onInsert: ((String) -> Void)?
 
     private let placeholderLabel = AppTheme.label(
-        Self.emptyHistoryMessage(),
+        "",
         font: AppTheme.Font.body,
         color: AppTheme.Color.body,
         lines: 0
