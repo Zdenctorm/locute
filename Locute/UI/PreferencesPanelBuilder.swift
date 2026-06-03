@@ -19,7 +19,12 @@ final class PreferencesPanelBuilder: NSObject {
     )
     private let soundFeedbackCheckbox = NSButton(checkboxWithTitle: "Zvuková zpětná vazba", target: nil, action: nil)
     private let livePreviewCheckbox = NSButton(
-        checkboxWithTitle: "Zobrazovat průběžný přepis při držení klávesy",
+        checkboxWithTitle: "Náhled během diktování",
+        target: nil,
+        action: nil
+    )
+    private let postProcessingCheckbox = NSButton(
+        checkboxWithTitle: "Oprava textu po přepisu (volitelné)",
         target: nil,
         action: nil
     )
@@ -156,14 +161,27 @@ final class PreferencesPanelBuilder: NSObject {
 
         let title = AppTheme.label("Model přepisu", font: AppTheme.Font.headline, color: AppTheme.Color.title)
         let speedNote = AppTheme.label(
-            "Turbo = rychlejší přepis po puštění klávesy. Přesnost = lepší pro technické termíny, pomalejší.",
+            "Rychlost = nejrychlejší cesta (výchozí). Přesnost = lepší pro technické termíny, pomalejší. Vše běží offline na Macu.",
             font: AppTheme.Font.footnote,
             color: AppTheme.Color.body,
             lines: 0
         )
         modelDetailLabel.stringValue = TranscriptionModelPreference.current.detail
 
-        return AppTheme.card([title, speedNote, modelDetailLabel, modelPicker])
+        postProcessingCheckbox.state = PostProcessingPreference.isEnabled ? .on : .off
+        postProcessingCheckbox.target = self
+        postProcessingCheckbox.action = #selector(postProcessingChanged(_:))
+        let postProcessingNote = AppTheme.label(
+            "Lokálně na Macu — interpunkce a drobné úpravy. Vypnuto = nejrychlejší přepis.",
+            font: AppTheme.Font.footnote,
+            color: AppTheme.Color.body,
+            lines: 0
+        )
+
+        return AppTheme.card([
+            title, speedNote, modelDetailLabel, modelPicker,
+            postProcessingCheckbox, postProcessingNote
+        ])
     }
 
     private func buildActivationCard() -> NSView {
@@ -195,7 +213,7 @@ final class PreferencesPanelBuilder: NSObject {
         postProcessingSizeDetailLabel.stringValue = PostProcessingPreference.modelSize.detail
         let title = AppTheme.label("Oprava textu na Macu", font: AppTheme.Font.headline, color: AppTheme.Color.title)
         let detail = AppTheme.label(
-            "Zapni nebo vypni v menu → Pokročilé. Velikost ovlivní kvalitu a rychlost offline úprav textu.",
+            "Zapni nebo vypni také v menu → Pokročilé. Velikost ovlivní kvalitu a rychlost offline úprav textu. Vypnuto = nejrychlejší přepis.",
             font: AppTheme.Font.body,
             color: AppTheme.Color.body,
             lines: 0
@@ -246,7 +264,13 @@ final class PreferencesPanelBuilder: NSObject {
         livePreviewCheckbox.target = self
         livePreviewCheckbox.action = #selector(livePreviewChanged(_:))
         let title = AppTheme.label("Chování aplikace", font: AppTheme.Font.headline, color: AppTheme.Color.title)
-        return AppTheme.card([title, showInDockCheckbox, reviewBeforePasteCheckbox, livePreviewCheckbox, soundFeedbackCheckbox])
+        let previewNote = AppTheme.label(
+            "Jedna řádka v malém panelu u kurzoru nebo v menu baru — ne velký banner.",
+            font: AppTheme.Font.footnote,
+            color: AppTheme.Color.body,
+            lines: 0
+        )
+        return AppTheme.card([title, showInDockCheckbox, reviewBeforePasteCheckbox, livePreviewCheckbox, previewNote, soundFeedbackCheckbox])
     }
 
     @objc private func showInDockChanged(_ sender: NSButton) {
@@ -263,6 +287,10 @@ final class PreferencesPanelBuilder: NSObject {
 
     @objc private func livePreviewChanged(_ sender: NSButton) {
         DictationPreviewPreference.isEnabled = sender.state == .on
+    }
+
+    @objc private func postProcessingChanged(_ sender: NSButton) {
+        PostProcessingPreference.isEnabled = sender.state == .on
     }
 
     @objc private func modelPreferenceChanged(_ sender: NSPopUpButton) {

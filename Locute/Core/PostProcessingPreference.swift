@@ -36,14 +36,14 @@ enum PostProcessingModelSize: String, CaseIterable, Sendable {
     }
 }
 
-/// Preference pro opt-in AI opravu přepisů (interpunkce, kapitalizace, ALL-CAPS normalizace).
+/// Preference pro volitelnou lokální opravu přepisů (interpunkce, kapitalizace, ALL-CAPS normalizace).
 enum PostProcessingPreference {
     private static let enabledKey   = "postProcessingEnabled"
     private static let modelSizeKey = "postProcessingModelSize"
 
     static var isEnabled: Bool {
         get {
-            guard UserDefaults.standard.object(forKey: enabledKey) != nil else { return true }
+            guard UserDefaults.standard.object(forKey: enabledKey) != nil else { return false }
             return UserDefaults.standard.bool(forKey: enabledKey)
         }
         set {

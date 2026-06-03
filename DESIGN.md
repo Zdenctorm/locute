@@ -116,9 +116,11 @@ Pojmenování pro copy a AI — mapování v `AppTheme.Color`.
 
 ### Recording overlay (`RecordingOverlayController`)
 
-- Top center, **~420×72** min, non-activating panel.
-- Dot **10pt**, corner **5pt**; states: recording = Live Ember pulse; transcribing/injecting = Deep Claret; success = system green; failure = avoid systemRed.
-- Optional second line: streaming preview footnote (confirmed + draft).
+- Top center, **300×44 px pill** (Whispur vzor), non-activating panel — **ne banner**.
+- Horizontální layout: tečka **10pt** | waveform meter | krátký stav (1 řádek, trunc) | „Esc“.
+- Corner radius = polovina výšky (plná pill); material `.hudWindow`.
+- States: recording = Live Ember pulse; transcribing/injecting = Deep Claret; success = system green; failure = avoid systemRed.
+- Streaming preview: max 1 řádek ve status labelu, ne druhý velký blok textu.
 
 ### Menu bar
 

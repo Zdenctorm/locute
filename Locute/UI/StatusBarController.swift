@@ -54,7 +54,7 @@ final class StatusBarController: NSObject, NSMenuDelegate {
     )
     private let launchAtLoginItem = NSMenuItem(title: "Spouštět po přihlášení", action: #selector(toggleLaunchAtLogin), keyEquivalent: "")
     private let postProcessingItem = NSMenuItem(
-        title: "Oprava textu na Macu",
+        title: "Oprava textu po přepisu (volitelné)",
         action: #selector(togglePostProcessing),
         keyEquivalent: ""
     )
