@@ -218,7 +218,7 @@ final class RecordingOverlayController {
         AccessibilitySupport.configure(
             pillRow,
             label: "Stav diktování",
-            help: "Kompaktní indikátor nahrávání. Esc zruší.",
+            help: "Esc zruší nahrávání.",
             role: .group
         )
 

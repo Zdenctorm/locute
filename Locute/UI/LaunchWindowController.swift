@@ -31,9 +31,9 @@ final class LaunchWindowController: NSWindowController {
     private var downloadCard: NSView?
     private var latestDownloadProgress = ModelDownloadProgress.empty
     private let retryButton = AppTheme.primaryButton("Zkusit znovu", target: nil, action: nil)
-    private let setupGuideButton = AppTheme.secondaryButton("Otevřít průvodce nastavením…", target: nil, action: nil)
-    private let historyButton = AppTheme.secondaryButton("Historie přepisů…", target: nil, action: nil)
-    private let closeButton = AppTheme.primaryButton("Skrýt okno", target: nil, action: nil)
+    private let setupGuideButton = AppTheme.primaryButton("Průvodce nastavením…", target: nil, action: nil)
+    private let historyButton = AppTheme.secondaryButton("Historie…", target: nil, action: nil)
+    private let closeButton = AppTheme.secondaryButton("Skrýt okno", target: nil, action: nil)
 
     init(stateMachine: AppStateMachine) {
         self.stateMachine = stateMachine
@@ -72,7 +72,7 @@ final class LaunchWindowController: NSWindowController {
 
     private func refreshHotkeyCopy() {
         heroDetailLabel.stringValue =
-            "Soukromé diktování v češtině. Podrž \(HotkeyPreference.current.hintLabel), mluv a pusť — text se vloží tam, kde máš kurzor. Historii najdeš v menu baru."
+            "Podrž \(HotkeyPreference.current.hintLabel), mluv, pusť."
     }
 
     required init?(coder: NSCoder) {
@@ -100,7 +100,7 @@ final class LaunchWindowController: NSWindowController {
         let title = AppTheme.label("\(AppBrand.displayName) běží", font: AppTheme.Font.largeTitle, color: AppTheme.Color.title)
 
         heroDetailLabel.stringValue =
-            "Soukromé diktování v češtině. Podrž \(HotkeyPreference.current.hintLabel), mluv a pusť — text se vloží tam, kde máš kurzor. Historii najdeš v menu baru."
+            "Podrž \(HotkeyPreference.current.hintLabel), mluv, pusť."
         AccessibilitySupport.configure(statusLabel, label: "Stav aplikace")
         AccessibilitySupport.configure(downloadProgressIndicator, label: "Průběh stahování modelu")
 
@@ -191,7 +191,7 @@ final class LaunchWindowController: NSWindowController {
     private func update(for state: LocuteState) {
         switch state {
         case .idle:
-            statusLabel.stringValue = "Připraveno. Okno můžeš skrýt — \(AppBrand.displayName) zůstane v horní liště."
+            statusLabel.stringValue = "Připraveno."
             statusLabel.textColor = AppTheme.Color.title
             setupGuideButton.isHidden = true
             retryButton.isHidden = true
@@ -212,15 +212,14 @@ final class LaunchWindowController: NSWindowController {
         case .modelLoading:
             stopModelLoadTimer()
             downloadCard?.isHidden = true
-            statusLabel.stringValue = "Model je stažený. Připravuji lokální přepis."
+            statusLabel.stringValue = "Načítám model…"
             statusLabel.textColor = AppTheme.Color.title
             setupGuideButton.isHidden = true
             retryButton.isHidden = true
         case .permissionsNeeded:
             stopModelLoadTimer()
             downloadCard?.isHidden = true
-            statusLabel.stringValue =
-                "Chybí oprávnění — mikrofon, Zpřístupnění a Monitorování vstupu. Otevři průvodce níže."
+            statusLabel.stringValue = "Chybí oprávnění — otevři průvodce."
             statusLabel.textColor = AppTheme.Color.warning
             setupGuideButton.isHidden = false
             retryButton.isHidden = true
@@ -284,9 +283,8 @@ final class LaunchWindowController: NSWindowController {
         let total = Self.byteFormatter.string(fromByteCount: latestDownloadProgress.totalBytes)
         let percent = Int((latestDownloadProgress.fraction * 100).rounded())
 
-        downloadDetailLabel.stringValue = "Staženo \(downloaded) z \(total) (\(percent) %)."
-        statusLabel.stringValue =
-            "První spuštění stahuje lokální model. Můžeš už diktovat — přepis doběhne po stažení. Probíhá \(elapsedText). Neukončuj \(AppBrand.displayName)."
+        downloadDetailLabel.stringValue = "\(downloaded) / \(total) (\(percent) %)."
+        statusLabel.stringValue = "Stahuji model (\(elapsedText)). Můžeš už diktovat."
     }
 
     private static let byteFormatter: ByteCountFormatter = {

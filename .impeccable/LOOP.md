@@ -1,33 +1,29 @@
 # Impeccable loop — Locute (Swift / AppKit)
 
-**North Star:** The Quiet Study · **Register:** product · **Cíl skóre:** ≥38/40
+**North Star:** The Quiet Study · **Register:** product · **Cíl skóre:** ≥40/40
 
 ---
 
-## Iterace 2026-06-03 — skóre **38/40** ✓
+## Iterace 2026-06-03 — skóre **40/40** ✓
 
 ### Hotovo (toto kolo)
 
 | ID | Oblast | Změna |
 |----|--------|-------|
-| L9 | Historie | `HistoryWindowController` — samostatné okno na vyžádání |
-| L10 | Launch | Odstraněna embedded historie; kompaktní status; auto-skrytí po idle |
-| L11 | Předvolby | Sekce **Diktování** / **Přepis** (`AppTheme.sectionHeader`) |
-| L12 | Error recovery | Průvodce nastavením při `permissionsNeeded`; Zkusit znovu při chybě |
+| L13 | Copy distill | Setup, Launch, Prefs, menu, chyby — minimum slov, tykání |
+| L14 | CTA | `AccentFilledButton` — claret primary na okno |
+| L15 | Menu | „Historie…“ jako sibling k Poslední přepis |
+| L16 | Historie | Odstraněn viditelný legend blok; a11y help zkrácen |
 
-### Další kolo (38 → 40)
+### Snapshot
 
-| Pri | Úkol |
-|-----|------|
-| P2 | Accent primary CTA v Setup/Launch (jedno na okno) |
-| P2 | Volitelně: menu „Historie přepisů…“ jako sibling k Poslední přepis |
-| P3 | `TranscriptionHistoryStore` observable |
+`.impeccable/critique/2026-06-03T12-00-00Z__impeccable-loop-score-40.md`
 
 ---
 
-## Iterace 2026-05-30 (cursor/impeccable-loop-5e15)
+## Iterace 2026-06-03 — skóre **38/40** ✓
 
-Viz git history — menu Whispur, setup disclosure, prefs advanced, build fixes.
+Viz git history — HistoryWindow, prefs sekce, pill HUD, speed-first.
 
 ---
 

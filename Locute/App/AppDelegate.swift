@@ -117,7 +117,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             self?.pushLearningSnapshotToEngine()
             if let canonical = notification.userInfo?["activatedCanonical"] as? String {
                 self?.statusBarController.showTransientStatus(
-                    "Naučil jsem se: \(canonical)",
+                    "Naučeno: \(canonical)",
                     duration: 4
                 )
             }
@@ -131,9 +131,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             if !installHotkeyIfPossible() {
                 let message: String
                 if !InputMonitoringSettings.isGranted() {
-                    message = "Chybí Monitorování vstupu — klávesa funguje jen s oknem \(AppBrand.displayName). Otevři Nastavení."
+                    message = "Chybí Monitorování vstupu."
                 } else {
-                    message = "Chybí Zpřístupnění — diktovací klávesa nebude fungovat v jiných aplikacích."
+                    message = "Chybí Zpřístupnění."
                 }
                 statusBarController.showTransientStatus(message, duration: 10)
                 showSetupWindow()
@@ -168,6 +168,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             self?.statusBarController.showTransientStatus("Zkopírováno", duration: 2)
         }
         statusBarController.onOpenLearnedTerms = { [weak self] in self?.showLearnedTermsWindow() }
+        statusBarController.onOpenHistory = { [weak self] in self?.showHistoryWindow() }
         launchWindowController?.onRetry = { [weak self] in self?.startStartupTask() }
         launchWindowController?.onOpenHistory = { [weak self] in self?.showHistoryWindow() }
         launchWindowController?.onOpenSetupGuide = { [weak self] in self?.showSetupWindow() }
@@ -221,7 +222,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 guard let self else { return }
                 DiagnosticsLogger.exitDictationSession()
                 self.stateMachine.transition(to: .idle)
-                self.recordingOverlay.showTransientFeedback("Nahrávání zrušeno (Esc)", duration: 2)
+                self.recordingOverlay.showTransientFeedback("Zrušeno", duration: 2)
                 SoundFeedbackService.playError()
             }
         }
@@ -287,17 +288,17 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private func busyOverlayMode() -> RecordingOverlayMode {
         switch stateMachine.state {
         case .injecting:
-            return .busy("Počkejte — ještě vkládám text")
+            return .busy("Počkej — vkládám")
         case .transcribing:
-            return .busy("Počkejte — přepisuji")
+            return .busy("Přepisuji…")
         case .modelDownloading, .modelLoading, .launching:
-            return .busy("Počkejte — připravuji model")
+            return .busy("Načítám model…")
         case .permissionsNeeded:
-            return .busy("Nejdřív dokončete nastavení oprávnění")
+            return .busy("Dokonči nastavení")
         case .error:
-            return .busy("\(AppBrand.displayName) vyžaduje pozornost")
+            return .busy("\(AppBrand.displayName) — chyba")
         default:
-            return .busy("Počkejte — ještě nejsem připravený")
+            return .busy("Počkej…")
         }
     }
 
@@ -323,7 +324,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         transcriptionTestMode = true
         beginDictation(trigger: "test")
-        statusBarController.showTransientStatus("Test: mluvte a znovu klikněte na „Ověřit přepis“", duration: 4)
+        statusBarController.showTransientStatus("Test: mluv a klikni znovu.", duration: 4)
     }
 
     private func showLaunchWindow() {
@@ -523,14 +524,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                     self.stateMachine.transition(to: .idle)
                     self.recordingOverlay.hide()
                     self.statusBarController.showTransientStatus(
-                        "Mikrofon nic nezachytil — drž \(HotkeyPreference.current.hintLabel) déle a mluv hlasitěji",
+                        "Nic nezachytilo — mluv déle a hlasitěji.",
                         duration: 5
                     )
                 }
                 if trigger == "test" {
                     self.showTranscriptionTestAlert(
                         text: nil,
-                        errorMessage: "Žádný zvuk — drž \(HotkeyPreference.current.hintLabel) déle (min. cca půl sekundy) a mluv blíž k mikrofonu."
+                        errorMessage: "Nic nezachytilo — mluv déle."
                     )
                 }
                 return
@@ -557,7 +558,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                     try? FileManager.default.removeItem(at: capture.url)
                     await handleTranscriptionFailure(
                         trigger: trigger,
-                        message: "Nic se nepřepsalo — zkuste mluvit hlasitěji a déle."
+                        message: "Nic se nepřepsalo — mluv hlasitěji."
                     )
                     return
                 }
@@ -610,7 +611,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                     try? FileManager.default.removeItem(at: capture.url)
                     await handleTranscriptionFailure(
                         trigger: trigger,
-                        message: "Nic se nepřepsalo — zkuste mluvit hlasitěji a déle."
+                        message: "Nic se nepřepsalo — mluv hlasitěji."
                     )
                     return
                 }
@@ -657,7 +658,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                         self.stateMachine.transition(to: .idle)
                         self.showHistoryWindow()
                         self.recordingOverlay.showTransientFeedback(
-                            "Přepis je v historii — zkontroluj a klepni „Vložit“",
+                            "Přepis v historii — zkontroluj.",
                             duration: 5
                         )
                     } else if injectExternally {
@@ -686,7 +687,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 DiagnosticsLogger.log("Transcription failed (\(trigger)): \(error.localizedDescription)")
                 await handleTranscriptionFailure(
                     trigger: trigger,
-                    message: "Přepis se nepodařil — zkuste to znovu."
+                    message: "Přepis selhal — zkus znovu."
                 )
             }
         }
@@ -713,11 +714,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private func transcriptionFailureMessage(for error: TranscriptionError) -> String {
         switch error {
         case .audioTooQuiet:
-            return "Mikrofon skoro nic nezachytil. V Nastavení → Zvuk zkontroluj vstupní zařízení a mluv blíž."
+            return "Mikrofon skoro nic nezachytil — mluv blíž."
         case .hallucinatedTranscript:
-            return "Whisper slyšel jen šum (falešné „titulky“). Mluv hlasitěji — \(AppBrand.displayName) to záměrně nevloží."
+            return "Jen šum — mluv hlasitěji."
         case .modelNotLoaded:
-            return "Model ještě není načtený — počkejte na dokončení stahování."
+            return "Model se načítá — počkej."
         }
     }
 
@@ -797,11 +798,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 guard let self else { return }
                 SoundFeedbackService.playError()
                 self.recordingOverlay.showTransientFeedback(
-                    "Vložení trvá dlouho — text je v okně \(AppBrand.displayName)",
+                    "Vkládání trvá dlouho…",
                     duration: 5
                 )
                 self.statusBarController.showTransientStatus(
-                    "Vložení trvá dlouho — text je v okně \(AppBrand.displayName)",
+                    "Vkládání trvá dlouho…",
                     duration: 4
                 )
             }
@@ -832,7 +833,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             recordingOverlay.scheduleAutoHide(after: 5)
             showLastTranscription()
             statusBarController.showTransientStatus(
-                "Text je v okně \(AppBrand.displayName) — zkopíruj nebo zkus „Vložit“",
+                "Vložení selhalo — text je v historii.",
                 duration: 5
             )
         }
@@ -879,13 +880,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private func busyStatusMessage() -> String {
         switch stateMachine.state {
         case .injecting:
-            return "Počkejte — vkládám text"
+            return "Počkej — vkládám"
         case .transcribing:
-            return "Počkejte — přepisuji"
+            return "Přepisuji…"
         case .modelDownloading, .modelLoading:
-            return "Počkejte — připravuji model"
+            return "Načítám model…"
         default:
-            return "Počkejte — \(AppBrand.displayName) není připravený"
+            return "Počkej…"
         }
     }
 
@@ -1043,8 +1044,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private func modelLoadErrorMessage(for error: Error) -> String {
         let nsError = error as NSError
         if nsError.domain == NSURLErrorDomain || error.localizedDescription.localizedCaseInsensitiveContains("offline") {
-            return "Model Whisper se nepodařilo stáhnout, protože Mac teď nemá funkční připojení k internetu. Připojte se k internetu a klikněte na „Zkusit znovu“. Diktování zůstává lokální; stahuje se jen model pro první spuštění."
+            return "Model se nestáhl — připoj internet a zkus znovu."
         }
-        return "Model Whisper se nepodařilo načíst. Klikněte na „Zkusit znovu“, případně zkontrolujte připojení k internetu."
+        return "Model se nepodařilo načíst — zkus znovu."
     }
 }

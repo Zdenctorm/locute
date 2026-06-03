@@ -5,7 +5,7 @@ import Cocoa
 final class PreferencesWindowController: NSWindowController {
     private let panelBuilder = PreferencesPanelBuilder()
     private var refreshTimer: Timer?
-    private let advancedDisclosure = NSButton(title: "Pokročilé: oprava textu na Macu", target: nil, action: nil)
+    private let advancedDisclosure = NSButton(title: "Pokročilé", target: nil, action: nil)
     private let advancedPanel = NSView()
 
     var hotkeyHealthProvider: (() -> HotkeyHealth)? {
@@ -53,14 +53,8 @@ final class PreferencesWindowController: NSWindowController {
         ])
 
         let title = AppTheme.label("Nastavení", font: AppTheme.Font.title, color: AppTheme.Color.title)
-        let subtitle = AppTheme.label(
-            "Klávesa, model přepisu a chování \(AppBrand.displayName). Oprávnění upravíš v Průvodci nastavením z menu.",
-            font: AppTheme.Font.body,
-            color: AppTheme.Color.body,
-            lines: 0
-        )
 
-        let headerText = NSStackView(views: [title, subtitle])
+        let headerText = NSStackView(views: [title])
         headerText.orientation = .vertical
         headerText.alignment = .leading
         headerText.spacing = AppTheme.Spacing.tight

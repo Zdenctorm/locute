@@ -2,11 +2,7 @@ import Cocoa
 
 @MainActor
 final class TranscriptionPanelView: NSView {
-    static let wordMarkupLegend = """
-    Nejnovější nahoře. Klikni na podtržené slovo pro opravu. \
-    Plné zelené podtržení: už opravené slovo. Tečkované oranžové: nízká jistota přepisu. \
-    Šedé plné: střední jistota. U každého přepisu můžeš text zkopírovat nebo vložit do aktivního pole.
-    """
+    static let wordMarkupLegend = "Klikni podtržené slovo pro opravu."
 
     /// Called with the text of the row whose "vložit" button was tapped.
     var onInsert: ((String) -> Void)?
@@ -80,7 +76,7 @@ final class TranscriptionPanelView: NSView {
     }
 
     private static func emptyHistoryMessage() -> String {
-        "Zatím nic — podrž \(HotkeyPreference.current.hintLabel) a mluv. Přepisy se objeví tady; do jiné aplikace je vložíš tlačítkem „Vložit“."
+        "Zatím nic."
     }
 
     // MARK: - Layout
@@ -104,12 +100,6 @@ final class TranscriptionPanelView: NSView {
         )
 
         let titleLabel = AppTheme.label("Historie přepisů", font: AppTheme.Font.headline, color: AppTheme.Color.title)
-        let helperLabel = AppTheme.label(
-            Self.wordMarkupLegend,
-            font: AppTheme.Font.footnote,
-            color: AppTheme.Color.body,
-            lines: 0
-        )
 
         entriesStack.orientation = .vertical
         entriesStack.alignment = .leading
@@ -129,13 +119,12 @@ final class TranscriptionPanelView: NSView {
 
         placeholderLabel.translatesAutoresizingMaskIntoConstraints = false
 
-        let content = NSStackView(views: [titleLabel, helperLabel, scrollView])
+        let content = NSStackView(views: [titleLabel, scrollView])
         content.orientation = .vertical
         content.alignment = .leading
         content.spacing = AppTheme.Spacing.section
         content.translatesAutoresizingMaskIntoConstraints = false
         content.setCustomSpacing(AppTheme.Spacing.tight, after: titleLabel)
-        content.setCustomSpacing(AppTheme.Spacing.row, after: helperLabel)
 
         addSubview(content)
         addSubview(placeholderLabel)

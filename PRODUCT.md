@@ -45,6 +45,7 @@ Hlavní loop: **klávesa → mikrofon → přepis → vložení**. Vedlejší: h
 5. **Předvídatelnost** — stav systému viditelný (nahrávám / přepisuji / vkládám); hotkey konzistentní v celém UI.
 6. **Opravitelnost** — historie, znovu vložit, oprava podtržených slov, vlastní slovník.
 7. **Ne přeplnit** — nastavení a diagnostika nepatří do stejné vrstvy jako „podrž klávesu a mluv“.
+8. **Minimum slov** — UI copy je krátké a akční; vysvětlení a troubleshooting jen v disclosure / Pokročilé.
 
 ---
 

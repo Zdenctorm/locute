@@ -138,8 +138,7 @@ enum AppTheme {
     }
 
     static func primaryButton(_ title: String, target: AnyObject?, action: Selector?) -> NSButton {
-        let button = button(title, target: target, action: action)
-        button.bezelStyle = .rounded
+        let button = AccentFilledButton(title: title, target: target, action: action)
         button.keyEquivalent = "\r"
         return button
     }
@@ -201,6 +200,37 @@ enum AppTheme {
     /// Kořen popoveru — warm surface místo systémového šedého panelu.
     static func popoverRootView(frame: NSRect = .zero) -> NSView {
         PopoverChromeView(frame: frame)
+    }
+}
+
+// MARK: - Claret-filled primary CTA (one per window)
+
+private final class AccentFilledButton: NSButton {
+    init(title: String, target: AnyObject?, action: Selector?) {
+        super.init(frame: .zero)
+        self.title = title
+        self.target = target
+        self.action = action
+        bezelStyle = .rounded
+        controlSize = .large
+        AccessibilitySupport.configure(self, label: title)
+        applyAccentFill()
+    }
+
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+
+    override func viewDidChangeEffectiveAppearance() {
+        super.viewDidChangeEffectiveAppearance()
+        applyAccentFill()
+    }
+
+    private func applyAccentFill() {
+        effectiveAppearance.performAsCurrentDrawingAppearance {
+            bezelColor = AppTheme.Color.accent
+            contentTintColor = AppTheme.Color.brandPaper
+        }
     }
 }
 

@@ -110,7 +110,7 @@ Pojmenování pro copy a AI — mapování v `AppTheme.Color`.
 
 ### Buttons
 
-- Primary: `primaryButton` — rounded, large, keyEquivalent Return.
+- Primary: `primaryButton` — claret fill, cream label, keyEquivalent Return.
 - Secondary: `secondaryButton` — regular control size.
 - Popovery: `AppTheme` tlačítka a `popoverRootView`; bez dalšího chrome karty (plochý surface).
 

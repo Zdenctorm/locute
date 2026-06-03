@@ -29,9 +29,9 @@ enum PostProcessingModelSize: String, CaseIterable, Sendable {
     var detail: String {
         switch self {
         case .standard:
-            return "~950 MB, lepší čeština. Doporučeno."
+            return "Lepší čeština (~950 MB)."
         case .compact:
-            return "~620 MB, rychlejší, méně přesné v češtině."
+            return "Rychlejší (~620 MB)."
         }
     }
 }

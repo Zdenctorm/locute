@@ -41,7 +41,7 @@ final class StatusBarPopoverController: NSObject, NSPopoverDelegate {
             AccessibilitySupport.configure(previewLabel, label: "Text posledního přepisu")
             AccessibilitySupport.configure(timestampLabel, label: "Čas přepisu: \(timestampLabel.stringValue)")
         } else {
-            previewLabel.stringValue = "Zatím žádný přepis. Podrž \(HotkeyPreference.current.hintLabel) a mluv."
+            previewLabel.stringValue = "Zatím nic."
             timestampLabel.isHidden = true
             AccessibilitySupport.configure(previewLabel, label: previewLabel.stringValue)
         }
@@ -73,7 +73,7 @@ final class StatusBarPopoverController: NSObject, NSPopoverDelegate {
         buttons.spacing = AppTheme.Spacing.row
 
         let historyButton = AppTheme.secondaryButton(
-            "Otevřít celou historii…",
+            "Historie…",
             target: self,
             action: #selector(openFullHistoryTapped)
         )

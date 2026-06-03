@@ -7,13 +7,13 @@ final class PreferencesPanelBuilder: NSObject {
     private let activationPicker = NSPopUpButton(frame: .zero, pullsDown: false)
     private let activationDetailLabel = AppTheme.label("", font: AppTheme.Font.body, color: AppTheme.Color.body, lines: 0)
     private let modelPicker = NSPopUpButton(frame: .zero, pullsDown: false)
-    private let modelDetailLabel = AppTheme.label("", font: AppTheme.Font.body, color: AppTheme.Color.body, lines: 0)
+    private let modelDetailLabel = AppTheme.label("", font: AppTheme.Font.footnote, color: AppTheme.Color.body, lines: 0)
     private let postProcessingSizePicker = NSPopUpButton(frame: .zero, pullsDown: false)
-    private let postProcessingSizeDetailLabel = AppTheme.label("", font: AppTheme.Font.body, color: AppTheme.Color.body, lines: 0)
+    private let postProcessingSizeDetailLabel = AppTheme.label("", font: AppTheme.Font.footnote, color: AppTheme.Color.body, lines: 0)
     private let microphonePicker = NSPopUpButton(frame: .zero, pullsDown: false)
     private let showInDockCheckbox = NSButton(checkboxWithTitle: "Zobrazit ikonu v Docku", target: nil, action: nil)
     private let reviewBeforePasteCheckbox = NSButton(
-        checkboxWithTitle: "Nejdřív zkontrolovat přepis (bez automatického vložení)",
+        checkboxWithTitle: "Zkontrolovat před vložením",
         target: nil,
         action: nil
     )
@@ -24,7 +24,7 @@ final class PreferencesPanelBuilder: NSObject {
         action: nil
     )
     private let postProcessingCheckbox = NSButton(
-        checkboxWithTitle: "Oprava textu po přepisu (volitelné)",
+        checkboxWithTitle: "Oprava textu po přepisu",
         target: nil,
         action: nil
     )
@@ -59,7 +59,6 @@ final class PreferencesPanelBuilder: NSObject {
         ]
     }
 
-    /// Pokročilé nastavení (mimo hlavní scroll) — oprava textu na Macu.
     func buildAdvancedCards() -> [NSView] {
         [buildPostProcessingCard()]
     }
@@ -83,8 +82,7 @@ final class PreferencesPanelBuilder: NSObject {
 
     func refreshHotkeyTapHealthLabel() {
         if !InputMonitoringSettings.isGranted() {
-            hotkeyTapHealthLabel.stringValue =
-                "Varování: bez Monitorování vstupu klávesa funguje jen když je \(AppBrand.displayName) v popředí — povol v Průvodci nastavením."
+            hotkeyTapHealthLabel.stringValue = "Bez Monitorování vstupu funguje klávesa jen v popředí."
             hotkeyTapHealthLabel.textColor = AppTheme.Color.danger
             return
         }
@@ -94,20 +92,16 @@ final class PreferencesPanelBuilder: NSObject {
         }
         switch health {
         case .notTrusted:
-            hotkeyTapHealthLabel.stringValue =
-                "Problém: klávesu nelze sledovat — nejdřív povol Zpřístupnění pro tuto kopii aplikace."
+            hotkeyTapHealthLabel.stringValue = "Chybí Zpřístupnění."
             hotkeyTapHealthLabel.textColor = AppTheme.Color.danger
         case .tapMissing:
-            hotkeyTapHealthLabel.stringValue =
-                "Pozor: sledování klávesy není aktivní — restartuj \(AppBrand.displayName) po povolení Zpřístupnění."
+            hotkeyTapHealthLabel.stringValue = "Klávesu nelze sledovat — restartuj \(AppBrand.displayName)."
             hotkeyTapHealthLabel.textColor = AppTheme.Color.warning
         case .receivingEvents:
-            hotkeyTapHealthLabel.stringValue =
-                "V pořádku: sledování klávesy je aktivní. Otestuj stiskem diktovací klávesy (funguje i v jiné aplikaci)."
+            hotkeyTapHealthLabel.stringValue = "Klávesa funguje."
             hotkeyTapHealthLabel.textColor = AppTheme.Color.success
-        case .stale(let seconds):
-            hotkeyTapHealthLabel.stringValue =
-                "Pozor: klávesu dlouho nevidím (\(Int(seconds)) s) — stiskni diktovací klávesu jednou pro probuzení."
+        case .stale:
+            hotkeyTapHealthLabel.stringValue = "Stiskni diktovací klávesu jednou."
             hotkeyTapHealthLabel.textColor = AppTheme.Color.warning
         }
     }
@@ -123,19 +117,12 @@ final class PreferencesPanelBuilder: NSObject {
         hotkeyPicker.action = #selector(hotkeyChoiceChanged(_:))
 
         let title = AppTheme.label("Klávesa pro diktování", font: AppTheme.Font.headline, color: AppTheme.Color.title)
-        let detail = AppTheme.label(
-            "Výchozí: pravý Command (⌘). Option (⌥) je volitelný — na české klávesnici bývá AltGr.",
-            font: AppTheme.Font.body,
-            color: AppTheme.Color.body,
-            lines: 0
-        )
-
         let recommendButton = AppTheme.secondaryButton(
-            "Použít doporučenou klávesu (\(HotkeyPreference.recommendedDefault.label))",
+            "Doporučená klávesa",
             target: self,
             action: #selector(useRecommendedHotkey(_:))
         )
-        return AppTheme.card([title, detail, hotkeyPicker, recommendButton, hotkeyTapHealthLabel])
+        return AppTheme.card([title, hotkeyPicker, recommendButton, hotkeyTapHealthLabel])
     }
 
     @objc private func hotkeyChoiceChanged(_ sender: NSPopUpButton) {
@@ -160,28 +147,13 @@ final class PreferencesPanelBuilder: NSObject {
         modelPicker.action = #selector(modelPreferenceChanged(_:))
 
         let title = AppTheme.label("Model přepisu", font: AppTheme.Font.headline, color: AppTheme.Color.title)
-        let speedNote = AppTheme.label(
-            "Rychlost = nejrychlejší cesta (výchozí). Přesnost = lepší pro technické termíny, pomalejší. Vše běží offline na Macu.",
-            font: AppTheme.Font.footnote,
-            color: AppTheme.Color.body,
-            lines: 0
-        )
         modelDetailLabel.stringValue = TranscriptionModelPreference.current.detail
 
         postProcessingCheckbox.state = PostProcessingPreference.isEnabled ? .on : .off
         postProcessingCheckbox.target = self
         postProcessingCheckbox.action = #selector(postProcessingChanged(_:))
-        let postProcessingNote = AppTheme.label(
-            "Lokálně na Macu — interpunkce a drobné úpravy. Vypnuto = nejrychlejší přepis.",
-            font: AppTheme.Font.footnote,
-            color: AppTheme.Color.body,
-            lines: 0
-        )
 
-        return AppTheme.card([
-            title, speedNote, modelDetailLabel, modelPicker,
-            postProcessingCheckbox, postProcessingNote
-        ])
+        return AppTheme.card([title, modelPicker, modelDetailLabel, postProcessingCheckbox])
     }
 
     private func buildActivationCard() -> NSView {
@@ -193,7 +165,7 @@ final class PreferencesPanelBuilder: NSObject {
         activationPicker.action = #selector(activationModeChanged(_:))
         activationDetailLabel.stringValue = DictationActivationPreference.current.detail
         let title = AppTheme.label("Způsob aktivace", font: AppTheme.Font.headline, color: AppTheme.Color.title)
-        return AppTheme.card([title, activationDetailLabel, activationPicker])
+        return AppTheme.card([title, activationPicker, activationDetailLabel])
     }
 
     @objc private func activationModeChanged(_ sender: NSPopUpButton) {
@@ -211,14 +183,8 @@ final class PreferencesPanelBuilder: NSObject {
         postProcessingSizePicker.target = self
         postProcessingSizePicker.action = #selector(postProcessingSizeChanged(_:))
         postProcessingSizeDetailLabel.stringValue = PostProcessingPreference.modelSize.detail
-        let title = AppTheme.label("Oprava textu na Macu", font: AppTheme.Font.headline, color: AppTheme.Color.title)
-        let detail = AppTheme.label(
-            "Zapni nebo vypni také v menu → Pokročilé. Velikost ovlivní kvalitu a rychlost offline úprav textu. Vypnuto = nejrychlejší přepis.",
-            font: AppTheme.Font.body,
-            color: AppTheme.Color.body,
-            lines: 0
-        )
-        return AppTheme.card([title, detail, postProcessingSizeDetailLabel, postProcessingSizePicker])
+        let title = AppTheme.label("Oprava textu", font: AppTheme.Font.headline, color: AppTheme.Color.title)
+        return AppTheme.card([title, postProcessingSizePicker, postProcessingSizeDetailLabel])
     }
 
     @objc private func postProcessingSizeChanged(_ sender: NSPopUpButton) {
@@ -233,13 +199,7 @@ final class PreferencesPanelBuilder: NSObject {
         microphonePicker.target = self
         microphonePicker.action = #selector(microphoneChanged(_:))
         let title = AppTheme.label("Mikrofon", font: AppTheme.Font.headline, color: AppTheme.Color.title)
-        let detail = AppTheme.label(
-            "Výchozí systémový vstup nebo konkrétní zařízení. Platí pro další nahrávání.",
-            font: AppTheme.Font.body,
-            color: AppTheme.Color.body,
-            lines: 0
-        )
-        return AppTheme.card([title, detail, microphonePicker])
+        return AppTheme.card([title, microphonePicker])
     }
 
     @objc private func microphoneChanged(_ sender: NSPopUpButton) {
@@ -263,14 +223,8 @@ final class PreferencesPanelBuilder: NSObject {
         livePreviewCheckbox.state = DictationPreviewPreference.isEnabled ? .on : .off
         livePreviewCheckbox.target = self
         livePreviewCheckbox.action = #selector(livePreviewChanged(_:))
-        let title = AppTheme.label("Chování aplikace", font: AppTheme.Font.headline, color: AppTheme.Color.title)
-        let previewNote = AppTheme.label(
-            "Jedna řádka v malém panelu u kurzoru nebo v menu baru — ne velký banner.",
-            font: AppTheme.Font.footnote,
-            color: AppTheme.Color.body,
-            lines: 0
-        )
-        return AppTheme.card([title, showInDockCheckbox, reviewBeforePasteCheckbox, livePreviewCheckbox, previewNote, soundFeedbackCheckbox])
+        let title = AppTheme.label("Chování", font: AppTheme.Font.headline, color: AppTheme.Color.title)
+        return AppTheme.card([title, showInDockCheckbox, reviewBeforePasteCheckbox, livePreviewCheckbox, soundFeedbackCheckbox])
     }
 
     @objc private func showInDockChanged(_ sender: NSButton) {
