@@ -168,12 +168,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             self?.statusBarController.showTransientStatus("Zkopírováno", duration: 2)
         }
         statusBarController.onOpenLearnedTerms = { [weak self] in self?.showLearnedTermsWindow() }
-        statusBarController.onOpenHistory = { [weak self] in self?.showHistoryWindow() }
+        statusBarController.onOpenHistory = { [weak self] in self?.presentLaunchHistory() }
         launchWindowController?.onRetry = { [weak self] in self?.startStartupTask() }
         launchWindowController?.onRetryInsert = { [weak self] text in
             self?.retryInsert(text: text)
         }
-        launchWindowController?.onOpenHistory = { [weak self] in self?.showHistoryWindow() }
         launchWindowController?.onOpenSetupGuide = { [weak self] in self?.showSetupWindow() }
         historyWindowController?.onRetryInsert = { [weak self] text in
             self?.retryInsert(text: text)
@@ -247,7 +246,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         if stateMachine.state == .permissionsNeeded {
             showSetupWindow()
         } else {
-            showLaunchWindow()
+            presentLaunchHistory()
         }
         return true
     }
@@ -393,7 +392,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         stateMachine.transition(to: .idle)
         hotkeyManager.prepareForCrossAppUse()
         DiagnosticsLogger.log("Startup completed. App is idle.")
-        launchWindowController?.dismissIfIdle()
 
         if PostProcessingPreference.isEnabled {
             Task { [weak self] in await self?.startPostProcessingLoad() }

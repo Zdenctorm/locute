@@ -6,7 +6,6 @@ import Combine
 final class LaunchWindowController: NSWindowController {
     var onRetry: (() -> Void)?
     var onRetryInsert: ((String) -> Void)?
-    var onOpenHistory: (() -> Void)?
     var onOpenSetupGuide: (() -> Void)?
 
     private let stateMachine: AppStateMachine
@@ -33,7 +32,6 @@ final class LaunchWindowController: NSWindowController {
     private var latestDownloadProgress = ModelDownloadProgress.empty
     private let retryButton = AppTheme.primaryButton("Zkusit znovu", target: nil, action: nil)
     private let setupGuideButton = AppTheme.primaryButton("Průvodce nastavením…", target: nil, action: nil)
-    private let historyButton = AppTheme.secondaryButton("Historie…", target: nil, action: nil)
     private let closeButton = AppTheme.secondaryButton("Skrýt okno", target: nil, action: nil)
     private let transcriptionPanel = TranscriptionPanelView()
 
@@ -83,12 +81,7 @@ final class LaunchWindowController: NSWindowController {
 
     override func showWindow(_ sender: Any?) {
         super.showWindow(sender)
-        AppWindowPresenter.present(window)
-    }
-
-    func dismissIfIdle() {
-        guard case .idle = stateMachine.state else { return }
-        window?.orderOut(nil)
+        AppWindowPresenter.presentHome(window)
     }
 
     func setTranscriptionHistory(_ entries: [TranscriptionHistoryEntry]) {
@@ -140,13 +133,10 @@ final class LaunchWindowController: NSWindowController {
         setupGuideButton.action = #selector(openSetupGuide)
         setupGuideButton.isHidden = true
 
-        historyButton.target = self
-        historyButton.action = #selector(openHistory)
-
         closeButton.target = self
         closeButton.action = #selector(hideWindow)
 
-        let actions = NSStackView(views: [retryButton, setupGuideButton, historyButton, closeButton])
+        let actions = NSStackView(views: [retryButton, setupGuideButton, closeButton])
         actions.orientation = .horizontal
         actions.alignment = .centerY
         actions.spacing = AppTheme.Spacing.row
@@ -261,10 +251,6 @@ final class LaunchWindowController: NSWindowController {
 
     @objc private func hideWindow() {
         window?.orderOut(nil)
-    }
-
-    @objc private func openHistory() {
-        onOpenHistory?()
     }
 
     @objc private func openSetupGuide() {

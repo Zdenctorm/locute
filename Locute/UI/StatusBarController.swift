@@ -44,7 +44,7 @@ final class StatusBarController: NSObject, NSMenuDelegate {
         keyEquivalent: ""
     )
     private let historyMenuItem = NSMenuItem(
-        title: "Historie…",
+        title: "Otevřít Locute…",
         action: #selector(openHistoryFromMenu),
         keyEquivalent: ""
     )
