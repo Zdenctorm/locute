@@ -185,7 +185,7 @@ final class PreferencesPanelBuilder: NSObject {
         postProcessingSizeDetailLabel.stringValue = PostProcessingPreference.modelSize.detail
         let title = AppTheme.label("Lepší formátování textu", font: AppTheme.Font.headline, color: AppTheme.Color.title)
         let detail = AppTheme.label(
-            "Interpunkce běží vždy. Zapnutá volba stáhne doplněk na Mac — průběh v menu.",
+            "Interpunkce běží vždy. Zapnutá volba stáhne doplněk — průběh v menu.",
             font: AppTheme.Font.body,
             color: AppTheme.Color.body,
             lines: 0

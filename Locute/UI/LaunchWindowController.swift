@@ -9,7 +9,9 @@ final class LaunchWindowController: NSWindowController {
     var onOpenSetupGuide: (() -> Void)?
 
     private let stateMachine: AppStateMachine
+    private let postProcessingReadiness: PostProcessingReadiness
     private var cancellables = Set<AnyCancellable>()
+    private var readinessCancellable: AnyCancellable?
     private var modelLoadStartedAt: Date?
     private var modelLoadTimer: Timer?
     private let heroDetailLabel = AppTheme.label(
@@ -35,8 +37,9 @@ final class LaunchWindowController: NSWindowController {
     private let closeButton = AppTheme.secondaryButton("Skrýt okno", target: nil, action: nil)
     private let transcriptionPanel = TranscriptionPanelView()
 
-    init(stateMachine: AppStateMachine) {
+    init(stateMachine: AppStateMachine, postProcessingReadiness: PostProcessingReadiness) {
         self.stateMachine = stateMachine
+        self.postProcessingReadiness = postProcessingReadiness
 
         let window = NSWindow(
             contentRect: NSRect(x: 0, y: 0, width: 560, height: 520),
@@ -51,6 +54,7 @@ final class LaunchWindowController: NSWindowController {
         super.init(window: window)
         buildUI()
         observeState()
+        observePostProcessingReadiness()
         refreshHotkeyCopy()
         update(for: stateMachine.state)
         hotkeyObserver = NotificationCenter.default.addObserver(
@@ -73,6 +77,15 @@ final class LaunchWindowController: NSWindowController {
     private func refreshHotkeyCopy() {
         heroDetailLabel.stringValue =
             "Podrž \(HotkeyPreference.current.hintLabel), mluv, pusť. Historie je níže."
+    }
+
+    private func observePostProcessingReadiness() {
+        readinessCancellable = postProcessingReadiness.$phase
+            .receive(on: RunLoop.main)
+            .sink { [weak self] _ in
+                guard let self, self.stateMachine.state == .idle else { return }
+                self.update(for: .idle)
+            }
     }
 
     required init?(coder: NSCoder) {
@@ -199,7 +212,7 @@ final class LaunchWindowController: NSWindowController {
     private func update(for state: LocuteState) {
         switch state {
         case .idle:
-            statusLabel.stringValue = "Připraveno."
+            statusLabel.stringValue = idleStatusMessage()
             statusLabel.textColor = AppTheme.Color.title
             setupGuideButton.isHidden = true
             retryButton.isHidden = true
@@ -289,6 +302,29 @@ final class LaunchWindowController: NSWindowController {
 
         downloadDetailLabel.stringValue = "\(downloaded) / \(total) (\(percent) %)."
         statusLabel.stringValue = "Stahuji model (\(elapsedText)). Můžeš už diktovat."
+    }
+
+    private func idleStatusMessage() -> String {
+        if PostProcessingPreference.isEnabled {
+            switch postProcessingReadiness.phase {
+            case .preparing(let progress):
+                let pct = Int((progress * 100).rounded())
+                return """
+                Přepis je připravený. Formátování textu se ještě načítá (\(pct) %) — \
+                můžeš diktovat hned; tentokrát platí základní pravidla. V menu uvidíš stejný průběh.
+                """
+            case .ready:
+                return "Připraveno včetně formátování textu. Okno můžete skrýt, \(AppBrand.displayName) zůstane v horní liště."
+            case .unavailable:
+                return """
+                Přepis je připravený. Lepší formátování se nepodařilo načíst — zůstává základní úprava. \
+                Zkus restart aplikace nebo vypni/zapni volbu v menu.
+                """
+            case .off:
+                break
+            }
+        }
+        return "Připraveno."
     }
 
     private static let byteFormatter: ByteCountFormatter = {

@@ -9,9 +9,17 @@ Whisper vrací souvislý text **bez interpunkce**. To je normální u speech-to-
 | Vrstva | Kdy běží | Co dělá |
 |--------|----------|---------|
 | **Pravidla (vždy, offline)** | Po každém diktátu | Mezery, mluvené příkazy („tečka“, „nový odstavec“), heuristická interpunkce v češtině, velká písmena na začátku vět, struktura e-mailu podle aplikace / frází |
-| **Lokální LLM (volitelné)** | Pokud je zapnuté v menu a model je stažený | Doladí delší texty: věty, odstavce, tón podle aplikace (Mail, Slack, …) |
+| **Lepší formátování (volitelné)** | Zapnuto v menu **a** doplněk je načtený na Macu | Doladí delší texty: věty, odstavce, tón podle aplikace (Mail, Slack, …) |
 
-**Vypnutí LLM v menu baru neznamená, že Locute neformátuje.** Znamená to jen, že se nepoužije druhá vrstva. První vrstva běží vždy.
+**Vypnutí v menu neznamená, že Locute neformátuje.** Znamená to jen, že se nepoužije druhá vrstva. První vrstva běží vždy.
+
+### Co vidí uživatel při startu
+
+1. **Stahování / načítání modelu přepisu** (Whisper) — progress v okně startu, v menu „Připravuji model“.
+2. Až je přepis **Připraveno**, může diktovat hned.
+3. Pokud je zapnuté **Lepší formátování**, v menu (a v okně startu) zůstane **„Připravuji formátování (X %)“** — to je *jiný* jednorázový doplněk, ne model diktování. Do té doby platí jen pravidla; po načtení se doplněk použije automaticky.
+
+Technické názvy modelů (Qwen, Llama) jsou jen v diagnostice / kódu, ne v běžném UI.
 
 ## E-mail
 

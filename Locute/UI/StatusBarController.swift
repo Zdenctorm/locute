@@ -26,6 +26,8 @@ final class StatusBarController: NSObject, NSMenuDelegate {
 
     private let statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
     private let stateMachine: AppStateMachine
+    private let postProcessingReadiness: PostProcessingReadiness
+    private var readinessCancellable: AnyCancellable?
     private let updaterController: SPUStandardUpdaterController
     private let sparkleUpdatesAvailable: Bool
     private var cancellables = Set<AnyCancellable>()
@@ -67,15 +69,19 @@ final class StatusBarController: NSObject, NSMenuDelegate {
 
     init(
         stateMachine: AppStateMachine,
+        postProcessingReadiness: PostProcessingReadiness,
         updaterController: SPUStandardUpdaterController,
         sparkleUpdatesAvailable: Bool
     ) {
         self.stateMachine = stateMachine
+        self.postProcessingReadiness = postProcessingReadiness
         self.updaterController = updaterController
         self.sparkleUpdatesAvailable = sparkleUpdatesAvailable
         super.init()
         setupMenu()
         observeState()
+        observePostProcessingReadiness()
+        refreshMenuStatusTitle(for: stateMachine.state)
         update(for: stateMachine.state)
     }
 
@@ -88,6 +94,32 @@ final class StatusBarController: NSObject, NSMenuDelegate {
             .receive(on: RunLoop.main)
             .sink { [weak self] state in self?.update(for: state) }
             .store(in: &cancellables)
+    }
+
+    private func observePostProcessingReadiness() {
+        readinessCancellable = postProcessingReadiness.$phase
+            .receive(on: RunLoop.main)
+            .sink { [weak self] _ in
+                guard let self else { return }
+                self.refreshMenuStatusTitle(for: self.stateMachine.state)
+                self.hintMenuItem.title = self.contextualHint(for: self.stateMachine.state)
+            }
+    }
+
+    private func refreshMenuStatusTitle(for state: LocuteState) {
+        if transientResetTimer != nil { return }
+        if state == .idle, let polishLine = postProcessingReadiness.menuStatusLine {
+            baseStatusTitle = polishLine
+            statusMenuItem.attributedTitle = nil
+            statusMenuItem.title = polishLine
+        } else if state == .idle {
+            baseStatusTitle = state.displayText
+            applyStatusMenuTitle(for: state)
+        } else {
+            baseStatusTitle = state.displayText
+            statusMenuItem.attributedTitle = nil
+            statusMenuItem.title = baseStatusTitle
+        }
     }
 
     private func setupMenu() {
@@ -198,10 +230,7 @@ final class StatusBarController: NSObject, NSMenuDelegate {
         pulseTimer?.invalidate()
         pulseTimer = nil
 
-        baseStatusTitle = state.displayText
-        if transientResetTimer == nil {
-            applyStatusMenuTitle(for: state)
-        }
+        refreshMenuStatusTitle(for: state)
         hintMenuItem.title = contextualHint(for: state)
         refreshDictationMenuItems()
 
@@ -210,7 +239,11 @@ final class StatusBarController: NSObject, NSMenuDelegate {
         switch state {
         case .idle:
             setImage("mic", template: true, decorativeDescription: "Mikrofon, připraveno")
-            button.toolTip = "Připraveno. Podrž \(HotkeyPreference.current.hintLabel)."
+            if postProcessingReadiness.isPreparing {
+                button.toolTip = "Přepis je připravený. Formátování se načítá — v menu uvidíš průběh."
+            } else {
+                button.toolTip = "Připraveno. Podrž \(HotkeyPreference.current.hintLabel)."
+            }
         case .recording:
             button.toolTip = "Nahrávám. Pusť klávesu nebo ukonči z menu."
             startRecordingPulse()
@@ -265,7 +298,7 @@ final class StatusBarController: NSObject, NSMenuDelegate {
             Task { @MainActor in
                 guard let self else { return }
                 self.transientResetTimer = nil
-                self.applyStatusMenuTitle(for: self.stateMachine.state)
+                self.refreshMenuStatusTitle(for: self.stateMachine.state)
             }
         }
     }
@@ -323,6 +356,12 @@ final class StatusBarController: NSObject, NSMenuDelegate {
         }
         switch state {
         case .idle:
+            if postProcessingReadiness.isPreparing {
+                return "Přepis jde hned. Formátování doběhne v menu."
+            }
+            if postProcessingReadiness.phase == .unavailable {
+                return "Formátování se nepodařilo načíst — platí základní pravidla."
+            }
             return "Podrž \(HotkeyPreference.current.hintLabel)."
         case .recording:
             return "Nahrávám — pusť klávesu."
