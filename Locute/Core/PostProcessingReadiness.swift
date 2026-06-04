@@ -56,7 +56,8 @@ final class PostProcessingReadiness: ObservableObject {
             phase = .off
             return
         }
-        phase = .preparing(progress: min(1, max(0, progress)))
+        let clamped = min(0.99, max(0, progress))
+        phase = .preparing(progress: clamped)
     }
 
     func becameReady() {

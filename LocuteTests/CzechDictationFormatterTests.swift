@@ -57,4 +57,36 @@ final class CzechDictationFormatterTests: XCTestCase {
         )
         XCTAssertTrue(result.localizedCaseInsensitiveContains("\n\nDěkuji"))
     }
+
+    func testPoliteQuestionMuzeete() {
+        let result = CzechDictationFormatter.format(
+            "můžete mi prosím poslat dokument",
+            targetAppBundleID: nil
+        )
+        XCTAssertTrue(result.hasSuffix("?"))
+    }
+
+    func testEmbeddedJakSeMateQuestion() {
+        let result = CzechDictationFormatter.format(
+            "dobrý den jak se máte",
+            targetAppBundleID: "com.apple.mail"
+        )
+        XCTAssertTrue(result.contains("?"))
+    }
+
+    func testLongSentenceGetsSentenceBreaks() {
+        let input = """
+        chtěl bych vám napsat že projekt pokračuje podle plánu ale potřebujeme ještě schválit rozpočet \
+        proto vás prosím o zpětnou vazbu do pátku
+        """
+        let result = CzechDictationFormatter.format(input, targetAppBundleID: nil)
+        let periodCount = result.filter { $0 == "." }.count
+        XCTAssertGreaterThanOrEqual(periodCount, 1)
+        XCTAssertTrue(result.contains(", že"))
+    }
+
+    func testNeedsMorePunctuationDetectsRunOn() {
+        let runOn = String(repeating: "slovo ", count: 20)
+        XCTAssertTrue(CzechHeuristicPunctuator.needsMorePunctuation(runOn))
+    }
 }

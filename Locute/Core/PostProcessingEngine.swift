@@ -30,7 +30,9 @@ actor PostProcessingEngine {
 
     private static let systemPrompt = """
         Jsi asistent pro opravu přepisu řeči v češtině. \
-        Přidej správnou interpunkci (tečky, čárky, otazníky, dvojtečky) a velká písmena na začátku vět. \
+        Povinně rozděl text na věty: každá věta končí tečkou, otazníkem nebo vykřičníkem. \
+        Dlouhý souvislý blok bez interpunkce je nepřípustný — vlož čárky a tečky podle české syntaxe. \
+        Otázky v češtině znač otazníkem (slova jak, proč, kde, kdy, jestli, zda, můžete, copak, …). \
         U delších textů použij odstavce (prázdný řádek mezi bloky). \
         U e-mailů: po pozdravu čárka, pak nový odstavec; závěr „S pozdravem“ v novém odstavci. \
         Zkratky jako KYC, AML, API, SEPA, EUR, PDF, HTML, JSON, REST nech velkými. \
@@ -56,26 +58,31 @@ actor PostProcessingEngine {
         DiagnosticsLogger.log("PostProcessing: load started — \(repo)")
 
         state = .downloading
-        progressHandler(0.05)
+        progressHandler(0.02)
 
         do {
             let config = ModelConfiguration(id: repo)
             state = .loading
-            progressHandler(0.5)
 
             let loaded = try await loadModelContainer(
                 from: HuggingFaceHubDownloader(),
                 using: HuggingFaceTokenizerLoader(),
                 configuration: config
             ) { progress in
-                let fraction = progress.fractionCompleted
-                if fraction < 0.5 {
-                    progressHandler(0.05 + fraction * 0.9)
-                } else {
-                    progressHandler(0.5 + (fraction - 0.5))
-                }
+                let fraction = min(1, max(0, progress.fractionCompleted))
+                progressHandler(0.02 + fraction * 0.88)
             }
             container = loaded
+            progressHandler(0.92)
+
+            do {
+                try await warmUp(container: loaded)
+            } catch {
+                logger.warning("PostProcessing: warm-up failed — \(error.localizedDescription, privacy: .public)")
+                DiagnosticsLogger.log("PostProcessing: warm-up failed — \(error.localizedDescription)")
+            }
+            progressHandler(0.98)
+
             state = .ready
             progressHandler(1.0)
             logger.info("PostProcessing: model ready")
@@ -92,6 +99,12 @@ actor PostProcessingEngine {
         container = nil
         state = .idle
         DiagnosticsLogger.log("PostProcessing: model unloaded")
+    }
+
+    /// Krátký běh po načtení — UI ukáže 100 % až když je model opravdu použitelný.
+    private func warmUp(container: ModelContainer) async throws {
+        let session = ChatSession(container, instructions: Self.systemPrompt)
+        _ = try await session.respond(to: "Ahoj.")
     }
 
     // MARK: - Processing
@@ -128,6 +141,12 @@ actor PostProcessingEngine {
 
         let ratio = Double(trimmed.count) / Double(input.count)
         guard ratio >= 0.5, ratio <= 2.5 else { return nil }
+
+        let inputWords = input.split(whereSeparator: { $0.isWhitespace }).count
+        if inputWords >= 12, CzechHeuristicPunctuator.needsMorePunctuation(trimmed) {
+            DiagnosticsLogger.log("PostProcessing: rejected — output lacks punctuation")
+            return nil
+        }
 
         return trimmed
     }

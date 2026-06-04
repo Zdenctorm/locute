@@ -606,7 +606,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                         return nil
                     }
                     if let processed {
-                        finalText = processed.trimmingCharacters(in: .whitespacesAndNewlines)
+                        let trimmed = processed.trimmingCharacters(in: .whitespacesAndNewlines)
+                        finalText = CzechDictationFormatter.format(
+                            trimmed,
+                            targetAppBundleID: targetApp?.bundleIdentifier
+                        )
                         DiagnosticsLogger.log("PostProcessing: applied (\(caseNormalized.count)c → \(finalText.count)c)")
                     } else {
                         finalText = formatted
@@ -619,6 +623,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                             self?.notifyPostProcessingStillPreparing()
                         }
                     }
+                }
+
+                if CzechHeuristicPunctuator.needsMorePunctuation(finalText) {
+                    finalText = CzechDictationFormatter.applyPunctuationPass(finalText)
                 }
 
                 if finalText.isEmpty {

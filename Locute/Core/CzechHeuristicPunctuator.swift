@@ -4,28 +4,49 @@ import Foundation
 enum CzechHeuristicPunctuator {
     private static let subordinateCommaTriggers = [
         "že", "když", "protože", "pokud", "jestliže", "aby", "než",
-        "který", "která", "které", "kteří", "kde",
+        "který", "která", "které", "kteří", "kde", "jestli", "zda",
+        "proto", "tedy", "totiž", "například", "ovšem", "však", "případně",
     ]
 
     private static let sentenceBreakTriggers = [
-        "ale", "avšak", "proto", "takže", "potom", "pak", "navíc",
-        "nicméně", "ovšem", "přesto", "zároveň", "nakonec",
+        "ale", "avšak", "takže", "potom", "pak", "navíc",
+        "nicméně", "přesto", "zároveň", "nakonec", "jinak", "proto",
     ]
 
-    private static let questionStarters = [
-        "jak", "proč", "kde", "kdy", "kolik", "co", "kdo", "čí",
-        "můžeš", "můžete", "je", "jsou", "má", "máte", "bude", "budou",
+    private static let questionSentenceStarters = [
+        "jak", "proč", "kde", "kdy", "kolik", "co", "kdo", "čí", "číž",
+        "který", "která", "které", "jaký", "jaká", "jaké", "copak", "snad",
+        "můžeš", "můžete", "můžeme", "můžu", "mohu", "mohl", "mohla",
+        "máš", "máte", "má", "máme", "je", "jsou", "bude", "budou",
+        "jde", "šlo", "patří", "znamená",
     ]
+
+    private static let questionPhrases = [
+        "je to možné", "je možné", "je možne", "šlo by", "jde o to",
+        "má to smysl", "je to tak", "že ne", "nebo ne", "nebo jo",
+        "viď", "vid", "opravdu", "skutečně", "skutecne",
+    ]
+
+    private static let maxWordsWithoutPunctuation = 12
+    private static let minWordsForSentenceBreak = 4
 
     static func apply(_ text: String) -> String {
         guard !text.isEmpty else { return text }
-        if punctuationDensity(in: text) >= 0.12 { return text }
+        if isWellPunctuated(text) { return collapsePunctuationSpacing(text) }
 
         var result = text
         result = insertCommasBeforeSubordinateClauses(result)
         result = insertSentenceBreaks(result)
-        result = applyTerminalPunctuation(result)
+        result = breakOverlongClauses(result)
+        result = applyTerminalPunctuationToSentences(result)
         return collapsePunctuationSpacing(result)
+    }
+
+    /// True when long text still lacks real sentence punctuation (e.g. LLM returned one block).
+    static func needsMorePunctuation(_ text: String) -> Bool {
+        let words = wordCount(text)
+        guard words >= 8 else { return false }
+        return punctuationDensity(in: text) < 0.07
     }
 
     // MARK: - Commas
@@ -49,9 +70,7 @@ enum CzechHeuristicPunctuator {
 
         var output = text
         for match in matches.reversed() {
-            let range = match.range
-            let replacement = ", \(word) "
-            output = (output as NSString).replacingCharacters(in: range, with: replacement)
+            output = (output as NSString).replacingCharacters(in: match.range, with: ", \(word) ")
         }
         return output
     }
@@ -60,21 +79,17 @@ enum CzechHeuristicPunctuator {
 
     private static func insertSentenceBreaks(_ text: String) -> String {
         let words = text.split(separator: " ", omittingEmptySubsequences: true)
-        guard words.count >= 10 else { return text }
+        guard words.count >= minWordsForSentenceBreak + 2 else { return text }
 
         var result = ""
         var wordsSinceBreak = 0
         for (index, rawWord) in words.enumerated() {
             let word = String(rawWord)
-            let normalized = word
-                .folding(options: [.diacriticInsensitive, .caseInsensitive], locale: Locale(identifier: "cs"))
-                .trimmingCharacters(in: .punctuationCharacters)
+            let normalized = normalizedToken(word)
 
             if index > 0 {
                 if shouldBreakBefore(word: normalized, wordsSinceBreak: wordsSinceBreak, previousChunk: result) {
-                    if !result.hasSuffix(".") && !result.hasSuffix("?") && !result.hasSuffix("!") {
-                        result.append(".")
-                    }
+                    appendSentenceEnd(to: &result, for: result)
                     wordsSinceBreak = 0
                 }
                 result.append(" ")
@@ -90,51 +105,176 @@ enum CzechHeuristicPunctuator {
         wordsSinceBreak: Int,
         previousChunk: String
     ) -> Bool {
-        guard wordsSinceBreak >= 6 else { return false }
+        guard wordsSinceBreak >= minWordsForSentenceBreak else { return false }
         guard sentenceBreakTriggers.contains(word) else { return false }
-        let tail = previousChunk.suffix(24)
+        let tail = previousChunk.suffix(32)
         if tail.contains(".") || tail.contains("?") || tail.contains("!") { return false }
         if tail.hasSuffix(",") { return false }
         return true
     }
 
-    // MARK: - Terminal punctuation
+    // MARK: - Long clauses
 
-    private static func applyTerminalPunctuation(_ text: String) -> String {
-        var result = text.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !result.isEmpty else { return result }
+    private static func breakOverlongClauses(_ text: String) -> String {
+        let words = text.split(separator: " ", omittingEmptySubsequences: true)
+        guard words.count > maxWordsWithoutPunctuation else { return text }
 
-        let last = result.last!
-        if ".!?".contains(last) { return result }
-
-        if looksLikeQuestion(result) {
-            result.append("?")
-        } else {
-            result.append(".")
+        var result = ""
+        var sincePunct = 0
+        for (index, raw) in words.enumerated() {
+            let word = String(raw)
+            let norm = normalizedToken(word)
+            if index > 0 {
+                if sincePunct >= maxWordsWithoutPunctuation,
+                   sentenceBreakTriggers.contains(norm) || ["proto", "tedy", "totiž", "totiz"].contains(norm) {
+                    appendSentenceEnd(to: &result, for: result)
+                    sincePunct = 0
+                } else if sincePunct >= maxWordsWithoutPunctuation + 3 {
+                    appendSentenceEnd(to: &result, for: result)
+                    sincePunct = 0
+                }
+                result.append(" ")
+            }
+            result.append(word)
+            if let last = word.last, ".!?".contains(last) {
+                sincePunct = 0
+            } else {
+                sincePunct += 1
+            }
         }
         return result
     }
 
-    private static func looksLikeQuestion(_ text: String) -> Bool {
-        let firstWord = text
-            .split(whereSeparator: { $0.isWhitespace })
-            .first
-            .map { String($0) }
-            .map {
-                $0.folding(options: [.diacriticInsensitive, .caseInsensitive], locale: Locale(identifier: "cs"))
-                    .trimmingCharacters(in: .punctuationCharacters)
-            } ?? ""
-        if questionStarters.contains(firstWord) { return true }
+    // MARK: - Terminal punctuation per sentence
 
-        let lowered = text.folding(options: .diacriticInsensitive, locale: Locale(identifier: "cs")).lowercased()
-        return lowered.contains(" prosím ") || lowered.hasSuffix(" prosím")
-            || lowered.contains(" že ano") || lowered.contains(" ze ano")
+    private static func applyTerminalPunctuationToSentences(_ text: String) -> String {
+        var result = ""
+        var buffer = ""
+
+        func flushBuffer() {
+            let trimmed = buffer.trimmingCharacters(in: .whitespaces)
+            guard !trimmed.isEmpty else { buffer = ""; return }
+            result.append(punctuatedSentence(trimmed))
+            buffer = ""
+        }
+
+        for char in text {
+            if char == "\n" {
+                flushBuffer()
+                result.append("\n")
+            } else if ".!?".contains(char) {
+                buffer.append(char)
+                flushBuffer()
+            } else {
+                buffer.append(char)
+            }
+        }
+        flushBuffer()
+        return result.trimmingCharacters(in: .whitespaces)
+    }
+
+    private static func punctuatedSentence(_ sentence: String) -> String {
+        var s = sentence.trimmingCharacters(in: .whitespaces)
+        guard !s.isEmpty else { return "" }
+
+        if let last = s.last, ".!?".contains(last) {
+            if last == "?" || last == "!" { return s }
+            if last == ".", isQuestionSentence(s.dropLast()) {
+                return String(s.dropLast()) + "?"
+            }
+            return s
+        }
+
+        if isQuestionSentence(s) {
+            s.append("?")
+        } else {
+            s.append(".")
+        }
+        return s
+    }
+
+    private static func appendSentenceEnd(to result: inout String, for sentenceSoFar: String) {
+        let trimmed = sentenceSoFar.trimmingCharacters(in: .whitespaces)
+        guard !trimmed.isEmpty else { return }
+        if trimmed.hasSuffix("?") || trimmed.hasSuffix("!") || trimmed.hasSuffix(".") { return }
+        result.append(isQuestionSentence(trimmed) ? "?" : ".")
+    }
+
+    // MARK: - Czech questions
+
+    private static func isQuestionSentence(_ sentence: Substring) -> Bool {
+        isQuestionSentence(String(sentence))
+    }
+
+    private static func isQuestionSentence(_ sentence: String) -> Bool {
+        let normalized = sentence
+            .folding(options: [.diacriticInsensitive, .caseInsensitive], locale: Locale(identifier: "cs"))
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !normalized.isEmpty else { return false }
+
+        let words = normalized.split(separator: " ").map(String.init)
+        guard let first = words.first else { return false }
+
+        if questionSentenceStarters.contains(first) { return true }
+
+        for phrase in questionPhrases where normalized.contains(phrase) {
+            return true
+        }
+
+        if normalized.contains(" prosím ") || normalized.hasSuffix(" prosím")
+            || normalized.contains(" prosim ") || normalized.hasSuffix(" prosim") {
+            return true
+        }
+
+        if normalized.contains(" jestli ") || normalized.contains(" zda ") {
+            if words.count <= 14 { return true }
+            if normalized.hasPrefix("nevím") || normalized.hasPrefix("nevim")
+                || normalized.hasPrefix("ptám") || normalized.hasPrefix("ptam")
+                || normalized.contains("zeptal") || normalized.contains("zeptala")
+                || normalized.contains("říkám si") || normalized.contains("rikam si") {
+                return true
+            }
+        }
+
+        if words.count <= 10,
+           ["muzete", "muzes", "mate", "mas", "ma", "mame", "jsou", "je", "bude", "budou"].contains(first) {
+            return true
+        }
+
+        if words.count >= 2, words[1] == "se", ["jak", "kde", "kdy", "proc", "co"].contains(first) {
+            return true
+        }
+
+        if normalized.contains(" jak se ") || normalized.contains(" jak ti ")
+            || normalized.contains(" jak vam ") || normalized.contains(" jak vám ") {
+            return true
+        }
+
+        return false
     }
 
     // MARK: - Helpers
 
+    private static func isWellPunctuated(_ text: String) -> Bool {
+        let words = wordCount(text)
+        guard words > 0 else { return true }
+        let density = punctuationDensity(in: text)
+        if words >= 20 { return density >= 0.09 }
+        return density >= 0.14
+    }
+
+    private static func wordCount(_ text: String) -> Int {
+        text.split(whereSeparator: { $0.isWhitespace }).count
+    }
+
+    private static func normalizedToken(_ word: String) -> String {
+        word
+            .folding(options: [.diacriticInsensitive, .caseInsensitive], locale: Locale(identifier: "cs"))
+            .trimmingCharacters(in: .punctuationCharacters)
+    }
+
     private static func punctuationDensity(in text: String) -> Double {
-        let words = text.split(whereSeparator: { $0.isWhitespace }).count
+        let words = wordCount(text)
         guard words > 0 else { return 0 }
         let punctCount = text.filter { ".!?,:;".contains($0) }.count
         return Double(punctCount) / Double(words)
@@ -148,6 +288,8 @@ enum CzechHeuristicPunctuator {
         }
         s = s.replacingOccurrences(of: "..", with: ".")
         s = s.replacingOccurrences(of: ",,", with: ",")
+        s = s.replacingOccurrences(of: "?.", with: "?")
+        s = s.replacingOccurrences(of: ".?", with: "?")
         return s
     }
 }

@@ -5,11 +5,17 @@ enum CzechDictationFormatter {
     static func format(_ text: String, targetAppBundleID: String?) -> String {
         var result = normalizeWhitespace(text)
         result = applySpokenCommands(result)
-        result = CzechHeuristicPunctuator.apply(result)
-        result = collapsePunctuationSpacing(result)
-        result = capitalizeSentences(result)
+        result = applyPunctuationPass(result)
         result = applyEmailStructureIfNeeded(result, bundleID: targetAppBundleID)
         return result.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    /// Interpunkce + velká písmena (bez mluvených příkazů a e-mailové struktury).
+    static func applyPunctuationPass(_ text: String) -> String {
+        var result = CzechHeuristicPunctuator.apply(text)
+        result = collapsePunctuationSpacing(result)
+        result = capitalizeSentences(result)
+        return result
     }
 
     private static func normalizeWhitespace(_ text: String) -> String {
