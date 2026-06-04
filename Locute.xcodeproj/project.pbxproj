@@ -74,6 +74,9 @@
 		01000000000000000000004B /* CzechDictationFormatter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 02000000000000000000004B /* CzechDictationFormatter.swift */; };
 		01000000000000000000005A /* CzechHeuristicPunctuator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 02000000000000000000005A /* CzechHeuristicPunctuator.swift */; };
 		01000000000000000000005B /* PostProcessingReadiness.swift in Sources */ = {isa = PBXBuildFile; fileRef = 02000000000000000000005B /* PostProcessingReadiness.swift */; };
+		01000000000000000000005C /* CzechPunctuationRules.swift in Sources */ = {isa = PBXBuildFile; fileRef = 02000000000000000000005C /* CzechPunctuationRules.swift */; };
+		01000000000000000000005D /* PostProcessingOutputSanitizer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 02000000000000000000005D /* PostProcessingOutputSanitizer.swift */; };
+		01000000000000000000005E /* PostProcessingOutputSanitizerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 02000000000000000000005E /* PostProcessingOutputSanitizerTests.swift */; };
 		01000000000000000000004C /* HotkeyTriggerLogicTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 02000000000000000000004C /* HotkeyTriggerLogicTests.swift */; };
 		01000000000000000000004D /* CzechDictationFormatterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 02000000000000000000004D /* CzechDictationFormatterTests.swift */; };
 		01000000000000000000004E /* InputMonitoringSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 02000000000000000000004E /* InputMonitoringSettings.swift */; };
@@ -152,6 +155,9 @@
 		02000000000000000000004B /* CzechDictationFormatter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CzechDictationFormatter.swift; sourceTree = "<group>"; };
 		02000000000000000000005A /* CzechHeuristicPunctuator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CzechHeuristicPunctuator.swift; sourceTree = "<group>"; };
 		02000000000000000000005B /* PostProcessingReadiness.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PostProcessingReadiness.swift; sourceTree = "<group>"; };
+		02000000000000000000005C /* CzechPunctuationRules.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CzechPunctuationRules.swift; sourceTree = "<group>"; };
+		02000000000000000000005D /* PostProcessingOutputSanitizer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PostProcessingOutputSanitizer.swift; sourceTree = "<group>"; };
+		02000000000000000000005E /* PostProcessingOutputSanitizerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PostProcessingOutputSanitizerTests.swift; sourceTree = "<group>"; };
 		02000000000000000000004C /* HotkeyTriggerLogicTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HotkeyTriggerLogicTests.swift; sourceTree = "<group>"; };
 		02000000000000000000004D /* CzechDictationFormatterTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CzechDictationFormatterTests.swift; sourceTree = "<group>"; };
 		02000000000000000000004E /* InputMonitoringSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InputMonitoringSettings.swift; sourceTree = "<group>"; };
@@ -227,6 +233,8 @@
 				02000000000000000000004B /* CzechDictationFormatter.swift */,
 				02000000000000000000005A /* CzechHeuristicPunctuator.swift */,
 				02000000000000000000005B /* PostProcessingReadiness.swift */,
+				02000000000000000000005C /* CzechPunctuationRules.swift */,
+				02000000000000000000005D /* PostProcessingOutputSanitizer.swift */,
 				020000000000000000000025 /* DictationTargetTracker.swift */,
 				020000000000000000000040 /* SparkleUpdateSupport.swift */,
 				020000000000000000000019 /* PasteInsertionPlan.swift */,
@@ -316,6 +324,7 @@
 				020000000000000000000045 /* TranscriptionCaseNormalizerTests.swift */,
 				02000000000000000000004C /* HotkeyTriggerLogicTests.swift */,
 				02000000000000000000004D /* CzechDictationFormatterTests.swift */,
+				02000000000000000000005E /* PostProcessingOutputSanitizerTests.swift */,
 				020000000000000000000050 /* AccessibilityAuditReportTests.swift */,
 			);
 			path = LocuteTests;
@@ -503,6 +512,8 @@
 				01000000000000000000004B /* CzechDictationFormatter.swift in Sources */,
 				01000000000000000000005A /* CzechHeuristicPunctuator.swift in Sources */,
 				01000000000000000000005B /* PostProcessingReadiness.swift in Sources */,
+				01000000000000000000005C /* CzechPunctuationRules.swift in Sources */,
+				01000000000000000000005D /* PostProcessingOutputSanitizer.swift in Sources */,
 				01000000000000000000004E /* InputMonitoringSettings.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -519,6 +530,7 @@
 				010000000000000000000045 /* TranscriptionCaseNormalizerTests.swift in Sources */,
 				01000000000000000000004C /* HotkeyTriggerLogicTests.swift in Sources */,
 				01000000000000000000004D /* CzechDictationFormatterTests.swift in Sources */,
+				01000000000000000000005E /* PostProcessingOutputSanitizerTests.swift in Sources */,
 				010000000000000000000050 /* AccessibilityAuditReportTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

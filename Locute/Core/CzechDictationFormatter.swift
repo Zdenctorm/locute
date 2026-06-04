@@ -12,7 +12,8 @@ enum CzechDictationFormatter {
 
     /// Interpunkce + velká písmena (bez mluvených příkazů a e-mailové struktury).
     static func applyPunctuationPass(_ text: String) -> String {
-        var result = CzechHeuristicPunctuator.apply(text)
+        var result = PostProcessingOutputSanitizer.replaceForbiddenDashes(text)
+        result = CzechHeuristicPunctuator.apply(result)
         result = collapsePunctuationSpacing(result)
         result = capitalizeSentences(result)
         return result

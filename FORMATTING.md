@@ -39,7 +39,9 @@ Heuristika (offline) mimo jiné:
 - `?` u otázek začínajících na `jak`, `proč`, `kde`, …
 - tečka na konci utterance, pokud chybí
 
-Kvalita není jako u člověka ani u velkého LLM — u delších textů doporučujeme zapnout **Doladění přepisu (lokální LLM)**.
+Pravidla jsou v `CzechPunctuationRules.swift` (čárky před podřazením, konce vět, otazníky). **Pomlčky (—, –) se nikdy nevkládají** — nahrazují se čárkou nebo tečkou.
+
+Lokální model smí jen doplnit znaki. Když odpoví jako chat („Samozřejmě…“, „Rád pomohu…“) nebo přidá cizí věty, výstup se **zahodí** a zůstanou pravidla.
 
 ## Power user
 
@@ -52,4 +54,4 @@ Stále platí mluvené příkazy: **tečka**, **čárka**, **nový odstavec**, *
 - **Apple Dictation:** uživatel diktuje interpunkci sám
 - **Locute:** pravidla vždy lokálně + volitelný lokální LLM (bez cloudu)
 
-Implementace: `CzechDictationFormatter.swift`, `CzechHeuristicPunctuator.swift`, `PostProcessingEngine.swift`.
+Implementace: `CzechPunctuationRules.swift`, `CzechHeuristicPunctuator.swift`, `CzechDictationFormatter.swift`, `PostProcessingOutputSanitizer.swift`, `PostProcessingEngine.swift`.

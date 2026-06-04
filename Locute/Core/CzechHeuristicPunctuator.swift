@@ -2,33 +2,14 @@ import Foundation
 
 /// Offline Czech punctuation heuristics when Whisper (and optionally LLM) leave continuous prose.
 enum CzechHeuristicPunctuator {
-    private static let subordinateCommaTriggers = [
-        "že", "když", "protože", "pokud", "jestliže", "aby", "než",
-        "který", "která", "které", "kteří", "kde", "jestli", "zda",
-        "proto", "tedy", "totiž", "například", "ovšem", "však", "případně",
+    private static let subordinateCommaTriggers = CzechPunctuationRules.commaBeforeSubordinators
+    private static let sentenceBreakTriggers = CzechPunctuationRules.periodBeforeConjunctions + ["proto"]
+    private static let questionSentenceStarters = CzechPunctuationRules.questionStarters
+    private static let questionPhrases = CzechPunctuationRules.questionPhrases + [
+        "je to tak", "že ne", "nebo ne", "viď", "vid",
     ]
-
-    private static let sentenceBreakTriggers = [
-        "ale", "avšak", "takže", "potom", "pak", "navíc",
-        "nicméně", "přesto", "zároveň", "nakonec", "jinak", "proto",
-    ]
-
-    private static let questionSentenceStarters = [
-        "jak", "proč", "kde", "kdy", "kolik", "co", "kdo", "čí", "číž",
-        "který", "která", "které", "jaký", "jaká", "jaké", "copak", "snad",
-        "můžeš", "můžete", "můžeme", "můžu", "mohu", "mohl", "mohla",
-        "máš", "máte", "má", "máme", "je", "jsou", "bude", "budou",
-        "jde", "šlo", "patří", "znamená",
-    ]
-
-    private static let questionPhrases = [
-        "je to možné", "je možné", "je možne", "šlo by", "jde o to",
-        "má to smysl", "je to tak", "že ne", "nebo ne", "nebo jo",
-        "viď", "vid", "opravdu", "skutečně", "skutecne",
-    ]
-
-    private static let maxWordsWithoutPunctuation = 12
-    private static let minWordsForSentenceBreak = 4
+    private static let maxWordsWithoutPunctuation = CzechPunctuationRules.maxWordsWithoutPunctuation
+    private static let minWordsForSentenceBreak = CzechPunctuationRules.minWordsBeforeClauseBreak
 
     static func apply(_ text: String) -> String {
         guard !text.isEmpty else { return text }
@@ -39,6 +20,7 @@ enum CzechHeuristicPunctuator {
         result = insertSentenceBreaks(result)
         result = breakOverlongClauses(result)
         result = applyTerminalPunctuationToSentences(result)
+        result = PostProcessingOutputSanitizer.replaceForbiddenDashes(result)
         return collapsePunctuationSpacing(result)
     }
 
