@@ -9,7 +9,7 @@ Whisper vrací souvislý text **bez interpunkce**. To je normální u speech-to-
 | Vrstva | Kdy běží | Co dělá |
 |--------|----------|---------|
 | **Pravidla (vždy, offline)** | Po každém diktátu | Mezery, mluvené příkazy („tečka“, „nový odstavec“), heuristická interpunkce v češtině, velká písmena na začátku vět, struktura e-mailu podle aplikace / frází |
-| **Lepší formátování (volitelné)** | Zapnuto v menu **a** doplněk je načtený na Macu | Doladí delší texty: věty, odstavce, tón podle aplikace (Mail, Slack, …) |
+| **Lepší formátování (volitelné)** | Zapnuto v menu **a** doplněk je načtený na Macu | Doladí interpunkci a odstavce — **neodpovídá** na obsah, nepřidává vlastní věty |
 
 **Vypnutí v menu neznamená, že Locute neformátuje.** Znamená to jen, že se nepoužije druhá vrstva. První vrstva běží vždy.
 
