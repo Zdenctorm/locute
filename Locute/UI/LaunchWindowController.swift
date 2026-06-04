@@ -96,6 +96,7 @@ final class LaunchWindowController: NSWindowController {
     }
 
     func focusTranscriptionPanel() {
+        transcriptionPanel.scrollToLatestEntry()
         showWindow(nil)
     }
 

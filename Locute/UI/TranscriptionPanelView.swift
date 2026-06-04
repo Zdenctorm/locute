@@ -1,5 +1,10 @@
 import Cocoa
 
+/// Origin nahoře vlevo — bez toho macOS scroll view ukazuje spodek dokumentu (nejstarší přepisy).
+private final class FlippedDocumentView: NSView {
+    override var isFlipped: Bool { true }
+}
+
 @MainActor
 final class TranscriptionPanelView: NSView {
     static let wordMarkupLegend = "Klikni podtržené slovo pro opravu."
@@ -17,6 +22,7 @@ final class TranscriptionPanelView: NSView {
     }()
 
     private let scrollView = NSScrollView()
+    private let documentView = FlippedDocumentView()
     private let entriesStack = NSStackView()
     private var rowViews: [HistoryRowView] = []
     private var cachedEntries: [TranscriptionHistoryEntry] = []
@@ -39,7 +45,7 @@ final class TranscriptionPanelView: NSView {
 
     // MARK: - Public API
 
-    func setHistory(_ entries: [TranscriptionHistoryEntry]) {
+    func setHistory(_ entries: [TranscriptionHistoryEntry], scrollToLatest: Bool = false) {
         cachedEntries = entries
         for row in rowViews { row.removeFromSuperview() }
         rowViews.removeAll()
@@ -73,6 +79,19 @@ final class TranscriptionPanelView: NSView {
                 sep.widthAnchor.constraint(equalTo: entriesStack.widthAnchor).isActive = true
             }
         }
+
+        if scrollToLatest {
+            scrollToLatestEntry()
+        }
+    }
+
+    /// Posune scroll na nejnovější přepis (index 0 — nahoře v seznamu).
+    func scrollToLatestEntry() {
+        layoutSubtreeIfNeeded()
+        scrollView.layoutSubtreeIfNeeded()
+        documentView.layoutSubtreeIfNeeded()
+        scrollView.contentView.scroll(to: .zero)
+        scrollView.reflectScrolledClipView(scrollView.contentView)
     }
 
     private static func emptyHistoryMessage() -> String {
@@ -85,7 +104,7 @@ final class TranscriptionPanelView: NSView {
         super.viewDidChangeEffectiveAppearance()
         AppTheme.applyPanelChrome(to: self)
         if !cachedEntries.isEmpty {
-            setHistory(cachedEntries)
+            setHistory(cachedEntries, scrollToLatest: false)
         }
     }
 
@@ -108,10 +127,13 @@ final class TranscriptionPanelView: NSView {
         entriesStack.edgeInsets = NSEdgeInsets(top: 4, left: 4, bottom: 4, right: 4)
 
         scrollView.hasVerticalScroller = true
+        scrollView.autohidesScrollers = true
         scrollView.borderType = .noBorder
         scrollView.drawsBackground = false
         scrollView.translatesAutoresizingMaskIntoConstraints = false
-        scrollView.documentView = entriesStack
+        documentView.translatesAutoresizingMaskIntoConstraints = false
+        documentView.addSubview(entriesStack)
+        scrollView.documentView = documentView
         scrollView.contentView.postsBoundsChangedNotifications = false
         if let clip = scrollView.contentView as NSClipView? {
             clip.drawsBackground = false
@@ -141,7 +163,11 @@ final class TranscriptionPanelView: NSView {
             scrollView.widthAnchor.constraint(equalTo: content.widthAnchor),
             scrollView.heightAnchor.constraint(greaterThanOrEqualToConstant: 140),
 
-            entriesStack.widthAnchor.constraint(equalTo: scrollView.widthAnchor),
+            documentView.widthAnchor.constraint(equalTo: scrollView.widthAnchor),
+            entriesStack.leadingAnchor.constraint(equalTo: documentView.leadingAnchor),
+            entriesStack.trailingAnchor.constraint(equalTo: documentView.trailingAnchor),
+            entriesStack.topAnchor.constraint(equalTo: documentView.topAnchor),
+            entriesStack.bottomAnchor.constraint(equalTo: documentView.bottomAnchor),
 
             placeholderLabel.leadingAnchor.constraint(equalTo: scrollView.leadingAnchor, constant: 8),
             placeholderLabel.trailingAnchor.constraint(lessThanOrEqualTo: scrollView.trailingAnchor, constant: -8),

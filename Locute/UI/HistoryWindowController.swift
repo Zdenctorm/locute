@@ -27,6 +27,7 @@ final class HistoryWindowController: NSWindowController {
     override func showWindow(_ sender: Any?) {
         super.showWindow(sender)
         AppWindowPresenter.present(window)
+        transcriptionPanel.scrollToLatestEntry()
     }
 
     func setTranscriptionHistory(_ entries: [TranscriptionHistoryEntry]) {
