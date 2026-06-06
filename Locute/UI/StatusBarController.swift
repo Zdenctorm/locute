@@ -14,14 +14,20 @@ final class StatusBarController: NSObject, NSMenuDelegate {
     var onTestTranscription: (() -> Void)?
     var onShowLastTranscription: (() -> Void)?
     var onOpenLearnedTerms: (() -> Void)?
+    var onOpenHistory: (() -> Void)?
     var onMenuWillOpen: (() -> Void)?
     var onShowTranscriptionPopover: ((NSStatusBarButton) -> Void)?
+    var onPasteAgain: (() -> Void)?
+    var onCopyLastTranscript: (() -> Void)?
+    var lastTranscriptProvider: (() -> TranscriptionHistoryEntry?)?
     var hotkeyHealthProvider: (() -> HotkeyHealth)?
 
     var statusButton: NSStatusBarButton? { statusItem.button }
 
     private let statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
     private let stateMachine: AppStateMachine
+    private let postProcessingReadiness: PostProcessingReadiness
+    private var readinessCancellable: AnyCancellable?
     private let updaterController: SPUStandardUpdaterController
     private let sparkleUpdatesAvailable: Bool
     private var cancellables = Set<AnyCancellable>()
@@ -32,31 +38,50 @@ final class StatusBarController: NSObject, NSMenuDelegate {
 
     private let statusMenuItem = NSMenuItem(title: "Spouštím", action: nil, keyEquivalent: "")
     private let hintMenuItem = NSMenuItem(title: "Podrž diktovací klávesu a mluv", action: nil, keyEquivalent: "")
-    private let dictationMenuItem = NSMenuItem(title: "Začít diktování (bez klávesy)", action: #selector(toggleDictation), keyEquivalent: "")
-    private let testTranscriptionMenuItem = NSMenuItem(title: "Ověřit přepis (ukáže text)", action: #selector(runTranscriptionTest), keyEquivalent: "")
+    private let dictationMenuItem = NSMenuItem(title: "Diktovat", action: #selector(toggleDictation), keyEquivalent: "")
+    private let testTranscriptionMenuItem = NSMenuItem(title: "Test přepisu", action: #selector(runTranscriptionTest), keyEquivalent: "")
     private let lastTranscriptionMenuItem = NSMenuItem(
         title: "Poslední přepis…",
         action: #selector(showLastTranscriptionFromMenu),
         keyEquivalent: ""
     )
+    private let historyMenuItem = NSMenuItem(
+        title: "Otevřít Locute…",
+        action: #selector(openHistoryFromMenu),
+        keyEquivalent: ""
+    )
+    private let pasteAgainMenuItem = NSMenuItem(
+        title: "Vložit znovu",
+        action: #selector(pasteAgainFromMenu),
+        keyEquivalent: ""
+    )
+    private let copyLastTranscriptMenuItem = NSMenuItem(
+        title: "Zkopírovat poslední přepis",
+        action: #selector(copyLastTranscriptFromMenu),
+        keyEquivalent: ""
+    )
     private let launchAtLoginItem = NSMenuItem(title: "Spouštět po přihlášení", action: #selector(toggleLaunchAtLogin), keyEquivalent: "")
     private let postProcessingItem = NSMenuItem(
-        title: "Oprava přepisu na Macu (lokální LLM)",
+        title: "Lepší formátování textu",
         action: #selector(togglePostProcessing),
         keyEquivalent: ""
     )
 
     init(
         stateMachine: AppStateMachine,
+        postProcessingReadiness: PostProcessingReadiness,
         updaterController: SPUStandardUpdaterController,
         sparkleUpdatesAvailable: Bool
     ) {
         self.stateMachine = stateMachine
+        self.postProcessingReadiness = postProcessingReadiness
         self.updaterController = updaterController
         self.sparkleUpdatesAvailable = sparkleUpdatesAvailable
         super.init()
         setupMenu()
         observeState()
+        observePostProcessingReadiness()
+        refreshMenuStatusTitle(for: stateMachine.state)
         update(for: stateMachine.state)
     }
 
@@ -69,6 +94,32 @@ final class StatusBarController: NSObject, NSMenuDelegate {
             .receive(on: RunLoop.main)
             .sink { [weak self] state in self?.update(for: state) }
             .store(in: &cancellables)
+    }
+
+    private func observePostProcessingReadiness() {
+        readinessCancellable = postProcessingReadiness.$phase
+            .receive(on: RunLoop.main)
+            .sink { [weak self] _ in
+                guard let self else { return }
+                self.refreshMenuStatusTitle(for: self.stateMachine.state)
+                self.hintMenuItem.title = self.contextualHint(for: self.stateMachine.state)
+            }
+    }
+
+    private func refreshMenuStatusTitle(for state: LocuteState) {
+        if transientResetTimer != nil { return }
+        if state == .idle, let polishLine = postProcessingReadiness.menuStatusLine {
+            baseStatusTitle = polishLine
+            statusMenuItem.attributedTitle = nil
+            statusMenuItem.title = polishLine
+        } else if state == .idle {
+            baseStatusTitle = state.displayText
+            applyStatusMenuTitle(for: state)
+        } else {
+            baseStatusTitle = state.displayText
+            statusMenuItem.attributedTitle = nil
+            statusMenuItem.title = baseStatusTitle
+        }
     }
 
     private func setupMenu() {
@@ -87,6 +138,21 @@ final class StatusBarController: NSObject, NSMenuDelegate {
 
         lastTranscriptionMenuItem.target = self
         menu.addItem(lastTranscriptionMenuItem)
+
+        historyMenuItem.target = self
+        menu.addItem(historyMenuItem)
+
+        pasteAgainMenuItem.target = self
+        pasteAgainMenuItem.isHidden = true
+        AccessibilitySupport.configure(
+            pasteAgainMenuItem,
+            help: "Vloží poslední přepis do aplikace, kde máš kurzor."
+        )
+        menu.addItem(pasteAgainMenuItem)
+
+        copyLastTranscriptMenuItem.target = self
+        copyLastTranscriptMenuItem.isHidden = true
+        menu.addItem(copyLastTranscriptMenuItem)
 
         menu.addItem(.separator())
 
@@ -116,6 +182,7 @@ final class StatusBarController: NSObject, NSMenuDelegate {
         postProcessingItem.state = PostProcessingPreference.isEnabled ? .on : .off
         hintMenuItem.title = activationHintLine()
         refreshDictationMenuItems()
+        refreshLastTranscriptMenuItems()
     }
 
     func refreshDictationMenuItems() {
@@ -131,18 +198,18 @@ final class StatusBarController: NSObject, NSMenuDelegate {
             testTranscriptionMenuItem.isEnabled = true
             AccessibilitySupport.configure(testTranscriptionMenuItem, help: nil)
         case .idle:
-            dictationMenuItem.title = "Začít diktování (bez klávesy)"
+            dictationMenuItem.title = "Diktovat"
             dictationMenuItem.isEnabled = true
             AccessibilitySupport.configure(dictationMenuItem, help: nil)
-            testTranscriptionMenuItem.title = "Ověřit přepis (ukáže text)"
+            testTranscriptionMenuItem.title = "Test přepisu"
             testTranscriptionMenuItem.isEnabled = true
             AccessibilitySupport.configure(testTranscriptionMenuItem, help: nil)
         case .modelDownloading, .modelLoading:
-            dictationMenuItem.title = "Začít diktování (model se načítá)"
+            dictationMenuItem.title = "Diktovat (načítá se model)"
             dictationMenuItem.isEnabled = true
             AccessibilitySupport.configure(
                 dictationMenuItem,
-                help: "Můžeš začít mluvit hned; přepis doběhne po načtení modelu."
+                help: "Přepis doběhne po načtení modelu."
             )
             testTranscriptionMenuItem.isEnabled = false
             AccessibilitySupport.configure(testTranscriptionMenuItem, help: disabledHelp)
@@ -163,10 +230,7 @@ final class StatusBarController: NSObject, NSMenuDelegate {
         pulseTimer?.invalidate()
         pulseTimer = nil
 
-        baseStatusTitle = state.displayText
-        if transientResetTimer == nil {
-            statusMenuItem.title = baseStatusTitle
-        }
+        refreshMenuStatusTitle(for: state)
         hintMenuItem.title = contextualHint(for: state)
         refreshDictationMenuItems()
 
@@ -175,25 +239,29 @@ final class StatusBarController: NSObject, NSMenuDelegate {
         switch state {
         case .idle:
             setImage("mic", template: true, decorativeDescription: "Mikrofon, připraveno")
-            button.toolTip = "\(AppBrand.displayName) je připravený. Podrž \(HotkeyPreference.current.hintLabel) nebo diktuj z menu."
+            if postProcessingReadiness.isPreparing {
+                button.toolTip = "Přepis je připravený. Formátování se načítá — v menu uvidíš průběh."
+            } else {
+                button.toolTip = "Připraveno. Podrž \(HotkeyPreference.current.hintLabel)."
+            }
         case .recording:
             button.toolTip = "Nahrávám. Pusť klávesu nebo ukonči z menu."
             startRecordingPulse()
         case .transcribing:
             setImage("waveform", template: true, decorativeDescription: "Vlna, přepis")
-            button.toolTip = "Přepisuji lokálně na tomto Macu."
+            button.toolTip = "Přepisuji…"
         case .injecting:
             setImage("keyboard", template: true, decorativeDescription: "Klávesnice, vkládání")
             button.toolTip = "Vkládám text."
         case .modelDownloading:
             setImage("arrow.down.circle", template: true, decorativeDescription: "Stahování modelu")
-            button.toolTip = "Stahuji lokální model přepisu."
+            button.toolTip = "Stahuji model."
         case .modelLoading:
             setImage("cpu", template: true, decorativeDescription: "Načítání modelu")
-            button.toolTip = "Načítám lokální model přepisu."
+            button.toolTip = "Načítám model."
         case .permissionsNeeded:
             setImage("mic.slash", template: true, decorativeDescription: "Mikrofon vypnutý")
-            button.toolTip = "\(AppBrand.displayName) potřebuje mikrofon a Zpřístupnění."
+            button.toolTip = "Chybí oprávnění."
         case .error(let message):
             setImage("exclamationmark.triangle", template: true, decorativeDescription: "Varování")
             button.toolTip = message
@@ -230,9 +298,56 @@ final class StatusBarController: NSObject, NSMenuDelegate {
             Task { @MainActor in
                 guard let self else { return }
                 self.transientResetTimer = nil
-                self.statusMenuItem.title = self.baseStatusTitle
+                self.refreshMenuStatusTitle(for: self.stateMachine.state)
             }
         }
+    }
+
+    private func refreshLastTranscriptMenuItems() {
+        let entry = lastTranscriptProvider?()
+        let hasEntry = entry != nil && !(entry?.text.isEmpty ?? true)
+        let canUseLast = hasEntry && stateMachine.state == .idle
+
+        pasteAgainMenuItem.isHidden = !canUseLast
+        copyLastTranscriptMenuItem.isHidden = !canUseLast
+
+        if hasEntry, let text = entry?.text {
+            let preview = Self.truncatedMenuPreview(text)
+            lastTranscriptionMenuItem.title = "Poslední přepis: \(preview)"
+            lastTranscriptionMenuItem.isEnabled = true
+        } else {
+            lastTranscriptionMenuItem.title = "Poslední přepis…"
+            lastTranscriptionMenuItem.isEnabled = false
+            AccessibilitySupport.configure(
+                lastTranscriptionMenuItem,
+                help: "Zatím nic."
+            )
+        }
+    }
+
+    private func applyStatusMenuTitle(for state: LocuteState) {
+        if case .idle = state {
+            let title = NSMutableAttributedString(
+                string: "● ",
+                attributes: [.foregroundColor: AppTheme.Color.success]
+            )
+            title.append(NSAttributedString(
+                string: state.displayText,
+                attributes: [.foregroundColor: NSColor.labelColor]
+            ))
+            statusMenuItem.attributedTitle = title
+        } else {
+            statusMenuItem.attributedTitle = nil
+            statusMenuItem.title = state.displayText
+        }
+    }
+
+    private static func truncatedMenuPreview(_ text: String, maxLength: Int = 44) -> String {
+        let collapsed = text
+            .replacingOccurrences(of: "\n", with: " ")
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        guard collapsed.count > maxLength else { return collapsed }
+        return String(collapsed.prefix(maxLength)).trimmingCharacters(in: .whitespaces) + "…"
     }
 
     private func contextualHint(for state: LocuteState) -> String {
@@ -241,19 +356,25 @@ final class StatusBarController: NSObject, NSMenuDelegate {
         }
         switch state {
         case .idle:
-            return "Podrž \(HotkeyPreference.current.hintLabel) nebo použij položku „Začít diktování“."
+            if postProcessingReadiness.isPreparing {
+                return "Přepis jde hned. Formátování doběhne v menu."
+            }
+            if postProcessingReadiness.phase == .unavailable {
+                return "Formátování se nepodařilo načíst — platí základní pravidla."
+            }
+            return "Podrž \(HotkeyPreference.current.hintLabel)."
         case .recording:
-            return "Nahrávám — pusť klávesu nebo zvol „Ukončit diktování“."
+            return "Nahrávám — pusť klávesu."
         case .modelDownloading, .modelLoading, .launching:
-            return "Po dokončení přípravy modelu půjde diktovat klávesou \(HotkeyPreference.current.hintLabel)."
+            return "Načítám model…"
         case .transcribing:
-            return "Přepisuji lokálně — chvíli strpení."
+            return "Přepisuji…"
         case .injecting:
-            return "Vkládám text — pokud to trvá dlouho, zkontroluj Zpřístupnění a log."
+            return "Vkládám…"
         case .permissionsNeeded:
-            return "Doplň mikrofon, Zpřístupnění a Monitorování vstupu (jinak klávesa jen s oknem \(AppBrand.displayName))."
+            return "Chybí oprávnění — otevři průvodce."
         case .error:
-            return "Je potřeba zásah — nápověda výše v menu."
+            return "Chyba — viz stav výše."
         }
     }
 
@@ -263,13 +384,13 @@ final class StatusBarController: NSObject, NSMenuDelegate {
         switch health {
         case .notTrusted:
             if !InputMonitoringSettings.isGranted() {
-                return "Zapni Monitorování vstupu pro \(AppBrand.bundleFileName) — bez toho klávesa nefunguje v jiných appkách."
+                return "Zapni Monitorování vstupu."
             }
-            return "Zapni Zpřístupnění pro tuto kopii \(AppBrand.bundleFileName) (Nastavení → Soukromí)."
+            return "Zapni Zpřístupnění."
         case .tapMissing:
-            return "Diktovací klávesa není aktivní — otevři Nastavení \(AppBrand.displayName)."
+            return "Klávesa neaktivní — otevři Nastavení."
         case .stale:
-            return "\(AppBrand.displayName) neviděl klávesu — stiskni \(HotkeyPreference.current.hintLabel) jednou."
+            return "Stiskni \(HotkeyPreference.current.hintLabel) jednou."
         case .receivingEvents:
             return nil
         }
@@ -280,7 +401,7 @@ final class StatusBarController: NSObject, NSMenuDelegate {
         case .pushToTalk:
             return "Podrž \(HotkeyPreference.current.hintLabel) a mluv"
         case .toggle:
-            return "Stiskni \(HotkeyPreference.current.hintLabel) pro start i stop diktování"
+            return "\(HotkeyPreference.current.hintLabel) = start/stop"
         }
     }
 
@@ -309,7 +430,7 @@ final class StatusBarController: NSObject, NSMenuDelegate {
         advancedMenu.addItem(postProcessingItem)
 
         let learnedItem = NSMenuItem(
-            title: "Co \(AppBrand.displayName) už umí…",
+            title: "Naučené termíny…",
             action: #selector(openLearnedTerms),
             keyEquivalent: ""
         )
@@ -317,7 +438,7 @@ final class StatusBarController: NSObject, NSMenuDelegate {
         advancedMenu.addItem(learnedItem)
 
         let setupGuideItem = NSMenuItem(
-            title: "Průvodce nastavením (oprávnění)…",
+            title: "Průvodce nastavením…",
             action: #selector(openSetupGuide),
             keyEquivalent: ""
         )
@@ -333,14 +454,14 @@ final class StatusBarController: NSObject, NSMenuDelegate {
         advancedMenu.addItem(diagnosticsItem)
 
         let auditItem = NSMenuItem(
-            title: "Analýza zpřístupnění (VoiceOver)…",
+            title: "Analýza zpřístupnění…",
             action: #selector(runAccessibilityAudit),
             keyEquivalent: ""
         )
         auditItem.target = self
         AccessibilitySupport.configure(
             auditItem,
-            help: "Projde UI \(AppBrand.displayName) a stručně porovná referenční aplikace. Uloží podrobnou zprávu do složky logů."
+            help: "Uloží zprávu do složky logů."
         )
         advancedMenu.addItem(auditItem)
 
@@ -446,8 +567,20 @@ final class StatusBarController: NSObject, NSMenuDelegate {
         }
     }
 
+    @objc private func pasteAgainFromMenu() {
+        onPasteAgain?()
+    }
+
+    @objc private func copyLastTranscriptFromMenu() {
+        onCopyLastTranscript?()
+    }
+
     @objc private func openLearnedTerms() {
         onOpenLearnedTerms?()
+    }
+
+    @objc private func openHistoryFromMenu() {
+        onOpenHistory?()
     }
 
     @objc private func openPreferences() {
@@ -470,7 +603,7 @@ final class StatusBarController: NSObject, NSMenuDelegate {
         NSApp.orderFrontStandardAboutPanel(options: [
             .applicationName: AppBrand.displayName,
             .applicationVersion: Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0",
-            .credits: NSAttributedString(string: "Soukromé české diktování. Bez telemetrie, analytiky a backendu. Historie přepisů se ukládá lokálně v ~/Library/Application Support/\(AppBrand.storageDirectoryName)/ a přežije restart aplikace.")
+            .credits: NSAttributedString(string: "Offline diktování. Bez telemetrie.")
         ])
         NSApp.activate(ignoringOtherApps: true)
     }

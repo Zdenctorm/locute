@@ -59,12 +59,12 @@ final class LearnedTermsView: NSView {
 
     private let listStack = NSStackView()
     private let emptyLabel = AppTheme.label(
-        "Zatím nic — \(AppBrand.displayName) se učí z oprav v historii nebo když stejnou větu řekneš znovu.",
+        "Zatím nic. Učí se z oprav v historii.",
         font: AppTheme.Font.body,
         color: AppTheme.Color.body,
         lines: 0
     )
-    private let advancedDisclosure = NSButton(title: "Pokročilé: ručně přidat termín", target: nil, action: nil)
+    private let advancedDisclosure = NSButton(title: "Přidat ručně", target: nil, action: nil)
     private let advancedPanel = NSView()
     private let canonicalField = NSTextField()
     private let variantRowsStack = NSStackView()
@@ -102,15 +102,8 @@ final class LearnedTermsView: NSView {
         translatesAutoresizingMaskIntoConstraints = false
 
         let intro = AppTheme.label(
-            "Termíny, které \(AppBrand.displayName) používá při přepisu. Můžeš je smazat nebo přidat ručně.",
+            "Termíny pro přepis.",
             font: AppTheme.Font.body,
-            color: AppTheme.Color.body,
-            lines: 0
-        )
-
-        let privacy = AppTheme.label(
-            "Soukromí: přepisy a naučené termíny zůstávají jen na tomto Macu. Zvuk z posledních nahrávek se drží na disku maximálně 1 hodinu.",
-            font: AppTheme.Font.footnote,
             color: AppTheme.Color.body,
             lines: 0
         )
@@ -143,7 +136,7 @@ final class LearnedTermsView: NSView {
         listContainer.translatesAutoresizingMaskIntoConstraints = false
         scrollView.documentView = listContainer
 
-        let root = NSStackView(views: [intro, scrollView, privacy, advancedDisclosure, advancedPanel])
+        let root = NSStackView(views: [intro, scrollView, advancedDisclosure, advancedPanel])
         root.orientation = .vertical
         root.alignment = .leading
         root.spacing = AppTheme.Spacing.section
@@ -163,7 +156,6 @@ final class LearnedTermsView: NSView {
             root.bottomAnchor.constraint(equalTo: bottomAnchor),
 
             intro.widthAnchor.constraint(equalTo: root.widthAnchor, constant: -AppTheme.Spacing.windowPadding * 2),
-            privacy.widthAnchor.constraint(equalTo: intro.widthAnchor),
             scrollView.widthAnchor.constraint(equalTo: intro.widthAnchor),
             scrollView.heightAnchor.constraint(greaterThanOrEqualToConstant: 220),
             listContainer.widthAnchor.constraint(equalTo: scrollView.widthAnchor),
@@ -181,7 +173,7 @@ final class LearnedTermsView: NSView {
         canonicalField.font = AppTheme.Font.body
         canonicalField.translatesAutoresizingMaskIntoConstraints = false
 
-        let variantsLabel = AppTheme.label("Varianty (co Whisper často řekne špatně)", font: AppTheme.Font.footnote, color: AppTheme.Color.body)
+        let variantsLabel = AppTheme.label("Varianty", font: AppTheme.Font.footnote, color: AppTheme.Color.body)
         variantRowsStack.orientation = .vertical
         variantRowsStack.alignment = .leading
         variantRowsStack.spacing = AppTheme.Spacing.tight
@@ -257,7 +249,7 @@ final class LearnedTermsView: NSView {
         guard let canonical = sender.identifier?.rawValue else { return }
         let alert = NSAlert()
         alert.messageText = "Smazat „\(canonical)“?"
-        alert.informativeText = "\(AppBrand.displayName) přestane tento termín upravovat v přepisech."
+        alert.informativeText = "Smazat z naučených termínů?"
         alert.addButton(withTitle: "Smazat")
         alert.addButton(withTitle: "Zrušit")
         alert.alertStyle = .warning

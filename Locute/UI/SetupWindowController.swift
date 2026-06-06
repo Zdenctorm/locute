@@ -10,7 +10,16 @@ final class SetupWindowController: NSWindowController {
     private var lastLoggedSnapshot: PermissionsSnapshot?
     private var hadAllPermissionsWhenOpened = false
     private var didRequestAccessibilityPromptThisSession = false
+    private var hotkeyObserver: NSObjectProtocol?
     private let bundlePathLabel = AppTheme.label(
+        "",
+        font: AppTheme.Font.footnote,
+        color: AppTheme.Color.body,
+        lines: 0
+    )
+    private let helpDisclosure = NSButton(title: "Potřebuješ pomoc?", target: nil, action: nil)
+    private let helpPanel = NSView()
+    private let logStatusLabel = AppTheme.label(
         "",
         font: AppTheme.Font.footnote,
         color: AppTheme.Color.body,
@@ -34,7 +43,7 @@ final class SetupWindowController: NSWindowController {
     private let revealAppButton = AppTheme.secondaryButton("Ukázat ve Finderu", target: nil, action: nil)
     private let copyLogButton = AppTheme.secondaryButton("Zkopírovat log", target: nil, action: nil)
     private let keyTestStatusLabel = AppTheme.label(
-        "Stiskni svou diktovací klávesu — \(AppBrand.displayName) ukáže, jestli ji vidí.",
+        "Stiskni diktovací klávesu.",
         font: AppTheme.Font.body,
         color: AppTheme.Color.body,
         lines: 0
@@ -48,14 +57,24 @@ final class SetupWindowController: NSWindowController {
             backing: .buffered,
             defer: false
         )
-        AppTheme.configureMainWindow(window, title: "Průvodce nastavením")
+        AppTheme.configureMainWindow(window, title: "Oprávnění")
 
         super.init(window: window)
 
         buildUI()
         wireActions()
+        refreshHotkeyCopy()
         refreshPermissionState()
         startPolling()
+        hotkeyObserver = NotificationCenter.default.addObserver(
+            forName: .locuteHotkeyPreferenceChanged,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            Task { @MainActor in
+                self?.refreshHotkeyCopy()
+            }
+        }
     }
 
     required init?(coder: NSCoder) {
@@ -67,7 +86,7 @@ final class SetupWindowController: NSWindowController {
         hadAllPermissionsWhenOpened = PermissionsSnapshotProvider.current.allGranted
         AppWindowPresenter.activateApp()
         AppWindowPresenter.present(window)
-        bundlePathLabel.stringValue = "Aktuální kopie: \(Bundle.main.bundleURL.path)"
+        bundlePathLabel.stringValue = "Cesta: \(Bundle.main.bundleURL.path)"
         requestAccessibilityPromptIfNeeded()
     }
 
@@ -76,7 +95,14 @@ final class SetupWindowController: NSWindowController {
         checkTimer = nil
         keyTestHintTimer?.invalidate()
         keyTestHintTimer = nil
+        if let hotkeyObserver {
+            NotificationCenter.default.removeObserver(hotkeyObserver)
+        }
         super.close()
+    }
+
+    private func refreshHotkeyCopy() {
+        resetKeyTestHintIfStale()
     }
 
     func reportKeyEvent(key: HotkeyKey, isDown: Bool) {
@@ -84,9 +110,9 @@ final class SetupWindowController: NSWindowController {
         keyTestHintTimer?.invalidate()
 
         let formatter = DateFormatter()
-        formatter.timeStyle = .medium
+        formatter.timeStyle = .short
         keyTestStatusLabel.stringValue =
-            "Zachyceno (\(HotkeyPreference.current.hintLabel)) v \(formatter.string(from: Date()))"
+            "Klávesa OK (\(HotkeyPreference.current.hintLabel), \(formatter.string(from: Date())))"
         keyTestStatusLabel.textColor = AppTheme.Color.success
 
         keyTestHintTimer = Timer.scheduledTimer(withTimeInterval: 8, repeats: false) { [weak self] _ in
@@ -97,8 +123,7 @@ final class SetupWindowController: NSWindowController {
     }
 
     private func resetKeyTestHintIfStale() {
-        keyTestStatusLabel.stringValue =
-            "Stiskni svou diktovací klávesu (\(HotkeyPreference.current.hintLabel)) — \(AppBrand.displayName) ukáže, jestli ji vidí."
+        keyTestStatusLabel.stringValue = "Stiskni \(HotkeyPreference.current.hintLabel)."
         keyTestStatusLabel.textColor = AppTheme.Color.body
     }
 
@@ -111,12 +136,12 @@ final class SetupWindowController: NSWindowController {
         ])
 
         let title = AppTheme.label(
-            "Dokončete nastavení",
+            "Dokonči nastavení",
             font: AppTheme.Font.title,
             color: AppTheme.Color.title
         )
         let subtitle = AppTheme.label(
-            "Povolte tři oprávnění. Bez „Monitorování vstupu“ diktovací klávesa funguje jen s otevřeným oknem \(AppBrand.displayName).",
+            "Povol tři oprávnění níže.",
             font: AppTheme.Font.body,
             color: AppTheme.Color.body,
             lines: 0
@@ -139,7 +164,7 @@ final class SetupWindowController: NSWindowController {
         let microphoneRow = PermissionsPanelBuilder.permissionRow(
             number: "1",
             title: "Mikrofon",
-            detail: "Nahrává jen ve chvíli, kdy držíte \(HotkeyPreference.current.hintLabel).",
+            detail: "",
             badge: microphoneBadge,
             button: microphoneButton
         )
@@ -147,43 +172,64 @@ final class SetupWindowController: NSWindowController {
         let accessibilityRow = PermissionsPanelBuilder.permissionRow(
             number: "2",
             title: "Zpřístupnění",
-            detail: """
-            macOS aplikaci do seznamu nepřidá sama — ani po výzvě. Klepni na tlačítko níže: otevře se Nastavení \
-            a ve Finderu uvidíš přesně tuto kopii \(AppBrand.bundleFileName). V Soukromí a zabezpečení → Zpřístupnění klepni na + \
-            a vyber tuto aplikaci (nebo ji přetáhni). Starý záznam „\(AppBrand.displayName)“ z jiné složky smaž.
-            """,
+            detail: "Tlačítko → Nastavení → Zpřístupnění → přidej tuto kopii (+).",
             badge: accessibilityBadge,
-            button: accessibilityButton,
-            extraViews: [bundlePathLabel]
+            button: accessibilityButton
         )
 
         let inputMonitoringRow = PermissionsPanelBuilder.permissionRow(
             number: "3",
             title: "Monitorování vstupu",
-            detail: """
-            Nutné pro globální diktovací klávesu v Linearu, Cursoru a dalších appkách. Klepni na tlačítko, \
-            povol \(AppBrand.displayName) v seznamu Monitorování vstupu (stejná .app jako u Zpřístupnění).
-            """,
+            detail: "Pro klávesu v jiných appkách.",
             badge: inputMonitoringBadge,
             button: inputMonitoringButton
         )
 
         keyTestStatusLabel.setAccessibilityLabel("Test diktovací klávesy")
         let keyTestCard = AppTheme.card([
-            AppTheme.label("Otestuj diktovací klávesu", font: AppTheme.Font.headline, color: AppTheme.Color.title),
+            AppTheme.label("Otestuj klávesu", font: AppTheme.Font.headline, color: AppTheme.Color.title),
             keyTestStatusLabel
         ])
 
-        let helper = AppTheme.label(
-            "Pokud klávesa funguje jen s otevřeným \(AppBrand.displayName), chybí Monitorování vstupu. Odeber staré záznamy \(AppBrand.displayName) a přidej /Applications/\(AppBrand.bundleFileName) do obou seznamů.",
+        bundlePathLabel.lineBreakMode = .byTruncatingMiddle
+        logStatusLabel.isHidden = true
+
+        helpDisclosure.setButtonType(.toggle)
+        helpDisclosure.bezelStyle = .inline
+        helpDisclosure.font = AppTheme.Font.footnote
+        helpDisclosure.state = .off
+        helpDisclosure.target = self
+        helpDisclosure.action = #selector(toggleHelpPanel)
+
+        let helpHint = AppTheme.label(
+            "Klávesa nefunguje globálně? Zkontroluj Monitorování vstupu a Zpřístupnění.",
             font: AppTheme.Font.footnote,
             color: AppTheme.Color.body,
             lines: 0
         )
 
+        let helpButtons = NSStackView(views: [revealAppButton, copyLogButton])
+        helpButtons.orientation = .horizontal
+        helpButtons.alignment = .centerY
+        helpButtons.spacing = AppTheme.Spacing.row
+
+        let helpStack = NSStackView(views: [helpHint, bundlePathLabel, helpButtons, logStatusLabel])
+        helpStack.orientation = .vertical
+        helpStack.alignment = .leading
+        helpStack.spacing = AppTheme.Spacing.tight
+        helpPanel.addSubview(helpStack)
+        helpStack.translatesAutoresizingMaskIntoConstraints = false
+        NSLayoutConstraint.activate([
+            helpStack.leadingAnchor.constraint(equalTo: helpPanel.leadingAnchor),
+            helpStack.trailingAnchor.constraint(equalTo: helpPanel.trailingAnchor),
+            helpStack.topAnchor.constraint(equalTo: helpPanel.topAnchor),
+            helpStack.bottomAnchor.constraint(equalTo: helpPanel.bottomAnchor)
+        ])
+        helpPanel.isHidden = true
+
         let footerSpacer = NSView()
         footerSpacer.setContentHuggingPriority(.defaultLow, for: .horizontal)
-        let footerButtons = NSStackView(views: [checkAgainButton, footerSpacer, revealAppButton, copyLogButton])
+        let footerButtons = NSStackView(views: [checkAgainButton, footerSpacer])
         footerButtons.orientation = .horizontal
         footerButtons.alignment = .centerY
         footerButtons.spacing = AppTheme.Spacing.row
@@ -202,11 +248,17 @@ final class SetupWindowController: NSWindowController {
                 inputMonitoringRow,
                 keyTestCard,
                 footerButtons,
-                helper
+                helpDisclosure,
+                helpPanel
             ]
         )
         contentStack.setCustomSpacing(AppTheme.Spacing.hero, after: header)
         contentStack.setCustomSpacing(AppTheme.Spacing.intimate, after: footerButtons)
+        contentStack.setCustomSpacing(AppTheme.Spacing.tight, after: helpDisclosure)
+    }
+
+    @objc private func toggleHelpPanel() {
+        helpPanel.isHidden = helpDisclosure.state != .on
     }
 
     private func wireActions() {
@@ -226,13 +278,12 @@ final class SetupWindowController: NSWindowController {
 
     @objc private func copyDiagnosticsLog() {
         DiagnosticsLogger.copyTailToPasteboard(50)
-        keyTestStatusLabel.stringValue = "Posledních 50 řádků logu je ve schránce."
-        keyTestStatusLabel.textColor = AppTheme.Color.success
-        keyTestHintTimer?.invalidate()
-        keyTestHintTimer = Timer.scheduledTimer(withTimeInterval: 4, repeats: false) { [weak self] _ in
-            Task { @MainActor in
-                self?.resetKeyTestHintIfStale()
-            }
+        logStatusLabel.isHidden = false
+        logStatusLabel.stringValue = "Log ve schránce."
+        logStatusLabel.textColor = AppTheme.Color.success
+        if helpDisclosure.state == .off {
+            helpDisclosure.state = .on
+            helpPanel.isHidden = false
         }
     }
 
@@ -262,9 +313,7 @@ final class SetupWindowController: NSWindowController {
         AccessibilitySupport.configure(
             microphoneBadge,
             label: "Mikrofon: \(snapshot.microphone.label)",
-            help: snapshot.microphone == .allowed
-                ? "Mikrofon je povolený."
-                : "Povol mikrofon pro nahrávání při držení diktovací klávesy."
+            help: snapshot.microphone == .allowed ? "Mikrofon je povolený." : "Povol mikrofon."
         )
         microphoneButton.isHidden = snapshot.microphone == .allowed
 
@@ -273,14 +322,19 @@ final class SetupWindowController: NSWindowController {
         AccessibilitySupport.configure(
             accessibilityBadge,
             label: "Zpřístupnění: \(snapshot.accessibility.label)",
-            help: snapshot.accessibility == .allowed
-                ? "Zpřístupnění je povolené."
-                : "Přidej tuto kopii \(AppBrand.bundleFileName) do Soukromí a zabezpečení → Zpřístupnění."
+            help: snapshot.accessibility == .allowed ? "Zpřístupnění je povolené." : "Přidej tuto kopii do Zpřístupnění."
         )
         accessibilityButton.isHidden = snapshot.accessibility == .allowed
 
         inputMonitoringBadge.stringValue = snapshot.inputMonitoring.label
         inputMonitoringBadge.textColor = snapshot.inputMonitoring.color
+        AccessibilitySupport.configure(
+            inputMonitoringBadge,
+            label: "Monitorování vstupu: \(snapshot.inputMonitoring.label)",
+            help: snapshot.inputMonitoring == .allowed
+                ? "Globální klávesa funguje."
+                : "Povol Monitorování vstupu."
+        )
         inputMonitoringButton.isHidden = snapshot.inputMonitoring == .allowed
     }
 

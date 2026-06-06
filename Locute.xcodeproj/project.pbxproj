@@ -21,6 +21,7 @@
 		010000000000000000000054 /* PreferencesWindowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 020000000000000000000054 /* PreferencesWindowController.swift */; };
 		010000000000000000000055 /* PreferencesPanelBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 020000000000000000000055 /* PreferencesPanelBuilder.swift */; };
 		010000000000000000000056 /* PermissionsPanelBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 020000000000000000000056 /* PermissionsPanelBuilder.swift */; };
+		01000000000000000000005A /* HistoryWindowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 02000000000000000000005A /* HistoryWindowController.swift */; };
 		01000000000000000000000A /* LaunchWindowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 02000000000000000000000C /* LaunchWindowController.swift */; };
 		01000000000000000000000B /* AppTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = 02000000000000000000000D /* AppTheme.swift */; };
 		01000000000000000000000D /* AppLogoView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 020000000000000000000010 /* AppLogoView.swift */; };
@@ -71,6 +72,11 @@
 		010000000000000000000049 /* HotkeyTriggerLogic.swift in Sources */ = {isa = PBXBuildFile; fileRef = 020000000000000000000049 /* HotkeyTriggerLogic.swift */; };
 		01000000000000000000004A /* DictationPreviewPreference.swift in Sources */ = {isa = PBXBuildFile; fileRef = 02000000000000000000004A /* DictationPreviewPreference.swift */; };
 		01000000000000000000004B /* CzechDictationFormatter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 02000000000000000000004B /* CzechDictationFormatter.swift */; };
+		01000000000000000000005A /* CzechHeuristicPunctuator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 02000000000000000000005A /* CzechHeuristicPunctuator.swift */; };
+		01000000000000000000005B /* PostProcessingReadiness.swift in Sources */ = {isa = PBXBuildFile; fileRef = 02000000000000000000005B /* PostProcessingReadiness.swift */; };
+		01000000000000000000005C /* CzechPunctuationRules.swift in Sources */ = {isa = PBXBuildFile; fileRef = 02000000000000000000005C /* CzechPunctuationRules.swift */; };
+		01000000000000000000005D /* PostProcessingOutputSanitizer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 02000000000000000000005D /* PostProcessingOutputSanitizer.swift */; };
+		01000000000000000000005E /* PostProcessingOutputSanitizerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 02000000000000000000005E /* PostProcessingOutputSanitizerTests.swift */; };
 		01000000000000000000004C /* HotkeyTriggerLogicTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 02000000000000000000004C /* HotkeyTriggerLogicTests.swift */; };
 		01000000000000000000004D /* CzechDictationFormatterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 02000000000000000000004D /* CzechDictationFormatterTests.swift */; };
 		01000000000000000000004E /* InputMonitoringSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 02000000000000000000004E /* InputMonitoringSettings.swift */; };
@@ -101,6 +107,7 @@
 		020000000000000000000009 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		02000000000000000000000A /* Locute.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Locute.entitlements; sourceTree = "<group>"; };
 		02000000000000000000000B /* Locute.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Locute.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		02000000000000000000005A /* HistoryWindowController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HistoryWindowController.swift; sourceTree = "<group>"; };
 		02000000000000000000000C /* LaunchWindowController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LaunchWindowController.swift; sourceTree = "<group>"; };
 		02000000000000000000000D /* AppTheme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppTheme.swift; sourceTree = "<group>"; };
 		020000000000000000000010 /* AppLogoView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppLogoView.swift; sourceTree = "<group>"; };
@@ -146,6 +153,11 @@
 		020000000000000000000049 /* HotkeyTriggerLogic.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HotkeyTriggerLogic.swift; sourceTree = "<group>"; };
 		02000000000000000000004A /* DictationPreviewPreference.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DictationPreviewPreference.swift; sourceTree = "<group>"; };
 		02000000000000000000004B /* CzechDictationFormatter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CzechDictationFormatter.swift; sourceTree = "<group>"; };
+		02000000000000000000005A /* CzechHeuristicPunctuator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CzechHeuristicPunctuator.swift; sourceTree = "<group>"; };
+		02000000000000000000005B /* PostProcessingReadiness.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PostProcessingReadiness.swift; sourceTree = "<group>"; };
+		02000000000000000000005C /* CzechPunctuationRules.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CzechPunctuationRules.swift; sourceTree = "<group>"; };
+		02000000000000000000005D /* PostProcessingOutputSanitizer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PostProcessingOutputSanitizer.swift; sourceTree = "<group>"; };
+		02000000000000000000005E /* PostProcessingOutputSanitizerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PostProcessingOutputSanitizerTests.swift; sourceTree = "<group>"; };
 		02000000000000000000004C /* HotkeyTriggerLogicTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HotkeyTriggerLogicTests.swift; sourceTree = "<group>"; };
 		02000000000000000000004D /* CzechDictationFormatterTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CzechDictationFormatterTests.swift; sourceTree = "<group>"; };
 		02000000000000000000004E /* InputMonitoringSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InputMonitoringSettings.swift; sourceTree = "<group>"; };
@@ -219,6 +231,10 @@
 				020000000000000000000049 /* HotkeyTriggerLogic.swift */,
 				02000000000000000000004A /* DictationPreviewPreference.swift */,
 				02000000000000000000004B /* CzechDictationFormatter.swift */,
+				02000000000000000000005A /* CzechHeuristicPunctuator.swift */,
+				02000000000000000000005B /* PostProcessingReadiness.swift */,
+				02000000000000000000005C /* CzechPunctuationRules.swift */,
+				02000000000000000000005D /* PostProcessingOutputSanitizer.swift */,
 				020000000000000000000025 /* DictationTargetTracker.swift */,
 				020000000000000000000040 /* SparkleUpdateSupport.swift */,
 				020000000000000000000019 /* PasteInsertionPlan.swift */,
@@ -267,6 +283,7 @@
 				020000000000000000000056 /* PermissionsPanelBuilder.swift */,
 				020000000000000000000058 /* AudioLevelMeterView.swift */,
 				02000000000000000000000C /* LaunchWindowController.swift */,
+				02000000000000000000005A /* HistoryWindowController.swift */,
 				020000000000000000000013 /* RecordingOverlayController.swift */,
 				020000000000000000000014 /* TranscriptionPanelView.swift */,
 				020000000000000000000017 /* AppWindowPresenter.swift */,
@@ -307,6 +324,7 @@
 				020000000000000000000045 /* TranscriptionCaseNormalizerTests.swift */,
 				02000000000000000000004C /* HotkeyTriggerLogicTests.swift */,
 				02000000000000000000004D /* CzechDictationFormatterTests.swift */,
+				02000000000000000000005E /* PostProcessingOutputSanitizerTests.swift */,
 				020000000000000000000050 /* AccessibilityAuditReportTests.swift */,
 			);
 			path = LocuteTests;
@@ -469,6 +487,7 @@
 				010000000000000000000056 /* PermissionsPanelBuilder.swift in Sources */,
 				010000000000000000000058 /* AudioLevelMeterView.swift in Sources */,
 				01000000000000000000000A /* LaunchWindowController.swift in Sources */,
+				01000000000000000000005A /* HistoryWindowController.swift in Sources */,
 				01000000000000000000000B /* AppTheme.swift in Sources */,
 				010000000000000000000022 /* AccessibilitySupport.swift in Sources */,
 				01000000000000000000000D /* AppLogoView.swift in Sources */,
@@ -491,6 +510,10 @@
 				010000000000000000000049 /* HotkeyTriggerLogic.swift in Sources */,
 				01000000000000000000004A /* DictationPreviewPreference.swift in Sources */,
 				01000000000000000000004B /* CzechDictationFormatter.swift in Sources */,
+				01000000000000000000005A /* CzechHeuristicPunctuator.swift in Sources */,
+				01000000000000000000005B /* PostProcessingReadiness.swift in Sources */,
+				01000000000000000000005C /* CzechPunctuationRules.swift in Sources */,
+				01000000000000000000005D /* PostProcessingOutputSanitizer.swift in Sources */,
 				01000000000000000000004E /* InputMonitoringSettings.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -507,6 +530,7 @@
 				010000000000000000000045 /* TranscriptionCaseNormalizerTests.swift in Sources */,
 				01000000000000000000004C /* HotkeyTriggerLogicTests.swift in Sources */,
 				01000000000000000000004D /* CzechDictationFormatterTests.swift in Sources */,
+				01000000000000000000005E /* PostProcessingOutputSanitizerTests.swift in Sources */,
 				010000000000000000000050 /* AccessibilityAuditReportTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

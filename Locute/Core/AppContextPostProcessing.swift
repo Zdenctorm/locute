@@ -38,21 +38,21 @@ enum AppContextPostProcessingStore {
         AppContextPostProcessingPreset(
             bundleID: "com.apple.mail",
             instruction: """
-            Formátuj jako e-mail: zdvořilý tón, celé věty, správná interpunkce. \
-            Po pozdravu čárka a nový odstavec; závěr v samostatném odstavci (např. S pozdravem).
+            E-mail: po pozdravu čárka a nový odstavec; závěr (S pozdravem, Děkuji) v novém odstavci. \
+            Jen interpunkce a odstavce — žádné vlastní věty.
             """
         ),
         AppContextPostProcessingPreset(
             bundleID: "com.todesktop.230313mzl4w4u92",
-            instruction: "Formátuj jako text v editoru kódu: stručně, bez zdvořilostních frází, zachovej technické termíny."
+            instruction: "Kód / poznámky: zachovej identifikátory a syntaxi; pouze interpunkce tam, kde dává smysl."
         ),
         AppContextPostProcessingPreset(
             bundleID: "com.tinyspeck.slackmacgap",
-            instruction: "Formátuj jako zprávu v chatu: stručně, neformálně, bez zbytečných oslovení."
+            instruction: "Chat: krátké věty, tečky nebo otazníky; nepřidávej nic mimo přepis."
         ),
         AppContextPostProcessingPreset(
             bundleID: "com.apple.Terminal",
-            instruction: "Zachovej technické termíny a příkazy; minimum zdvořilostních frází."
+            instruction: "Terminál: neměň příkazy ani cesty; jen doplň . ? kde je to zjevná věta."
         ),
     ]
 }

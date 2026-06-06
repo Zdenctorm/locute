@@ -13,6 +13,8 @@ Locute vypadá jako **papír a inkoust na stole** — teplé neutrály, jedna hl
 **Layout philosophy**
 
 - Okna: jeden hlavní vertikální flow (header → obsah → status/actions), padding **40pt** (`windowPadding`).
+- **Historie přepisů:** samostatné okno `HistoryWindowController` — ne v launch okně.
+- **Launch okno:** jen stav / stahování modelu; po idle se skryje, menu bar zůstane domovem.
 - Karty: `PanelCardView` — zaoblení **16pt**, border 1pt warm separator, padding **24pt**.
 - Menu bar popover / word popover: kořen přes `AppTheme.popoverRootView` (warm `surface`), typografie a tlačítka z `AppTheme`.
 
@@ -108,20 +110,22 @@ Pojmenování pro copy a AI — mapování v `AppTheme.Color`.
 
 ### Buttons
 
-- Primary: `primaryButton` — rounded, large, keyEquivalent Return.
+- Primary: `primaryButton` — claret fill, cream label, keyEquivalent Return.
 - Secondary: `secondaryButton` — regular control size.
 - Popovery: `AppTheme` tlačítka a `popoverRootView`; bez dalšího chrome karty (plochý surface).
 
 ### Recording overlay (`RecordingOverlayController`)
 
-- Top center, **~420×72** min, non-activating panel.
-- Dot **10pt**, corner **5pt**; states: recording = Live Ember pulse; transcribing/injecting = Deep Claret; success = system green; failure = avoid systemRed.
-- Optional second line: streaming preview footnote (confirmed + draft).
+- Top center, **300×44 px pill** (Whispur vzor), non-activating panel — **ne banner**.
+- Horizontální layout: tečka **10pt** | waveform meter | krátký stav (1 řádek, trunc) | „Esc“.
+- Corner radius = polovina výšky (plná pill); material `.hudWindow`.
+- States: recording = Live Ember pulse; transcribing/injecting = Deep Claret; success = system green; failure = avoid systemRed.
+- Streaming preview: max 1 řádek ve status labelu, ne druhý velký blok textu.
 
 ### Menu bar
 
 - Status item square; states change icon (mic / waveform / error) — template where idle.
-- **Target pattern** (Whispur): Ready badge, last transcript, Paste again — viz PRODUCT principles.
+- **Whispur pattern (implemented):** idle status `● Připraveno` (success dot + text); „Poslední přepis“ s náhledem řádku; „Vložit znovu“ a „Zkopírovat poslední přepis“ když existuje historie.
 
 ### Permission rows
 

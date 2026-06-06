@@ -5,10 +5,18 @@ enum CzechDictationFormatter {
     static func format(_ text: String, targetAppBundleID: String?) -> String {
         var result = normalizeWhitespace(text)
         result = applySpokenCommands(result)
-        result = collapsePunctuationSpacing(result)
-        result = capitalizeSentences(result)
+        result = applyPunctuationPass(result)
         result = applyEmailStructureIfNeeded(result, bundleID: targetAppBundleID)
         return result.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    /// Interpunkce + velká písmena (bez mluvených příkazů a e-mailové struktury).
+    static func applyPunctuationPass(_ text: String) -> String {
+        var result = PostProcessingOutputSanitizer.replaceForbiddenDashes(text)
+        result = CzechHeuristicPunctuator.apply(result)
+        result = collapsePunctuationSpacing(result)
+        result = capitalizeSentences(result)
+        return result
     }
 
     private static func normalizeWhitespace(_ text: String) -> String {
@@ -90,12 +98,16 @@ enum CzechDictationFormatter {
         guard isMailContext || looksLikeEmail else { return text }
 
         var s = text
-        let greetings = ["dobrý den", "dobry den", "ahoj", "vážen", "vážení"]
+        let greetings = [
+            "dobrý den", "dobry den", "vážený pane", "vážená paní", "vážen",
+            "vážení", "ahoj",
+        ]
         for greeting in greetings {
             if let range = s.range(of: greeting, options: [.caseInsensitive, .anchored]) {
+                let matched = String(s[range])
                 let afterGreeting = s[range.upperBound...]
                 if !afterGreeting.hasPrefix(",") && !afterGreeting.hasPrefix("\n") {
-                    s.replaceSubrange(range, with: String(s[range]) + ",")
+                    s.replaceSubrange(range, with: matched + ",")
                 }
                 if !s.contains("\n\n"), s.count > greeting.count + 4 {
                     if let comma = s.firstIndex(of: ",") {
@@ -107,12 +119,20 @@ enum CzechDictationFormatter {
             }
         }
 
-        if s.localizedCaseInsensitiveContains("s pozdravem"), !s.contains("\n\nS pozdravem") {
-            s = s.replacingOccurrences(
-                of: "s pozdravem",
-                with: "\n\nS pozdravem",
-                options: .caseInsensitive
-            )
+        let closings = ["s pozdravem", "s úctou", "s uctou", "děkuji", "dekuji"]
+        for closing in closings {
+            guard s.localizedCaseInsensitiveContains(closing) else { continue }
+            let pattern = "(?<!\\n\\n)\(NSRegularExpression.escapedPattern(for: closing))"
+            guard let regex = try? NSRegularExpression(pattern: pattern, options: .caseInsensitive) else {
+                continue
+            }
+            let ns = s as NSString
+            if let match = regex.firstMatch(in: s, range: NSRange(location: 0, length: ns.length)) {
+                let original = ns.substring(with: match.range)
+                let capitalized = original.prefix(1).uppercased() + original.dropFirst()
+                s = ns.replacingCharacters(in: match.range, with: "\n\n" + capitalized)
+            }
+            break
         }
         return s
     }

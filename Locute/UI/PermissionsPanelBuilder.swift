@@ -8,6 +8,7 @@ enum PermissionsPanelBuilder {
         detail: String,
         badge: NSTextField,
         button: NSButton,
+        detailView: NSView? = nil,
         extraViews: [NSView] = []
     ) -> NSView {
         let numberLabel = NSTextField(labelWithString: number)
@@ -17,7 +18,12 @@ enum PermissionsPanelBuilder {
         numberLabel.setContentHuggingPriority(.required, for: .horizontal)
 
         let titleLabel = AppTheme.label(title, font: AppTheme.Font.headline, color: AppTheme.Color.title)
-        let detailLabel = AppTheme.label(detail, font: AppTheme.Font.body, color: AppTheme.Color.body, lines: 0)
+        let detailLabel: NSView = detailView ?? AppTheme.label(
+            detail,
+            font: AppTheme.Font.body,
+            color: AppTheme.Color.body,
+            lines: 0
+        )
 
         let spacer = NSView()
         spacer.translatesAutoresizingMaskIntoConstraints = false
@@ -29,7 +35,10 @@ enum PermissionsPanelBuilder {
         titleRow.spacing = AppTheme.Spacing.row
         badge.setContentHuggingPriority(.required, for: .horizontal)
 
-        var contentChildren: [NSView] = [titleRow, detailLabel]
+        var contentChildren: [NSView] = [titleRow]
+        if !detail.isEmpty || detailView != nil {
+            contentChildren.append(detailLabel)
+        }
         contentChildren.append(contentsOf: extraViews)
         contentChildren.append(button)
         let content = NSStackView(views: contentChildren)

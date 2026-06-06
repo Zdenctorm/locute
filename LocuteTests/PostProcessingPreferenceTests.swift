@@ -12,8 +12,8 @@ final class PostProcessingPreferenceTests: XCTestCase {
         UserDefaults.standard.removeObject(forKey: modelSizeKey)
     }
 
-    func testDefaultIsEnabled() {
-        XCTAssertTrue(PostProcessingPreference.isEnabled)
+    func testDefaultIsDisabled() {
+        XCTAssertFalse(PostProcessingPreference.isEnabled)
     }
 
     func testTogglePersists() {

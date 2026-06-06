@@ -10,21 +10,20 @@ enum RecordingOverlayMode: Equatable {
     case injectionSuccess
     case injectionFailed(String)
     case busy(String)
-    case wrongKey
 }
 
+/// Kompaktní recording pill (Whispur vzor) — ne banner. Tečka + waveform + krátký stav + Esc.
 @MainActor
 final class RecordingOverlayController {
+    private static let pillWidth: CGFloat = 300
+    private static let pillHeight: CGFloat = 44
+
     private var panel: NSPanel?
     private let statusLabel = NSTextField(labelWithString: "")
-    private let previewLabel = NSTextField(labelWithString: "")
-    private let escHintLabel = NSTextField(labelWithString: "")
+    private let escHintLabel = NSTextField(labelWithString: "Esc")
     private let dotView = NSView()
-    private let statusRow = NSStackView()
+    private let pillRow = NSStackView()
     private let levelMeterView = AudioLevelMeterView()
-    private var statusRowBottomConstraint: NSLayoutConstraint?
-    private var meterBottomConstraint: NSLayoutConstraint?
-    private var meterVisible = false
     private var pulseTimer: Timer?
     private var currentMode: RecordingOverlayMode = .hidden
     private var lastSyncedState: LocuteState = .idle
@@ -47,14 +46,10 @@ final class RecordingOverlayController {
         currentMode = .hidden
         pulseTimer?.invalidate()
         pulseTimer = nil
-        previewLabel.stringValue = ""
-        previewLabel.isHidden = true
-        escHintLabel.isHidden = true
-        setMeterVisible(false)
+        levelMeterView.setLevel(0)
         panel?.orderOut(nil)
     }
 
-    /// Krátká zpráva nahoře na obrazovce (chyby vkládání, přepisu) — viditelná i bez otevřeného menu.
     func showTransientFeedback(_ message: String, duration: TimeInterval = 4.5) {
         cancelHideDelay()
         show(.busy(message))
@@ -70,7 +65,7 @@ final class RecordingOverlayController {
     }
 
     func updateAudioLevel(_ normalized: Float) {
-        guard meterVisible else { return }
+        guard modeShowsMeter(currentMode) else { return }
         levelMeterView.setLevel(normalized)
     }
 
@@ -130,14 +125,14 @@ final class RecordingOverlayController {
         case .modelDownloading, .modelLoading, .launching:
             cancelHideDelay()
             if rightOptionHeld {
-                show(.busy("Počkej — připravuji model"))
+                show(.busy("Počkej — model"))
             } else {
                 hide()
             }
         case .permissionsNeeded:
             cancelHideDelay()
             if rightOptionHeld {
-                show(.busy("Nejdřív dokonči nastavení oprávnění"))
+                show(.busy("Dokonči nastavení"))
             } else {
                 hide()
             }
@@ -164,7 +159,7 @@ final class RecordingOverlayController {
         guard panel == nil else { return }
 
         let panel = NSPanel(
-            contentRect: NSRect(x: 0, y: 0, width: 420, height: 72),
+            contentRect: NSRect(x: 0, y: 0, width: Self.pillWidth, height: Self.pillHeight),
             styleMask: [.borderless, .nonactivatingPanel],
             backing: .buffered,
             defer: false
@@ -183,7 +178,7 @@ final class RecordingOverlayController {
         container.material = .hudWindow
         container.state = .active
         container.wantsLayer = true
-        container.layer?.cornerRadius = 14
+        container.layer?.cornerRadius = Self.pillHeight / 2
         container.layer?.masksToBounds = true
         container.translatesAutoresizingMaskIntoConstraints = false
 
@@ -196,57 +191,41 @@ final class RecordingOverlayController {
             dotView.heightAnchor.constraint(equalToConstant: 10)
         ])
 
-        statusLabel.font = AppTheme.Font.status
+        statusLabel.font = AppTheme.Font.footnote
         statusLabel.textColor = AppTheme.Color.title
         statusLabel.lineBreakMode = .byTruncatingTail
         statusLabel.maximumNumberOfLines = 1
+        statusLabel.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
         statusLabel.setAccessibilityElement(false)
 
-        previewLabel.font = AppTheme.Font.footnote
-        previewLabel.textColor = AppTheme.Color.body
-        previewLabel.lineBreakMode = .byTruncatingTail
-        previewLabel.maximumNumberOfLines = 3
-        previewLabel.isHidden = true
-        previewLabel.setAccessibilityElement(false)
-
         escHintLabel.font = AppTheme.Font.footnote
-        escHintLabel.textColor = AppTheme.Color.body.withAlphaComponent(0.8)
-        escHintLabel.stringValue = "Esc — zrušit nahrávání"
-        escHintLabel.isHidden = true
+        escHintLabel.textColor = AppTheme.Color.body.withAlphaComponent(0.85)
+        escHintLabel.setContentHuggingPriority(.required, for: .horizontal)
+        escHintLabel.setAccessibilityLabel("Stiskni Esc pro zrušení nahrávání")
         escHintLabel.setAccessibilityElement(false)
 
-        let textColumn = NSStackView(views: [statusLabel, previewLabel, escHintLabel])
-        textColumn.orientation = .vertical
-        textColumn.alignment = .leading
-        textColumn.spacing = 4
+        levelMeterView.translatesAutoresizingMaskIntoConstraints = false
+        levelMeterView.setContentHuggingPriority(.defaultLow, for: .horizontal)
 
-        statusRow.orientation = .horizontal
-        statusRow.alignment = .centerY
-        statusRow.spacing = 10
-        statusRow.translatesAutoresizingMaskIntoConstraints = false
-        statusRow.addArrangedSubview(dotView)
-        statusRow.addArrangedSubview(textColumn)
+        pillRow.orientation = .horizontal
+        pillRow.alignment = .centerY
+        pillRow.spacing = 10
+        pillRow.translatesAutoresizingMaskIntoConstraints = false
+        pillRow.addArrangedSubview(dotView)
+        pillRow.addArrangedSubview(levelMeterView)
+        pillRow.addArrangedSubview(statusLabel)
+        pillRow.addArrangedSubview(escHintLabel)
         AccessibilitySupport.configure(
-            statusRow,
+            pillRow,
             label: "Stav diktování",
-            help: "Ukazuje, jestli \(AppBrand.displayName) nahrává, přepisuje nebo vkládá text.",
+            help: "Esc zruší nahrávání.",
             role: .group
         )
 
         let root = NSView()
         root.addSubview(container)
-        container.addSubview(statusRow)
-
-        levelMeterView.translatesAutoresizingMaskIntoConstraints = false
-        levelMeterView.isHidden = true
-        container.addSubview(levelMeterView)
-
+        container.addSubview(pillRow)
         panel.contentView = root
-
-        let statusBottom = statusRow.bottomAnchor.constraint(equalTo: container.bottomAnchor, constant: -12)
-        let meterBottom = levelMeterView.bottomAnchor.constraint(equalTo: container.bottomAnchor, constant: -12)
-        statusRowBottomConstraint = statusBottom
-        meterBottomConstraint = meterBottom
 
         NSLayoutConstraint.activate([
             container.leadingAnchor.constraint(equalTo: root.leadingAnchor),
@@ -254,13 +233,12 @@ final class RecordingOverlayController {
             container.topAnchor.constraint(equalTo: root.topAnchor),
             container.bottomAnchor.constraint(equalTo: root.bottomAnchor),
 
-            statusRow.leadingAnchor.constraint(equalTo: container.leadingAnchor, constant: 16),
-            statusRow.trailingAnchor.constraint(equalTo: container.trailingAnchor, constant: -16),
-            statusRow.topAnchor.constraint(equalTo: container.topAnchor, constant: 12),
+            pillRow.leadingAnchor.constraint(equalTo: container.leadingAnchor, constant: 14),
+            pillRow.trailingAnchor.constraint(equalTo: container.trailingAnchor, constant: -14),
+            pillRow.topAnchor.constraint(equalTo: container.topAnchor, constant: 10),
+            pillRow.bottomAnchor.constraint(equalTo: container.bottomAnchor, constant: -10),
 
-            levelMeterView.leadingAnchor.constraint(equalTo: statusRow.leadingAnchor),
-            levelMeterView.topAnchor.constraint(equalTo: statusRow.bottomAnchor, constant: 8),
-            statusBottom
+            levelMeterView.widthAnchor.constraint(greaterThanOrEqualToConstant: 88)
         ])
 
         self.panel = panel
@@ -277,62 +255,44 @@ final class RecordingOverlayController {
 
     private func positionPanel() {
         guard let panel, let screen = targetScreen() else { return }
-        let frame = panel.frame
-        let x = screen.frame.midX - frame.width / 2
-        let y = screen.visibleFrame.maxY - frame.height - 12
-        panel.setFrameOrigin(NSPoint(x: x, y: y))
+        let x = screen.frame.midX - Self.pillWidth / 2
+        let y = screen.visibleFrame.maxY - Self.pillHeight - 10
+        panel.setFrame(
+            NSRect(x: x, y: y, width: Self.pillWidth, height: Self.pillHeight),
+            display: false
+        )
     }
 
     private func apply(_ mode: RecordingOverlayMode) {
-        let showsRecordingUI = modeShowsMeter(mode)
-        escHintLabel.isHidden = !showsRecordingUI
+        let showsMeter = modeShowsMeter(mode)
+        levelMeterView.isHidden = !showsMeter
+        escHintLabel.isHidden = !showsRecordingUI(mode)
 
         switch mode {
         case .keyHeld:
-            statusLabel.stringValue = "Držíš \(HotkeyPreference.current.hintLabel)"
+            statusLabel.stringValue = "Drž a mluv"
             dotView.layer?.backgroundColor = AppTheme.Color.recording.cgColor
         case .recording:
-            statusLabel.stringValue = "Nahrávám — mluv"
-            previewLabel.isHidden = true
+            statusLabel.stringValue = "Pusť → přepis"
             dotView.layer?.backgroundColor = AppTheme.Color.recording.cgColor
         case .streamingPreview(let confirmed, let draft):
-            statusLabel.stringValue = "Nahrávám — mluv"
             dotView.layer?.backgroundColor = AppTheme.Color.recording.cgColor
-            let draftTrimmed = draft.trimmingCharacters(in: .whitespaces)
-            let confirmedTrimmed = confirmed.trimmingCharacters(in: .whitespaces)
-            if draftTrimmed.isEmpty && confirmedTrimmed.isEmpty {
-                previewLabel.isHidden = true
-            } else {
-                previewLabel.isHidden = false
-                if draftTrimmed.isEmpty {
-                    previewLabel.stringValue = confirmedTrimmed
-                    previewLabel.textColor = AppTheme.Color.title
-                } else if confirmedTrimmed.isEmpty {
-                    previewLabel.stringValue = draftTrimmed
-                    previewLabel.textColor = AppTheme.Color.body.withAlphaComponent(0.75)
-                } else {
-                    previewLabel.stringValue = "\(confirmedTrimmed) \(draftTrimmed)"
-                    previewLabel.textColor = AppTheme.Color.body
-                }
-            }
+            let text = Self.compactPreview(confirmed: confirmed, draft: draft)
+            statusLabel.stringValue = text.isEmpty ? "Pusť → přepis" : text
         case .transcribing:
             statusLabel.stringValue = "Přepisuji…"
-            previewLabel.isHidden = true
             dotView.layer?.backgroundColor = AppTheme.Color.accent.cgColor
         case .injecting:
-            statusLabel.stringValue = "Vkládám text…"
+            statusLabel.stringValue = "Vkládám…"
             dotView.layer?.backgroundColor = AppTheme.Color.accent.cgColor
         case .injectionSuccess:
             statusLabel.stringValue = "Vloženo"
             dotView.layer?.backgroundColor = AppTheme.Color.success.cgColor
         case .injectionFailed:
-            statusLabel.stringValue = "Text se nevložil — otevři \(AppBrand.displayName)"
+            statusLabel.stringValue = "Nepodařilo se vložit"
             dotView.layer?.backgroundColor = AppTheme.resolved(AppTheme.Color.danger, for: dotView).cgColor
         case .busy(let message):
-            statusLabel.stringValue = message
-            dotView.layer?.backgroundColor = AppTheme.Color.warning.cgColor
-        case .wrongKey:
-            statusLabel.stringValue = "Špatná klávesa — drž \(HotkeyPreference.current.hintLabel)"
+            statusLabel.stringValue = Self.truncate(message, max: 36)
             dotView.layer?.backgroundColor = AppTheme.Color.warning.cgColor
         case .hidden:
             break
@@ -340,8 +300,8 @@ final class RecordingOverlayController {
 
         let label = mode.accessibilityLabel
         if !label.isEmpty {
-            statusRow.setAccessibilityLabel(label)
-            statusRow.setAccessibilityValue(label)
+            pillRow.setAccessibilityLabel(label)
+            pillRow.setAccessibilityValue(label)
         }
 
         if mode.shouldAnnounce, lastAnnouncedMode != mode {
@@ -349,33 +309,41 @@ final class RecordingOverlayController {
             AccessibilitySupport.announce(label)
         }
 
-        setMeterVisible(showsRecordingUI)
         positionPanel()
     }
 
     private func modeShowsMeter(_ mode: RecordingOverlayMode) -> Bool {
         switch mode {
-        case .recording, .streamingPreview:
+        case .recording, .streamingPreview, .keyHeld:
             return true
         default:
             return false
         }
     }
 
-    private func setMeterVisible(_ visible: Bool) {
-        guard meterVisible != visible else { return }
-        meterVisible = visible
-        levelMeterView.isHidden = !visible
-        statusRowBottomConstraint?.isActive = !visible
-        meterBottomConstraint?.isActive = visible
-        if !visible {
-            levelMeterView.setLevel(0)
+    private func showsRecordingUI(_ mode: RecordingOverlayMode) -> Bool {
+        switch mode {
+        case .recording, .streamingPreview, .keyHeld:
+            return true
+        default:
+            return false
         }
+    }
 
-        guard let panel else { return }
-        var frame = panel.frame
-        frame.size.height = visible ? 98 : 72
-        panel.setFrame(frame, display: false)
+    private static func compactPreview(confirmed: String, draft: String) -> String {
+        let draftTrimmed = draft.trimmingCharacters(in: .whitespaces)
+        let confirmedTrimmed = confirmed.trimmingCharacters(in: .whitespaces)
+        let combined: String
+        if draftTrimmed.isEmpty { combined = confirmedTrimmed }
+        else if confirmedTrimmed.isEmpty { combined = draftTrimmed }
+        else { combined = "\(confirmedTrimmed) \(draftTrimmed)" }
+        return truncate(combined, max: 42)
+    }
+
+    private static func truncate(_ text: String, max: Int) -> String {
+        let collapsed = text.replacingOccurrences(of: "\n", with: " ").trimmingCharacters(in: .whitespaces)
+        guard collapsed.count > max else { return collapsed }
+        return String(collapsed.prefix(max)).trimmingCharacters(in: .whitespaces) + "…"
     }
 
     private func startPulseIfNeeded(for mode: RecordingOverlayMode) {

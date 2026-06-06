@@ -1,24 +1,28 @@
 import Cocoa
 
+/// Origin nahoře vlevo — bez toho macOS scroll view ukazuje spodek dokumentu (nejstarší přepisy).
+private final class FlippedDocumentView: NSView {
+    override var isFlipped: Bool { true }
+}
+
 @MainActor
 final class TranscriptionPanelView: NSView {
-    static let wordMarkupLegend = """
-    Nejnovější nahoře. Klikni na podtržené slovo pro opravu. \
-    Plné zelené podtržení: už opravené slovo. Tečkované oranžové: nízká jistota přepisu. \
-    Šedé plné: střední jistota. U každého přepisu můžeš text zkopírovat nebo vložit do aktivního pole.
-    """
+    static let wordMarkupLegend = "Klikni podtržené slovo pro opravu."
 
     /// Called with the text of the row whose "vložit" button was tapped.
     var onInsert: ((String) -> Void)?
 
-    private let placeholderLabel = AppTheme.label(
-        Self.emptyHistoryMessage(),
-        font: AppTheme.Font.body,
-        color: AppTheme.Color.body,
-        lines: 0
-    )
+    private lazy var placeholderLabel: NSTextField = {
+        AppTheme.label(
+            Self.emptyHistoryMessage(),
+            font: AppTheme.Font.body,
+            color: AppTheme.Color.body,
+            lines: 0
+        )
+    }()
 
     private let scrollView = NSScrollView()
+    private let documentView = FlippedDocumentView()
     private let entriesStack = NSStackView()
     private var rowViews: [HistoryRowView] = []
     private var cachedEntries: [TranscriptionHistoryEntry] = []
@@ -41,7 +45,7 @@ final class TranscriptionPanelView: NSView {
 
     // MARK: - Public API
 
-    func setHistory(_ entries: [TranscriptionHistoryEntry]) {
+    func setHistory(_ entries: [TranscriptionHistoryEntry], scrollToLatest: Bool = false) {
         cachedEntries = entries
         for row in rowViews { row.removeFromSuperview() }
         rowViews.removeAll()
@@ -75,10 +79,23 @@ final class TranscriptionPanelView: NSView {
                 sep.widthAnchor.constraint(equalTo: entriesStack.widthAnchor).isActive = true
             }
         }
+
+        if scrollToLatest {
+            scrollToLatestEntry()
+        }
+    }
+
+    /// Posune scroll na nejnovější přepis (index 0 — nahoře v seznamu).
+    func scrollToLatestEntry() {
+        layoutSubtreeIfNeeded()
+        scrollView.layoutSubtreeIfNeeded()
+        documentView.layoutSubtreeIfNeeded()
+        scrollView.contentView.scroll(to: .zero)
+        scrollView.reflectScrolledClipView(scrollView.contentView)
     }
 
     private static func emptyHistoryMessage() -> String {
-        "Zatím nic — podrž \(HotkeyPreference.current.hintLabel) a mluv. Přepisy se objeví tady; do jiné aplikace je vložíš tlačítkem „Vložit“."
+        "Zatím nic."
     }
 
     // MARK: - Layout
@@ -87,7 +104,7 @@ final class TranscriptionPanelView: NSView {
         super.viewDidChangeEffectiveAppearance()
         AppTheme.applyPanelChrome(to: self)
         if !cachedEntries.isEmpty {
-            setHistory(cachedEntries)
+            setHistory(cachedEntries, scrollToLatest: false)
         }
     }
 
@@ -102,12 +119,6 @@ final class TranscriptionPanelView: NSView {
         )
 
         let titleLabel = AppTheme.label("Historie přepisů", font: AppTheme.Font.headline, color: AppTheme.Color.title)
-        let helperLabel = AppTheme.label(
-            Self.wordMarkupLegend,
-            font: AppTheme.Font.footnote,
-            color: AppTheme.Color.body,
-            lines: 0
-        )
 
         entriesStack.orientation = .vertical
         entriesStack.alignment = .leading
@@ -116,10 +127,13 @@ final class TranscriptionPanelView: NSView {
         entriesStack.edgeInsets = NSEdgeInsets(top: 4, left: 4, bottom: 4, right: 4)
 
         scrollView.hasVerticalScroller = true
+        scrollView.autohidesScrollers = true
         scrollView.borderType = .noBorder
         scrollView.drawsBackground = false
         scrollView.translatesAutoresizingMaskIntoConstraints = false
-        scrollView.documentView = entriesStack
+        documentView.translatesAutoresizingMaskIntoConstraints = false
+        documentView.addSubview(entriesStack)
+        scrollView.documentView = documentView
         scrollView.contentView.postsBoundsChangedNotifications = false
         if let clip = scrollView.contentView as NSClipView? {
             clip.drawsBackground = false
@@ -127,13 +141,12 @@ final class TranscriptionPanelView: NSView {
 
         placeholderLabel.translatesAutoresizingMaskIntoConstraints = false
 
-        let content = NSStackView(views: [titleLabel, helperLabel, scrollView])
+        let content = NSStackView(views: [titleLabel, scrollView])
         content.orientation = .vertical
         content.alignment = .leading
         content.spacing = AppTheme.Spacing.section
         content.translatesAutoresizingMaskIntoConstraints = false
         content.setCustomSpacing(AppTheme.Spacing.tight, after: titleLabel)
-        content.setCustomSpacing(AppTheme.Spacing.row, after: helperLabel)
 
         addSubview(content)
         addSubview(placeholderLabel)
@@ -146,12 +159,15 @@ final class TranscriptionPanelView: NSView {
             content.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -pad),
 
             titleLabel.widthAnchor.constraint(equalTo: content.widthAnchor),
-            helperLabel.widthAnchor.constraint(equalTo: content.widthAnchor),
 
             scrollView.widthAnchor.constraint(equalTo: content.widthAnchor),
             scrollView.heightAnchor.constraint(greaterThanOrEqualToConstant: 140),
 
-            entriesStack.widthAnchor.constraint(equalTo: scrollView.widthAnchor),
+            documentView.widthAnchor.constraint(equalTo: scrollView.widthAnchor),
+            entriesStack.leadingAnchor.constraint(equalTo: documentView.leadingAnchor),
+            entriesStack.trailingAnchor.constraint(equalTo: documentView.trailingAnchor),
+            entriesStack.topAnchor.constraint(equalTo: documentView.topAnchor),
+            entriesStack.bottomAnchor.constraint(equalTo: documentView.bottomAnchor),
 
             placeholderLabel.leadingAnchor.constraint(equalTo: scrollView.leadingAnchor, constant: 8),
             placeholderLabel.trailingAnchor.constraint(lessThanOrEqualTo: scrollView.trailingAnchor, constant: -8),

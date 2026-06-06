@@ -4,11 +4,11 @@ import Foundation
 enum AppAppearancePreference {
     private static let showInDockKey = "showInDock"
 
-    /// Výchozí: skrýt ikonu v Docku (čistá menu bar appka).
+    /// Výchozí: ikona v Docku — domovské okno a historie musí být dohledatelné.
     static var showInDock: Bool {
         get {
             if UserDefaults.standard.object(forKey: showInDockKey) == nil {
-                return false
+                return true
             }
             return UserDefaults.standard.bool(forKey: showInDockKey)
         }

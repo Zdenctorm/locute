@@ -139,8 +139,8 @@ enum AccessibilityAuditEngine {
         guard !view.isHidden, view.alphaValue > 0.01 else { return [] }
 
         var findings: [AccessibilityAuditFinding] = []
-        let isIgnored = view.accessibilityIsIgnored()
-        let isElement = !isIgnored
+        let isElement = view.isAccessibilityElement()
+        let isIgnored = !isElement
         let label = view.accessibilityLabel()?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
         let title = view.accessibilityTitle()?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
         let help = view.accessibilityHelp()?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
@@ -764,7 +764,8 @@ enum AccessibilityAuditReportBuilder {
 private extension NSView {
     var axShortDescription: String {
         let type = String(describing: type(of: self))
-        if let id = accessibilityIdentifier(), !id.isEmpty {
+        let id = accessibilityIdentifier()
+        if !id.isEmpty {
             return "\(type)#\(id)"
         }
         if let label = accessibilityLabel(), !label.isEmpty {

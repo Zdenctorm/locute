@@ -12,10 +12,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var audioRecorder: AudioRecorder!
     private var transcriptionEngine: TranscriptionEngine!
     private var postProcessingEngine: PostProcessingEngine!
+    private var postProcessingReadiness: PostProcessingReadiness!
+    private var warnedPostProcessingNotReady = false
     private var recordingOverlay: RecordingOverlayController!
     private var setupWindowController: SetupWindowController?
     private var preferencesWindowController: PreferencesWindowController?
     private var launchWindowController: LaunchWindowController?
+    private var historyWindowController: HistoryWindowController?
     private var learnedTermsWindowController: LearnedTermsWindowController?
     private var updaterController: SPUStandardUpdaterController!
     private var lastTranscriptionText: String?
@@ -27,7 +30,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var streamingTranscriptionTask: Task<Void, Never>?
     private var stateCancellable: AnyCancellable?
     private var optionHeld = false
-    private var wrongModifierHeld = false
     private var transcriptionTestMode = false
     private var escapeMonitor: Any?
     private var keepAliveActivity: NSObjectProtocol?
@@ -58,6 +60,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         audioRecorder = AudioRecorder()
         transcriptionEngine = TranscriptionEngine()
         postProcessingEngine = PostProcessingEngine()
+        postProcessingReadiness = PostProcessingReadiness()
+        postProcessingReadiness.syncWithPreference()
         hotkeyManager = HotkeyManager()
         hotkeyManager.preference = HotkeyPreference.current
         hotkeyManager.activationMode = DictationActivationPreference.current
@@ -100,13 +104,18 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         recordingOverlay = RecordingOverlayController()
         statusBarController = StatusBarController(
             stateMachine: stateMachine,
+            postProcessingReadiness: postProcessingReadiness,
             updaterController: updaterController,
             sparkleUpdatesAvailable: sparkleUpdatesAvailable
         )
         statusBarController.hotkeyHealthProvider = { [weak self] in
             self?.hotkeyManager.currentHealth() ?? .tapMissing
         }
-        launchWindowController = LaunchWindowController(stateMachine: stateMachine)
+        launchWindowController = LaunchWindowController(
+            stateMachine: stateMachine,
+            postProcessingReadiness: postProcessingReadiness
+        )
+        historyWindowController = HistoryWindowController()
 
         NotificationCenter.default.addObserver(
             forName: .locuteLearnedTermsChanged,
@@ -116,7 +125,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             self?.pushLearningSnapshotToEngine()
             if let canonical = notification.userInfo?["activatedCanonical"] as? String {
                 self?.statusBarController.showTransientStatus(
-                    "Naučil jsem se: \(canonical)",
+                    "Naučeno: \(canonical)",
                     duration: 4
                 )
             }
@@ -130,14 +139,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             if !installHotkeyIfPossible() {
                 let message: String
                 if !InputMonitoringSettings.isGranted() {
-                    message = "Chybí Monitorování vstupu — klávesa funguje jen s oknem \(AppBrand.displayName). Otevři Nastavení."
+                    message = "Chybí Monitorování vstupu."
                 } else {
-                    message = "Chybí Zpřístupnění — diktovací klávesa nebude fungovat v jiných aplikacích."
+                    message = "Chybí Zpřístupnění."
                 }
                 statusBarController.showTransientStatus(message, duration: 10)
                 showSetupWindow()
-            } else {
-                maybeShowCzechHotkeyTip()
             }
         }
 
@@ -155,9 +162,27 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         statusBarController.onShowTranscriptionPopover = { [weak self] button in
             self?.showTranscriptionPopover(from: button)
         }
+        statusBarController.lastTranscriptProvider = { [weak self] in
+            self?.transcriptionHistory.first
+        }
+        statusBarController.onPasteAgain = { [weak self] in
+            guard let text = self?.transcriptionHistory.first?.text, !text.isEmpty else { return }
+            self?.startBackgroundInject(text: text, trigger: "menu-paste-again")
+        }
+        statusBarController.onCopyLastTranscript = { [weak self] in
+            guard let text = self?.transcriptionHistory.first?.text, !text.isEmpty else { return }
+            NSPasteboard.general.clearContents()
+            NSPasteboard.general.setString(text, forType: .string)
+            self?.statusBarController.showTransientStatus("Zkopírováno", duration: 2)
+        }
         statusBarController.onOpenLearnedTerms = { [weak self] in self?.showLearnedTermsWindow() }
+        statusBarController.onOpenHistory = { [weak self] in self?.presentLaunchHistory() }
         launchWindowController?.onRetry = { [weak self] in self?.startStartupTask() }
         launchWindowController?.onRetryInsert = { [weak self] text in
+            self?.retryInsert(text: text)
+        }
+        launchWindowController?.onOpenSetupGuide = { [weak self] in self?.showSetupWindow() }
+        historyWindowController?.onRetryInsert = { [weak self] text in
             self?.retryInsert(text: text)
         }
 
@@ -207,7 +232,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 guard let self else { return }
                 DiagnosticsLogger.exitDictationSession()
                 self.stateMachine.transition(to: .idle)
-                self.recordingOverlay.showTransientFeedback("Nahrávání zrušeno (Esc)", duration: 2)
+                self.recordingOverlay.showTransientFeedback("Zrušeno", duration: 2)
                 SoundFeedbackService.playError()
             }
         }
@@ -229,7 +254,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         if stateMachine.state == .permissionsNeeded {
             showSetupWindow()
         } else {
-            showLaunchWindow()
+            presentLaunchHistory()
         }
         return true
     }
@@ -238,23 +263,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         hotkeyManager.onModifierEvent = { [weak self] key, down in
             self?.handleModifierEvent(key: key, down: down)
         }
-        hotkeyManager.onWrongModifierHint = { [weak self] active in
-            self?.handleWrongModifierHint(active: active)
-        }
         hotkeyManager.onKeyDown = { [weak self] in self?.beginDictation(trigger: "hotkey") }
         hotkeyManager.onKeyUp = { [weak self] in self?.endDictation(trigger: "hotkey") }
-    }
-
-    private func handleWrongModifierHint(active: Bool) {
-        wrongModifierHeld = active
-        guard !stateMachine.isRecording else { return }
-        if active {
-            recordingOverlay.show(.wrongKey)
-        } else if optionHeld {
-            recordingOverlay.sync(appState: stateMachine.state, rightOptionHeld: true)
-        } else {
-            recordingOverlay.hide()
-        }
     }
 
     private func observeAppState() {
@@ -288,17 +298,17 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private func busyOverlayMode() -> RecordingOverlayMode {
         switch stateMachine.state {
         case .injecting:
-            return .busy("Počkejte — ještě vkládám text")
+            return .busy("Počkej — vkládám")
         case .transcribing:
-            return .busy("Počkejte — přepisuji")
+            return .busy("Přepisuji…")
         case .modelDownloading, .modelLoading, .launching:
-            return .busy("Počkejte — připravuji model")
+            return .busy("Načítám model…")
         case .permissionsNeeded:
-            return .busy("Nejdřív dokončete nastavení oprávnění")
+            return .busy("Dokonči nastavení")
         case .error:
-            return .busy("\(AppBrand.displayName) vyžaduje pozornost")
+            return .busy("\(AppBrand.displayName) — chyba")
         default:
-            return .busy("Počkejte — ještě nejsem připravený")
+            return .busy("Počkej…")
         }
     }
 
@@ -324,11 +334,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         transcriptionTestMode = true
         beginDictation(trigger: "test")
-        statusBarController.showTransientStatus("Test: mluvte a znovu klikněte na „Ověřit přepis“", duration: 4)
+        statusBarController.showTransientStatus("Test: mluv a klikni znovu.", duration: 4)
     }
 
     private func showLaunchWindow() {
         AppWindowPresenter.present(launchWindowController?.window)
+    }
+
+    private func showHistoryWindow() {
+        historyWindowController?.setTranscriptionHistory(transcriptionHistory)
+        historyWindowController?.showWindow(nil)
     }
 
     private func startStartupTask() {
@@ -385,23 +400,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         stateMachine.transition(to: .idle)
         hotkeyManager.prepareForCrossAppUse()
         DiagnosticsLogger.log("Startup completed. App is idle.")
-        maybeShowCzechHotkeyTip()
 
         if PostProcessingPreference.isEnabled {
             Task { [weak self] in await self?.startPostProcessingLoad() }
         }
-    }
-
-    private func maybeShowCzechHotkeyTip() {
-        let tipKey = "didShowCzechHotkeyTip"
-        guard !UserDefaults.standard.bool(forKey: tipKey) else { return }
-        guard HotkeyPreference.recommendedDefault == .rightCommand else { return }
-        guard HotkeyPreference.current == .rightOption || HotkeyPreference.current == .eitherOption else { return }
-        UserDefaults.standard.set(true, forKey: tipKey)
-        statusBarController.showTransientStatus(
-            "Na české klávesnici zvol v Nastavení „pravý Command (⌘)“ — pravý Option často nefunguje v jiných appkách.",
-            duration: 12
-        )
     }
 
     @discardableResult
@@ -531,14 +533,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                     self.stateMachine.transition(to: .idle)
                     self.recordingOverlay.hide()
                     self.statusBarController.showTransientStatus(
-                        "Mikrofon nic nezachytil — drž \(HotkeyPreference.current.hintLabel) déle a mluv hlasitěji",
+                        "Nic nezachytilo — mluv déle a hlasitěji.",
                         duration: 5
                     )
                 }
                 if trigger == "test" {
                     self.showTranscriptionTestAlert(
                         text: nil,
-                        errorMessage: "Žádný zvuk — drž \(HotkeyPreference.current.hintLabel) déle (min. cca půl sekundy) a mluv blíž k mikrofonu."
+                        errorMessage: "Nic nezachytilo — mluv déle."
                     )
                 }
                 return
@@ -565,7 +567,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                     try? FileManager.default.removeItem(at: capture.url)
                     await handleTranscriptionFailure(
                         trigger: trigger,
-                        message: "Nic se nepřepsalo — zkuste mluvit hlasitěji a déle."
+                        message: "Nic se nepřepsalo — mluv hlasitěji."
                     )
                     return
                 }
@@ -604,7 +606,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                         return nil
                     }
                     if let processed {
-                        finalText = processed.trimmingCharacters(in: .whitespacesAndNewlines)
+                        let trimmed = processed.trimmingCharacters(in: .whitespacesAndNewlines)
+                        finalText = CzechDictationFormatter.format(
+                            trimmed,
+                            targetAppBundleID: targetApp?.bundleIdentifier
+                        )
                         DiagnosticsLogger.log("PostProcessing: applied (\(caseNormalized.count)c → \(finalText.count)c)")
                     } else {
                         finalText = formatted
@@ -612,13 +618,22 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                     }
                 } else {
                     finalText = formatted
+                    if PostProcessingPreference.isEnabled, !await postProcessingEngine.isLoaded {
+                        await MainActor.run { [weak self] in
+                            self?.notifyPostProcessingStillPreparing()
+                        }
+                    }
+                }
+
+                if CzechHeuristicPunctuator.needsMorePunctuation(finalText) {
+                    finalText = CzechDictationFormatter.applyPunctuationPass(finalText)
                 }
 
                 if finalText.isEmpty {
                     try? FileManager.default.removeItem(at: capture.url)
                     await handleTranscriptionFailure(
                         trigger: trigger,
-                        message: "Nic se nepřepsalo — zkuste mluvit hlasitěji a déle."
+                        message: "Nic se nepřepsalo — mluv hlasitěji."
                     )
                     return
                 }
@@ -663,10 +678,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                     if reviewBeforePaste {
                         DiagnosticsLogger.log("Dictation (\(trigger)): review-before-paste")
                         self.stateMachine.transition(to: .idle)
-                        self.showLaunchWindow()
-                        self.launchWindowController?.focusTranscriptionPanel()
+                        self.presentLaunchHistory()
                         self.recordingOverlay.showTransientFeedback(
-                            "Přepis je v historii — zkontroluj a klepni „Vložit“",
+                            "Přepis v historii — zkontroluj.",
                             duration: 5
                         )
                     } else if injectExternally {
@@ -674,6 +688,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                     } else {
                         DiagnosticsLogger.log("Dictation (\(trigger)): history only — skipping external inject")
                         self.stateMachine.transition(to: .idle)
+                        self.presentLaunchHistory()
+                        self.recordingOverlay.showTransientFeedback(
+                            "Přepis v historii — klepni Vložit.",
+                            duration: 4
+                        )
                     }
                 }
 
@@ -695,7 +714,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 DiagnosticsLogger.log("Transcription failed (\(trigger)): \(error.localizedDescription)")
                 await handleTranscriptionFailure(
                     trigger: trigger,
-                    message: "Přepis se nepodařil — zkuste to znovu."
+                    message: "Přepis selhal — zkus znovu."
                 )
             }
         }
@@ -708,9 +727,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             self.transcriptionTestMode = false
             self.stateMachine.transition(to: .idle)
             SoundFeedbackService.playError()
+            self.recordingOverlay.hide()
             self.recordingOverlay.showTransientFeedback(message, duration: 5)
             self.statusBarController.showTransientStatus(message, duration: 6)
-            self.showLaunchWindow()
         }
         if trigger == "test" {
             await MainActor.run { [weak self] in
@@ -722,11 +741,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private func transcriptionFailureMessage(for error: TranscriptionError) -> String {
         switch error {
         case .audioTooQuiet:
-            return "Mikrofon skoro nic nezachytil. V Nastavení → Zvuk zkontroluj vstupní zařízení a mluv blíž."
+            return "Mikrofon skoro nic nezachytil — mluv blíž."
         case .hallucinatedTranscript:
-            return "Whisper slyšel jen šum (falešné „titulky“). Mluv hlasitěji — \(AppBrand.displayName) to záměrně nevloží."
+            return "Jen šum — mluv hlasitěji."
         case .modelNotLoaded:
-            return "Model ještě není načtený — počkejte na dokončení stahování."
+            return "Model se načítá — počkej."
         }
     }
 
@@ -742,6 +761,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     private func pushTranscriptionHistoryToPanels() {
         launchWindowController?.setTranscriptionHistory(transcriptionHistory)
+        historyWindowController?.setTranscriptionHistory(transcriptionHistory)
+    }
+
+    private func presentLaunchHistory() {
+        launchWindowController?.setTranscriptionHistory(transcriptionHistory)
+        launchWindowController?.focusTranscriptionPanel()
     }
 
     private func scheduleHistoryPersist() {
@@ -774,8 +799,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             statusBarController.showTransientStatus("Zatím žádný přepis — nejdřív něco nadiktuj", duration: 3)
             return
         }
-        launchWindowController?.setTranscriptionHistory(transcriptionHistory)
-        launchWindowController?.focusTranscriptionPanel()
+        presentLaunchHistory()
     }
 
     private func showTranscriptionPopover(from statusButton: NSStatusBarButton) {
@@ -807,11 +831,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 guard let self else { return }
                 SoundFeedbackService.playError()
                 self.recordingOverlay.showTransientFeedback(
-                    "Vložení trvá dlouho — text je v okně \(AppBrand.displayName)",
+                    "Vkládání trvá dlouho…",
                     duration: 5
                 )
                 self.statusBarController.showTransientStatus(
-                    "Vložení trvá dlouho — text je v okně \(AppBrand.displayName)",
+                    "Vkládání trvá dlouho…",
                     duration: 4
                 )
             }
@@ -819,8 +843,19 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         DispatchQueue.global(qos: .userInitiated).asyncAfter(deadline: .now() + 5, execute: watchdog)
         defer { watchdog.cancel() }
 
-        try? await Task.sleep(for: .milliseconds(200))
+        await waitForDictationHotkeyReleaseIfNeeded()
+        try? await Task.sleep(for: .milliseconds(150))
         return await TextInjector.inject(text: text, into: targetApp)
+    }
+
+    /// Po puštění pravého ⌘ jako hotkey musíme počkat, než se modifier uvolní — jinak Cmd+V selže.
+    private func waitForDictationHotkeyReleaseIfNeeded() async {
+        guard HotkeyPreference.current == .rightCommand else { return }
+        let keyCode: CGKeyCode = 54
+        for _ in 0..<60 {
+            if !CGEventSource.keyState(.hidSystemState, key: keyCode) { return }
+            try? await Task.sleep(for: .milliseconds(10))
+        }
     }
 
     @MainActor
@@ -842,7 +877,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             recordingOverlay.scheduleAutoHide(after: 5)
             showLastTranscription()
             statusBarController.showTransientStatus(
-                "Text je v okně \(AppBrand.displayName) — zkopíruj nebo zkus „Vložit“",
+                "Vložení selhalo — text je v historii.",
                 duration: 5
             )
         }
@@ -889,13 +924,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private func busyStatusMessage() -> String {
         switch stateMachine.state {
         case .injecting:
-            return "Počkejte — vkládám text"
+            return "Počkej — vkládám"
         case .transcribing:
-            return "Počkejte — přepisuji"
+            return "Přepisuji…"
         case .modelDownloading, .modelLoading:
-            return "Počkejte — připravuji model"
+            return "Načítám model…"
         default:
-            return "Počkejte — \(AppBrand.displayName) není připravený"
+            return "Počkej…"
         }
     }
 
@@ -971,28 +1006,55 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     private func startPostProcessingLoad() async {
-        guard PostProcessingPreference.isEnabled else { return }
-        guard await !postProcessingEngine.isLoaded else { return }
+        guard PostProcessingPreference.isEnabled else {
+            await MainActor.run { postProcessingReadiness.turnedOff() }
+            return
+        }
+        guard await !postProcessingEngine.isLoaded else {
+            await MainActor.run { postProcessingReadiness.becameReady() }
+            return
+        }
+        await MainActor.run {
+            warnedPostProcessingNotReady = false
+            postProcessingReadiness.beganPreparing()
+        }
         DiagnosticsLogger.log("PostProcessing: background load starting")
         do {
             try await postProcessingEngine.load { [weak self] progress in
                 Task { @MainActor in
-                    let pct = Int(progress * 100)
-                    self?.statusBarController.showTransientStatus("Oprava textu: načítám (\(pct) %)", duration: 3)
+                    self?.postProcessingReadiness.updateProgress(progress)
                 }
             }
             await MainActor.run { [weak self] in
-                self?.statusBarController.showTransientStatus("Oprava textu: připraveno", duration: 4)
+                self?.postProcessingReadiness.becameReady()
             }
         } catch {
             DiagnosticsLogger.log("PostProcessing: background load failed — \(error.localizedDescription)")
+            await MainActor.run { [weak self] in
+                self?.postProcessingReadiness.becameUnavailable()
+            }
         }
+    }
+
+    private func notifyPostProcessingStillPreparing() {
+        guard !warnedPostProcessingNotReady else { return }
+        warnedPostProcessingNotReady = true
+        statusBarController.showTransientStatus(
+            "Formátování se ještě připravovalo — v menu uvidíš průběh; další diktát už může být plný",
+            duration: 8
+        )
     }
 
     private func handlePostProcessingPreferenceChanged() {
         if PostProcessingPreference.isEnabled {
-            Task { [weak self] in await self?.startPostProcessingLoad() }
+            postProcessingReadiness.syncWithPreference()
+            Task { [weak self] in
+                await self?.postProcessingEngine.unload()
+                await self?.startPostProcessingLoad()
+            }
         } else {
+            postProcessingReadiness.turnedOff()
+            warnedPostProcessingNotReady = false
             Task { [weak self] in await self?.postProcessingEngine.unload() }
         }
     }
@@ -1053,8 +1115,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private func modelLoadErrorMessage(for error: Error) -> String {
         let nsError = error as NSError
         if nsError.domain == NSURLErrorDomain || error.localizedDescription.localizedCaseInsensitiveContains("offline") {
-            return "Model Whisper se nepodařilo stáhnout, protože Mac teď nemá funkční připojení k internetu. Připojte se k internetu a klikněte na „Zkusit znovu“. Diktování zůstává lokální; stahuje se jen model pro první spuštění."
+            return "Model se nestáhl — připoj internet a zkus znovu."
         }
-        return "Model Whisper se nepodařilo načíst. Klikněte na „Zkusit znovu“, případně zkontrolujte připojení k internetu."
+        return "Model se nepodařilo načíst — zkus znovu."
     }
 }

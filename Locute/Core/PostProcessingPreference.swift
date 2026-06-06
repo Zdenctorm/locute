@@ -21,29 +21,29 @@ enum PostProcessingModelSize: String, CaseIterable, Sendable {
 
     var label: String {
         switch self {
-        case .standard: return "Standardní (Qwen2.5 1.5B)"
-        case .compact:  return "Kompaktní (Llama 1B)"
+        case .standard: return "Kvalitní (~950 MB)"
+        case .compact:  return "Rychlé (~620 MB)"
         }
     }
 
     var detail: String {
         switch self {
         case .standard:
-            return "~950 MB, lepší čeština. Doporučeno."
+            return "Doporučeno. Jednorázové stažení na tento Mac."
         case .compact:
-            return "~620 MB, rychlejší, méně přesné v češtině."
+            return "Menší stažení. Horší u delších textů."
         }
     }
 }
 
-/// Preference pro opt-in AI opravu přepisů (interpunkce, kapitalizace, ALL-CAPS normalizace).
+/// Preference pro volitelnou lokální opravu přepisů (interpunkce, kapitalizace, ALL-CAPS normalizace).
 enum PostProcessingPreference {
     private static let enabledKey   = "postProcessingEnabled"
     private static let modelSizeKey = "postProcessingModelSize"
 
     static var isEnabled: Bool {
         get {
-            guard UserDefaults.standard.object(forKey: enabledKey) != nil else { return true }
+            guard UserDefaults.standard.object(forKey: enabledKey) != nil else { return false }
             return UserDefaults.standard.bool(forKey: enabledKey)
         }
         set {

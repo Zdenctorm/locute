@@ -138,8 +138,7 @@ enum AppTheme {
     }
 
     static func primaryButton(_ title: String, target: AnyObject?, action: Selector?) -> NSButton {
-        let button = button(title, target: target, action: action)
-        button.bezelStyle = .rounded
+        let button = AccentFilledButton(title: title, target: target, action: action)
         button.keyEquivalent = "\r"
         return button
     }
@@ -155,6 +154,22 @@ enum AppTheme {
         field.setContentHuggingPriority(.required, for: .horizontal)
         field.setAccessibilityRole(.staticText)
         return field
+    }
+
+    /// Sekční nadpis ve scrollovatelném nastavení (Diktování / Přepis).
+    static func sectionHeader(_ title: String) -> NSView {
+        let label = label(title, font: Font.title, color: Color.title)
+        let wrapper = NSView()
+        wrapper.translatesAutoresizingMaskIntoConstraints = false
+        label.translatesAutoresizingMaskIntoConstraints = false
+        wrapper.addSubview(label)
+        NSLayoutConstraint.activate([
+            label.leadingAnchor.constraint(equalTo: wrapper.leadingAnchor),
+            label.trailingAnchor.constraint(lessThanOrEqualTo: wrapper.trailingAnchor),
+            label.topAnchor.constraint(equalTo: wrapper.topAnchor, constant: Spacing.tight),
+            label.bottomAnchor.constraint(equalTo: wrapper.bottomAnchor)
+        ])
+        return wrapper
     }
 
     /// Resolves dynamic theme colors for the view's current appearance.
@@ -185,6 +200,37 @@ enum AppTheme {
     /// Kořen popoveru — warm surface místo systémového šedého panelu.
     static func popoverRootView(frame: NSRect = .zero) -> NSView {
         PopoverChromeView(frame: frame)
+    }
+}
+
+// MARK: - Claret-filled primary CTA (one per window)
+
+private final class AccentFilledButton: NSButton {
+    init(title: String, target: AnyObject?, action: Selector?) {
+        super.init(frame: .zero)
+        self.title = title
+        self.target = target
+        self.action = action
+        bezelStyle = .rounded
+        controlSize = .large
+        AccessibilitySupport.configure(self, label: title)
+        applyAccentFill()
+    }
+
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+
+    override func viewDidChangeEffectiveAppearance() {
+        super.viewDidChangeEffectiveAppearance()
+        applyAccentFill()
+    }
+
+    private func applyAccentFill() {
+        effectiveAppearance.performAsCurrentDrawingAppearance {
+            bezelColor = AppTheme.Color.accent
+            contentTintColor = AppTheme.Color.brandPaper
+        }
     }
 }
 

@@ -16,10 +16,10 @@ enum HotkeyHealth: Equatable, Sendable {
 
 /// Volba klávesy pro diktování. Persistováno v UserDefaults pod `hotkeyChoice`.
 enum HotkeyChoice: String, CaseIterable {
+    case rightCommand
     case eitherOption
     case rightOption
     case leftOption
-    case rightCommand
 
     var label: String {
         switch self {
@@ -47,19 +47,22 @@ extension Notification.Name {
 
 enum HotkeyPreference {
     private static let storageKey = "hotkeyChoice"
+    private static let migrationKey = "didMigrateHotkeyToRightCommand"
 
-    /// Česká klávesnice: pravý Option je často AltGr — pro globální diktování je spolehlivější pravý Command.
-    static var recommendedDefault: HotkeyChoice {
-        let czech = Locale.preferredLanguages.contains { $0.hasPrefix("cs") }
-            || Locale.current.identifier.hasPrefix("cs")
-        return czech ? .rightCommand : .eitherOption
-    }
+    /// Výchozí: pravý Command — na české klávesnici je spolehlivější než Option (AltGr).
+    static var recommendedDefault: HotkeyChoice { .rightCommand }
 
     static var current: HotkeyChoice {
         get {
             guard let raw = UserDefaults.standard.string(forKey: storageKey),
                   let choice = HotkeyChoice(rawValue: raw) else {
                 return recommendedDefault
+            }
+            if !UserDefaults.standard.bool(forKey: migrationKey),
+               choice == .eitherOption || choice == .rightOption {
+                UserDefaults.standard.set(true, forKey: migrationKey)
+                UserDefaults.standard.set(HotkeyChoice.rightCommand.rawValue, forKey: storageKey)
+                return .rightCommand
             }
             return choice
         }
@@ -74,10 +77,9 @@ final class HotkeyManager {
     var onKeyDown: (() -> Void)?
     var onKeyUp: (() -> Void)?
     var onModifierEvent: ((HotkeyKey, Bool) -> Void)?
-    var onWrongModifierHint: ((Bool) -> Void)?
     var activationMode: DictationActivationMode = DictationActivationPreference.current
     /// Aktuální volba uživatele — přepíná, která klávesa spouští diktování.
-    var preference: HotkeyChoice = .eitherOption
+    var preference: HotkeyChoice = .rightCommand
 
     private var isOptionDown = false
     private var triggerPhysicallyDown = false
@@ -568,13 +570,6 @@ final class HotkeyManager {
             case .rightCommand: return "rightCommand"
             }
         }()
-
-        let sessionActive = isOptionDown || pendingToggleStart
-        onWrongModifierHint?(HotkeyTriggerLogic.wrongModifierActive(
-            preference: preference,
-            snap: logicSnap,
-            sessionActive: sessionActive
-        ))
 
         if activationMode == .toggle {
             if triggerDown && !triggerPhysicallyDown {

@@ -38,11 +38,14 @@ Hlavní loop: **klávesa → mikrofon → přepis → vložení**. Vedlejší: h
 
 ## Goals (product)
 
-1. **Bez tření** — po nastavení oprávnění diktovat bez otevírání okna; menu bar + HUD stačí.
-2. **Důvěra** — na první pohled jasné: audio a přepis zůstávají na zařízení (kromě jednorázového stažení modelu).
-3. **Předvídatelnost** — stav systému viditelný (nahrávám / přepisuji / vkládám); hotkey konzistentní v celém UI.
-4. **Opravitelnost** — historie, znovu vložit, oprava podtržených slov, vlastní slovník.
-5. **Ne přeplnit** — nastavení a diagnostika nepatří do stejné vrstvy jako „podrž klávesu a mluv“.
+1. **Nejrychlejší přepis** — výchozí turbo model, oprava textu vypnutá; rychlost key-up → vložení je hlavní metrika.
+2. **Plně offline** — audio a přepis nikdy neopouští Mac (kromě jednorázového stažení modelu). Žádný cloud ASR, žádné NVIDIA/online API.
+3. **Bez tření** — po nastavení oprávnění diktovat bez otevírání okna; menu bar + kompaktní pill stačí.
+4. **Důvěra** — na první pohled jasné: data zůstávají na zařízení.
+5. **Předvídatelnost** — stav systému viditelný (nahrávám / přepisuji / vkládám); hotkey konzistentní v celém UI.
+6. **Opravitelnost** — historie, znovu vložit, oprava podtržených slov, vlastní slovník.
+7. **Ne přeplnit** — nastavení a diagnostika nepatří do stejné vrstvy jako „podrž klávesu a mluv“.
+8. **Minimum slov** — UI copy je krátké a akční; vysvětlení a troubleshooting jen v disclosure / Pokročilé.
 
 ---
 
@@ -59,7 +62,7 @@ Hlavní loop: **klávesa → mikrofon → přepis → vložení**. Vedlejší: h
 ## References (named)
 
 - **macOS System Settings / native utilities** — známé vzory, sidebar u větších oken, systémové fonty.
-- **Whispur** (open-source menu bar dictation) — minimální menu dropdown, recording pill s waveform, setup checklist 5/5.
+- **Whispur** (open-source menu bar dictation) — minimální menu dropdown, **kompaktní recording pill** (tečka + waveform + krátký stav), setup checklist 5/5.
 - **Pindrop / „quiet utility“** ethos — menu bar first, žádný Dock pokud user nechce.
 - **Editorial print / knižní papír** — warm cream surfaces, jedna committed ink barva (claret), ne rainbow UI.
 
@@ -67,7 +70,7 @@ Hlavní loop: **klávesa → mikrofon → přepis → vložení**. Vedlejší: h
 
 ## Anti-references (named)
 
-- **Wispr Flow marketing** — fialové gradienty, „4× faster“, generic AI startup hero.
+- **Wispr Flow / cloud ASR** — online přepis, fialové gradienty, marketingové bannery, „AI“ jako hlavní produkt.
 - **Superwhisper dark premium SaaS** — těžký „transform your voice“ glow, power-user API grid v první vrstvě.
 - **WhisperClip-style dark sidebar app** jako *primární* shell — Locute není „další Electron dashboard“.
 - **Apple Dictation** frustrace — dlouhé pauzy bez opravy, nutnost diktovat interpunkci.
@@ -80,11 +83,12 @@ Hlavní loop: **klávesa → mikrofon → přepis → vložení**. Vedlejší: h
 1. **Menu bar is home** — hlavní práce probíhá v cílové aplikaci; Locute je doprovod.
 2. **One accent, warm neutrals** — claret + cream/warm gray; systémové success/warning jen pro stav.
 3. **Progressive disclosure** — Setup (permissions + první diktát) ≠ Preferences (model, mikrofon, chování) ≠ Advanced (diagnostika, LLM).
-4. **Status before settings** — uživatel vždy ví: připraveno / nahrávám / přepisuji / chyba; HUD + menu bar souhlasí.
-5. **Hotkey is law** — všechny user-facing stringy používají aktuální `HotkeyPreference` label, ne hardcoded „Option“.
-6. **Native AppKit** — `AppTheme` jediný zdroj barev a spacing; žádné web tokeny; light/dark přes dynamic `NSColor`.
-7. **Accessibility by default** — VoiceOver labely, oznámení stavů; overlay nesmí být jediný kanál informace.
-8. **Competitive bar** — streaming preview a offline jsou diferenciátory; viz `research/competitive-analysis/COMPETITIVE_ANALYSIS.md`.
+4. **Status before settings** — uživatel vždy ví: připraveno / nahrávám / přepisuji / chyba; kompaktní pill + menu bar souhlasí.
+5. **Speed first, polish optional** — turbo přepis výchozí; lokální oprava textu opt-in (vypnuto = nejrychlejší cesta).
+6. **Hotkey is law** — všechny user-facing stringy používají aktuální `HotkeyPreference` label, ne hardcoded „Option“.
+7. **Native AppKit** — `AppTheme` jediný zdroj barev a spacing; žádné web tokeny; light/dark přes dynamic `NSColor`.
+8. **Accessibility by default** — VoiceOver labely, oznámení stavů; overlay nesmí být jediný kanál informace.
+9. **Competitive bar** — streaming preview a offline jsou diferenciátory; viz `research/competitive-analysis/COMPETITIVE_ANALYSIS.md`.
 
 ---
 
@@ -100,7 +104,7 @@ Hlavní loop: **klávesa → mikrofon → přepis → vložení**. Vedlejší: h
 
 - Cíl: **WCAG 2.1 AA** tam, kde AppKit a VoiceOver umožňují měřitelné chování (labely, oznámení stavů, kontrast textu na `AppTheme` površích).
 - **VoiceOver:** dynamické labely menu baru a HUD (`AccessibilitySupport`); audit z menu „Analýza zpřístupnění“.
-- **Reduced motion:** respektovat systémové nastavení macOS u pulzujícího HUD (roadmap).
+- **Reduced motion:** respektovat systémové nastavení macOS u pulzujícího HUD a ikony menu baru (implementováno přes `AccessibilitySupport.shouldReduceMotion`).
 - **Barvoslepost:** stavy nesmí spoléhat jen na červenou/zelenou — ikona + text stavu.
 
 ---

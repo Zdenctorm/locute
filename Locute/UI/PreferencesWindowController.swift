@@ -5,6 +5,8 @@ import Cocoa
 final class PreferencesWindowController: NSWindowController {
     private let panelBuilder = PreferencesPanelBuilder()
     private var refreshTimer: Timer?
+    private let advancedDisclosure = NSButton(title: "Pokročilé", target: nil, action: nil)
+    private let advancedPanel = NSView()
 
     var hotkeyHealthProvider: (() -> HotkeyHealth)? {
         didSet { panelBuilder.hotkeyHealthProvider = hotkeyHealthProvider }
@@ -46,19 +48,13 @@ final class PreferencesWindowController: NSWindowController {
         let logo = AppLogoView()
         logo.translatesAutoresizingMaskIntoConstraints = false
         NSLayoutConstraint.activate([
-            logo.widthAnchor.constraint(equalToConstant: 48),
-            logo.heightAnchor.constraint(equalToConstant: 48)
+            logo.widthAnchor.constraint(equalToConstant: 64),
+            logo.heightAnchor.constraint(equalToConstant: 64)
         ])
 
         let title = AppTheme.label("Nastavení", font: AppTheme.Font.title, color: AppTheme.Color.title)
-        let subtitle = AppTheme.label(
-            "Klávesa, model přepisu a chování \(AppBrand.displayName). Oprávnění upravíš v Průvodci nastavením z menu.",
-            font: AppTheme.Font.body,
-            color: AppTheme.Color.body,
-            lines: 0
-        )
 
-        let headerText = NSStackView(views: [title, subtitle])
+        let headerText = NSStackView(views: [title])
         headerText.orientation = .vertical
         headerText.alignment = .leading
         headerText.spacing = AppTheme.Spacing.tight
@@ -75,11 +71,37 @@ final class PreferencesWindowController: NSWindowController {
         window?.contentView = contentView
         AppTheme.pinScrollViewToWindow(scrollView, in: contentView)
 
+        advancedDisclosure.setButtonType(.toggle)
+        advancedDisclosure.bezelStyle = .inline
+        advancedDisclosure.font = AppTheme.Font.footnote
+        advancedDisclosure.state = .off
+        advancedDisclosure.target = self
+        advancedDisclosure.action = #selector(toggleAdvancedPanel)
+
+        let advancedStack = NSStackView(views: panelBuilder.buildAdvancedCards())
+        advancedStack.orientation = .vertical
+        advancedStack.alignment = .leading
+        advancedStack.spacing = AppTheme.Spacing.stack
+        advancedStack.translatesAutoresizingMaskIntoConstraints = false
+        advancedPanel.addSubview(advancedStack)
+        NSLayoutConstraint.activate([
+            advancedStack.leadingAnchor.constraint(equalTo: advancedPanel.leadingAnchor),
+            advancedStack.trailingAnchor.constraint(equalTo: advancedPanel.trailingAnchor),
+            advancedStack.topAnchor.constraint(equalTo: advancedPanel.topAnchor),
+            advancedStack.bottomAnchor.constraint(equalTo: advancedPanel.bottomAnchor)
+        ])
+        advancedPanel.isHidden = true
+
         let contentStack = ScrollContentLayout.install(
             in: scrollView,
-            arrangedSubviews: [header] + panelBuilder.buildAllCards()
+            arrangedSubviews: [header] + panelBuilder.buildGroupedSections() + [advancedDisclosure, advancedPanel]
         )
         contentStack.setCustomSpacing(AppTheme.Spacing.hero, after: header)
+        contentStack.setCustomSpacing(AppTheme.Spacing.tight, after: advancedDisclosure)
+    }
+
+    @objc private func toggleAdvancedPanel() {
+        advancedPanel.isHidden = advancedDisclosure.state != .on
     }
 
     private func startRefreshTimer() {

@@ -23,17 +23,17 @@ enum TranscriptionModelPreference: String, CaseIterable, Sendable {
 
     var label: String {
         switch self {
-        case .speed: return "Rychlost (turbo)"
-        case .accuracy: return "Přesnost (large-v3)"
+        case .speed: return "Rychlost (doporučeno)"
+        case .accuracy: return "Přesnost (pomalejší)"
         }
     }
 
     var detail: String {
         switch self {
         case .speed:
-            return "Rychlejší přepis, menší stažení (~630 MB). Doporučeno pro denní diktování."
+            return "Nejrychlejší (~630 MB)."
         case .accuracy:
-            return "Nejpřesnější varianta (~626 MB v20240930). Pomalejší než turbo."
+            return "Přesnější, pomalejší (~626 MB)."
         }
     }
 

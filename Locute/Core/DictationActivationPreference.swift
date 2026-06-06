@@ -6,7 +6,7 @@ enum DictationActivationMode: String, CaseIterable, Sendable {
 
     var label: String {
         switch self {
-        case .pushToTalk: return "Podrž a mluv (push-to-talk)"
+        case .pushToTalk: return "Drž a pusť (doporučeno)"
         case .toggle: return "Stiskni pro start / znovu pro konec"
         }
     }
@@ -14,9 +14,9 @@ enum DictationActivationMode: String, CaseIterable, Sendable {
     var detail: String {
         switch self {
         case .pushToTalk:
-            return "Drž diktovací klávesu, mluv, pusť — přepis se spustí po puštění."
+            return "Drž, mluv, pusť."
         case .toggle:
-            return "První stisk začne nahrávání, druhý stisk ukončí (nemusíš držet klávesu)."
+            return "Stisk = start, další stisk = konec."
         }
     }
 }

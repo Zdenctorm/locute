@@ -181,14 +181,12 @@ extension RecordingOverlayMode {
             return "Text se nevložil. \(reason). Otevři okno \(AppBrand.displayName)."
         case .busy(let message):
             return message
-        case .wrongKey:
-            return "Špatná klávesa. Drž \(HotkeyPreference.current.hintLabel)."
         }
     }
 
     var shouldAnnounce: Bool {
         switch self {
-        case .recording, .streamingPreview, .transcribing, .injecting, .injectionSuccess, .injectionFailed, .busy, .wrongKey:
+        case .recording, .streamingPreview, .transcribing, .injecting, .injectionSuccess, .injectionFailed, .busy:
             return true
         case .hidden, .keyHeld:
             return false
