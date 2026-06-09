@@ -183,8 +183,14 @@ final class PreferencesPanelBuilder: NSObject {
         postProcessingSizePicker.target = self
         postProcessingSizePicker.action = #selector(postProcessingSizeChanged(_:))
         postProcessingSizeDetailLabel.stringValue = PostProcessingPreference.modelSize.detail
-        let title = AppTheme.label("Oprava textu", font: AppTheme.Font.headline, color: AppTheme.Color.title)
-        return AppTheme.card([title, postProcessingSizePicker, postProcessingSizeDetailLabel])
+        let title = AppTheme.label("Lepší formátování textu", font: AppTheme.Font.headline, color: AppTheme.Color.title)
+        let detail = AppTheme.label(
+            "Interpunkce běží vždy. Zapnutá volba stáhne doplněk — průběh v menu.",
+            font: AppTheme.Font.body,
+            color: AppTheme.Color.body,
+            lines: 0
+        )
+        return AppTheme.card([title, detail, postProcessingSizePicker, postProcessingSizeDetailLabel])
     }
 
     @objc private func postProcessingSizeChanged(_ sender: NSPopUpButton) {

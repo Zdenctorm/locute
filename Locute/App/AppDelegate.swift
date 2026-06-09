@@ -12,6 +12,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var audioRecorder: AudioRecorder!
     private var transcriptionEngine: TranscriptionEngine!
     private var postProcessingEngine: PostProcessingEngine!
+    private var postProcessingReadiness: PostProcessingReadiness!
+    private var warnedPostProcessingNotReady = false
     private var recordingOverlay: RecordingOverlayController!
     private var setupWindowController: SetupWindowController?
     private var preferencesWindowController: PreferencesWindowController?
@@ -58,6 +60,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         audioRecorder = AudioRecorder()
         transcriptionEngine = TranscriptionEngine()
         postProcessingEngine = PostProcessingEngine()
+        postProcessingReadiness = PostProcessingReadiness()
+        postProcessingReadiness.syncWithPreference()
         hotkeyManager = HotkeyManager()
         hotkeyManager.preference = HotkeyPreference.current
         hotkeyManager.activationMode = DictationActivationPreference.current
@@ -100,13 +104,17 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         recordingOverlay = RecordingOverlayController()
         statusBarController = StatusBarController(
             stateMachine: stateMachine,
+            postProcessingReadiness: postProcessingReadiness,
             updaterController: updaterController,
             sparkleUpdatesAvailable: sparkleUpdatesAvailable
         )
         statusBarController.hotkeyHealthProvider = { [weak self] in
             self?.hotkeyManager.currentHealth() ?? .tapMissing
         }
-        launchWindowController = LaunchWindowController(stateMachine: stateMachine)
+        launchWindowController = LaunchWindowController(
+            stateMachine: stateMachine,
+            postProcessingReadiness: postProcessingReadiness
+        )
         historyWindowController = HistoryWindowController()
 
         NotificationCenter.default.addObserver(
@@ -598,7 +606,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                         return nil
                     }
                     if let processed {
-                        finalText = processed.trimmingCharacters(in: .whitespacesAndNewlines)
+                        let trimmed = processed.trimmingCharacters(in: .whitespacesAndNewlines)
+                        finalText = CzechDictationFormatter.format(
+                            trimmed,
+                            targetAppBundleID: targetApp?.bundleIdentifier
+                        )
                         DiagnosticsLogger.log("PostProcessing: applied (\(caseNormalized.count)c → \(finalText.count)c)")
                     } else {
                         finalText = formatted
@@ -606,6 +618,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                     }
                 } else {
                     finalText = formatted
+                    if PostProcessingPreference.isEnabled, !await postProcessingEngine.isLoaded {
+                        await MainActor.run { [weak self] in
+                            self?.notifyPostProcessingStillPreparing()
+                        }
+                    }
+                }
+
+                if CzechHeuristicPunctuator.needsMorePunctuation(finalText) {
+                    finalText = CzechDictationFormatter.applyPunctuationPass(finalText)
                 }
 
                 if finalText.isEmpty {
@@ -985,28 +1006,55 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     private func startPostProcessingLoad() async {
-        guard PostProcessingPreference.isEnabled else { return }
-        guard await !postProcessingEngine.isLoaded else { return }
+        guard PostProcessingPreference.isEnabled else {
+            await MainActor.run { postProcessingReadiness.turnedOff() }
+            return
+        }
+        guard await !postProcessingEngine.isLoaded else {
+            await MainActor.run { postProcessingReadiness.becameReady() }
+            return
+        }
+        await MainActor.run {
+            warnedPostProcessingNotReady = false
+            postProcessingReadiness.beganPreparing()
+        }
         DiagnosticsLogger.log("PostProcessing: background load starting")
         do {
             try await postProcessingEngine.load { [weak self] progress in
                 Task { @MainActor in
-                    let pct = Int(progress * 100)
-                    self?.statusBarController.showTransientStatus("Oprava textu: načítám (\(pct) %)", duration: 3)
+                    self?.postProcessingReadiness.updateProgress(progress)
                 }
             }
             await MainActor.run { [weak self] in
-                self?.statusBarController.showTransientStatus("Oprava textu: připraveno", duration: 4)
+                self?.postProcessingReadiness.becameReady()
             }
         } catch {
             DiagnosticsLogger.log("PostProcessing: background load failed — \(error.localizedDescription)")
+            await MainActor.run { [weak self] in
+                self?.postProcessingReadiness.becameUnavailable()
+            }
         }
+    }
+
+    private func notifyPostProcessingStillPreparing() {
+        guard !warnedPostProcessingNotReady else { return }
+        warnedPostProcessingNotReady = true
+        statusBarController.showTransientStatus(
+            "Formátování se ještě připravovalo — v menu uvidíš průběh; další diktát už může být plný",
+            duration: 8
+        )
     }
 
     private func handlePostProcessingPreferenceChanged() {
         if PostProcessingPreference.isEnabled {
-            Task { [weak self] in await self?.startPostProcessingLoad() }
+            postProcessingReadiness.syncWithPreference()
+            Task { [weak self] in
+                await self?.postProcessingEngine.unload()
+                await self?.startPostProcessingLoad()
+            }
         } else {
+            postProcessingReadiness.turnedOff()
+            warnedPostProcessingNotReady = false
             Task { [weak self] in await self?.postProcessingEngine.unload() }
         }
     }

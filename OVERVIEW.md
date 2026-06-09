@@ -166,7 +166,8 @@ Aplikace má jen dvě:
 - [x] **Post-process velikost písmen**: pravidlová normalizace ALL-CAPS (+ volitelný LLM post-processing)
 - [x] **Backup + restore schránky** kolem Cmd+V — neztratit uživatelův obsah
 - [x] **Smart leading space** při paste doprostřed věty
-- [ ] **Punctuation commands** („tečka", „nový odstavec") — power user feature
+- [x] **Heuristická interpunkce + e-mail** (offline pravidla, vždy)
+- [x] **Punctuation commands** („tečka", „nový odstavec") — power user
 - [x] **HUD error feedback** při selhání injection
 - [x] **Sparkle auto-update** framework
 - [ ] **Apple Developer certifikát + notarizace** pro distribuci bez Gatekeeper warning
