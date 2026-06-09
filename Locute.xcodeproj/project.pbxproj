@@ -72,7 +72,7 @@
 		010000000000000000000049 /* HotkeyTriggerLogic.swift in Sources */ = {isa = PBXBuildFile; fileRef = 020000000000000000000049 /* HotkeyTriggerLogic.swift */; };
 		01000000000000000000004A /* DictationPreviewPreference.swift in Sources */ = {isa = PBXBuildFile; fileRef = 02000000000000000000004A /* DictationPreviewPreference.swift */; };
 		01000000000000000000004B /* CzechDictationFormatter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 02000000000000000000004B /* CzechDictationFormatter.swift */; };
-		01000000000000000000005A /* CzechHeuristicPunctuator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 02000000000000000000005A /* CzechHeuristicPunctuator.swift */; };
+		01000000000000000000005F /* CzechHeuristicPunctuator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 02000000000000000000005F /* CzechHeuristicPunctuator.swift */; };
 		01000000000000000000005B /* PostProcessingReadiness.swift in Sources */ = {isa = PBXBuildFile; fileRef = 02000000000000000000005B /* PostProcessingReadiness.swift */; };
 		01000000000000000000005C /* CzechPunctuationRules.swift in Sources */ = {isa = PBXBuildFile; fileRef = 02000000000000000000005C /* CzechPunctuationRules.swift */; };
 		01000000000000000000005D /* PostProcessingOutputSanitizer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 02000000000000000000005D /* PostProcessingOutputSanitizer.swift */; };
@@ -153,7 +153,7 @@
 		020000000000000000000049 /* HotkeyTriggerLogic.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HotkeyTriggerLogic.swift; sourceTree = "<group>"; };
 		02000000000000000000004A /* DictationPreviewPreference.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DictationPreviewPreference.swift; sourceTree = "<group>"; };
 		02000000000000000000004B /* CzechDictationFormatter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CzechDictationFormatter.swift; sourceTree = "<group>"; };
-		02000000000000000000005A /* CzechHeuristicPunctuator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CzechHeuristicPunctuator.swift; sourceTree = "<group>"; };
+		02000000000000000000005F /* CzechHeuristicPunctuator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CzechHeuristicPunctuator.swift; sourceTree = "<group>"; };
 		02000000000000000000005B /* PostProcessingReadiness.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PostProcessingReadiness.swift; sourceTree = "<group>"; };
 		02000000000000000000005C /* CzechPunctuationRules.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CzechPunctuationRules.swift; sourceTree = "<group>"; };
 		02000000000000000000005D /* PostProcessingOutputSanitizer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PostProcessingOutputSanitizer.swift; sourceTree = "<group>"; };
@@ -231,7 +231,7 @@
 				020000000000000000000049 /* HotkeyTriggerLogic.swift */,
 				02000000000000000000004A /* DictationPreviewPreference.swift */,
 				02000000000000000000004B /* CzechDictationFormatter.swift */,
-				02000000000000000000005A /* CzechHeuristicPunctuator.swift */,
+				02000000000000000000005F /* CzechHeuristicPunctuator.swift */,
 				02000000000000000000005B /* PostProcessingReadiness.swift */,
 				02000000000000000000005C /* CzechPunctuationRules.swift */,
 				02000000000000000000005D /* PostProcessingOutputSanitizer.swift */,
@@ -510,7 +510,7 @@
 				010000000000000000000049 /* HotkeyTriggerLogic.swift in Sources */,
 				01000000000000000000004A /* DictationPreviewPreference.swift in Sources */,
 				01000000000000000000004B /* CzechDictationFormatter.swift in Sources */,
-				01000000000000000000005A /* CzechHeuristicPunctuator.swift in Sources */,
+				01000000000000000000005F /* CzechHeuristicPunctuator.swift in Sources */,
 				01000000000000000000005B /* PostProcessingReadiness.swift in Sources */,
 				01000000000000000000005C /* CzechPunctuationRules.swift in Sources */,
 				01000000000000000000005D /* PostProcessingOutputSanitizer.swift in Sources */,
