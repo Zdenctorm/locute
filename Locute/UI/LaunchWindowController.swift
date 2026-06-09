@@ -309,17 +309,11 @@ final class LaunchWindowController: NSWindowController {
             switch postProcessingReadiness.phase {
             case .preparing(let progress):
                 let pct = Int((progress * 100).rounded())
-                return """
-                Přepis je připravený. Formátování textu se ještě načítá (\(pct) %) — \
-                můžeš diktovat hned; tentokrát platí základní pravidla. V menu uvidíš stejný průběh.
-                """
+                return "Formátování se načítá (\(pct) %). Můžeš diktovat."
             case .ready:
-                return "Připraveno včetně formátování textu. Okno můžete skrýt, \(AppBrand.displayName) zůstane v horní liště."
+                return "Připraveno."
             case .unavailable:
-                return """
-                Přepis je připravený. Lepší formátování se nepodařilo načíst — zůstává základní úprava. \
-                Zkus restart aplikace nebo vypni/zapni volbu v menu.
-                """
+                return "Formátování se nenačetlo — platí základní pravidla."
             case .off:
                 break
             }

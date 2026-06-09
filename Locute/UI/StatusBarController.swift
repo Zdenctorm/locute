@@ -240,7 +240,7 @@ final class StatusBarController: NSObject, NSMenuDelegate {
         case .idle:
             setImage("mic", template: true, decorativeDescription: "Mikrofon, připraveno")
             if postProcessingReadiness.isPreparing {
-                button.toolTip = "Přepis je připravený. Formátování se načítá — v menu uvidíš průběh."
+                button.toolTip = "Formátování se načítá — průběh v menu."
             } else {
                 button.toolTip = "Připraveno. Podrž \(HotkeyPreference.current.hintLabel)."
             }
@@ -360,7 +360,7 @@ final class StatusBarController: NSObject, NSMenuDelegate {
                 return "Přepis jde hned. Formátování doběhne v menu."
             }
             if postProcessingReadiness.phase == .unavailable {
-                return "Formátování se nepodařilo načíst — platí základní pravidla."
+                return "Formátování se nenačetlo — platí základní pravidla."
             }
             return "Podrž \(HotkeyPreference.current.hintLabel)."
         case .recording:
