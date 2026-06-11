@@ -618,9 +618,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                     }
                 } else {
                     finalText = formatted
-                    if PostProcessingPreference.isEnabled, !await postProcessingEngine.isLoaded {
-                        await MainActor.run { [weak self] in
-                            self?.notifyPostProcessingStillPreparing()
+                    if PostProcessingPreference.isEnabled {
+                        if !(await postProcessingEngine.isLoaded) {
+                            await MainActor.run { [weak self] in
+                                self?.notifyPostProcessingStillPreparing()
+                            }
                         }
                     }
                 }
